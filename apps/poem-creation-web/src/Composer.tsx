@@ -1,4 +1,5 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ClipboardEvent, KeyboardEvent } from "react";
 import { Tone } from "@poem/parser/kernel";
 import type { ToneConstraint } from "@poem/parser/kernel";
 import type { RhymeDict } from "@poem/parser/kernel";
@@ -24,10 +25,6 @@ type GridState = {
   grid: string[][];
 };
 
-function getLastComposedChar(text: string): string {
-  return Array.from(text.trim()).at(-1) ?? "";
-}
-
 function createEmptyGrid(pattern: ToneConstraint[][]): string[][] {
   return pattern.map((row) => row.map(() => ""));
 }
@@ -42,59 +39,66 @@ function createPatternSignature(pattern: ToneConstraint[][]): string {
     .join("|");
 }
 
-const CharSlot = forwardRef<HTMLInputElement, {
-  constraint: ToneConstraint;
-  value: string;
-  evaluation: SlotEvaluation;
-  onChange: (ch: string) => void;
-  onAdvance: () => void;
-}>(function CharSlot({
+function normalizePoemInput(text: string): string[] {
+  return Array.from(text).filter((ch) => !/[\s，。！？；：、,.!?;:]/u.test(ch));
+}
+
+function CharSlot({
   constraint,
   value,
   evaluation,
-  onChange,
-  onAdvance,
-}, ref) {
-  const [draft, setDraft] = useState(value);
-  const composingRef = useRef(false);
-
-  useEffect(() => {
-    if (!composingRef.current) setDraft(value);
-  }, [value]);
-
-  const commit = useCallback((text: string, shouldAdvance: boolean) => {
-    const next = getLastComposedChar(text);
-    setDraft(next);
-    onChange(next);
-    if (next && shouldAdvance) onAdvance();
-  }, [onAdvance, onChange]);
-
+  active,
+  draft,
+  inputRef,
+  onDraftChange,
+  onCompositionStart,
+  onCompositionEnd,
+  onKeyDown,
+  onPaste,
+  onSelect,
+}: {
+  constraint: ToneConstraint;
+  value: string;
+  evaluation: SlotEvaluation;
+  active: boolean;
+  draft: string;
+  inputRef: (input: HTMLInputElement | null) => void;
+  onDraftChange: (value: string) => void;
+  onCompositionStart: () => void;
+  onCompositionEnd: (value: string) => void;
+  onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+  onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
+  onSelect: () => void;
+}) {
   return (
     <span className="char-slot">
       <span className={`slot-label slot-label-${constraint.type}`}>
         {evaluation.label}
       </span>
-      <input
+      <button
+        type="button"
         aria-label={evaluation.title}
-        className={`char-input status-${evaluation.status}`}
-        ref={ref}
+        className={`char-input status-${evaluation.status}${active ? " is-active" : ""}`}
         title={evaluation.title}
-        value={draft}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          if (!composingRef.current) commit(e.target.value, true);
-        }}
-        onCompositionStart={() => {
-          composingRef.current = true;
-        }}
-        onCompositionEnd={(e) => {
-          composingRef.current = false;
-          commit(e.currentTarget.value, true);
-        }}
-      />
+        onClick={onSelect}
+      >
+        {value}
+      </button>
+      {active && (
+        <input
+          ref={inputRef}
+          className="active-cell-editor"
+          value={draft}
+          onChange={(event) => onDraftChange(event.currentTarget.value)}
+          onCompositionStart={onCompositionStart}
+          onCompositionEnd={(event) => onCompositionEnd(event.currentTarget.value)}
+          onKeyDown={onKeyDown}
+          onPaste={onPaste}
+        />
+      )}
     </span>
   );
-});
+}
 
 /** 正文编辑器 */
 export default function Composer({
@@ -114,19 +118,100 @@ export default function Composer({
   const grid = gridState.signature === patternSignature
     ? gridState.grid
     : createEmptyGrid(pattern);
-  const inputRefs = useRef<(HTMLInputElement | null)[][]>([]);
+  const activeInputRef = useRef<HTMLInputElement | null>(null);
+  const composingRef = useRef(false);
+  const [activeCell, setActiveCell] = useState<{ line: number; col: number } | null>(null);
+  const [draft, setDraft] = useState("");
 
-  const handleChange = useCallback(
-    (lineIdx: number, colIdx: number, ch: string) => {
+  useEffect(() => {
+    if (!activeCell) return;
+    requestAnimationFrame(() => {
+      activeInputRef.current?.focus();
+    });
+  }, [activeCell]);
+
+  const writeCharsAt = useCallback(
+    (lineIdx: number, colIdx: number, chars: string[]) => {
+      if (chars.length === 0) return;
       setGridState((prev) => {
         const source = prev.signature === patternSignature ? prev.grid : createEmptyGrid(pattern);
         const next = source.map((row) => [...row]);
-        next[lineIdx][colIdx] = ch;
+        const rowLength = pattern[lineIdx]?.length ?? 0;
+        for (let offset = 0; offset < chars.length && colIdx + offset < rowLength; offset++) {
+          next[lineIdx][colIdx + offset] = chars[offset];
+        }
         return { signature: patternSignature, grid: next };
       });
+
+      const rowLength = pattern[lineIdx]?.length ?? 0;
+      const nextCol = Math.min(colIdx + chars.length, Math.max(rowLength - 1, 0));
+      setDraft("");
+      setActiveCell({ line: lineIdx, col: nextCol });
     },
     [pattern, patternSignature],
   );
+
+  const clearCellAt = useCallback((lineIdx: number, colIdx: number) => {
+    setGridState((prev) => {
+      const source = prev.signature === patternSignature ? prev.grid : createEmptyGrid(pattern);
+      const next = source.map((row) => [...row]);
+      if (next[lineIdx]) next[lineIdx][colIdx] = "";
+      return { signature: patternSignature, grid: next };
+    });
+  }, [pattern, patternSignature]);
+
+  const moveActiveCell = useCallback((lineIdx: number, colIdx: number, delta: number) => {
+    const rowLength = pattern[lineIdx]?.length ?? 0;
+    if (rowLength === 0) return;
+    setDraft("");
+    setActiveCell({ line: lineIdx, col: Math.max(0, Math.min(colIdx + delta, rowLength - 1)) });
+  }, [pattern]);
+
+  const pasteAt = useCallback((
+    lineIdx: number,
+    colIdx: number,
+    text: string,
+  ) => {
+    const lines = text.split(/\r?\n/).map((line) => normalizePoemInput(line).join("")).filter(Boolean);
+
+    setGridState((prev) => {
+      const source = prev.signature === patternSignature ? prev.grid : createEmptyGrid(pattern);
+      const next = source.map((row) => [...row]);
+
+      if (lines.length > 1) {
+        for (let offset = 0; offset < lines.length && lineIdx + offset < pattern.length; offset++) {
+          const targetLine = lineIdx + offset;
+          const startCol = offset === 0 ? colIdx : 0;
+          const chars = normalizePoemInput(lines[offset]);
+          for (let charOffset = 0; charOffset < chars.length && startCol + charOffset < pattern[targetLine].length; charOffset++) {
+            next[targetLine][startCol + charOffset] = chars[charOffset];
+          }
+        }
+      } else {
+        const chars = normalizePoemInput(text);
+        for (let offset = 0; offset < chars.length && colIdx + offset < (pattern[lineIdx]?.length ?? 0); offset++) {
+          next[lineIdx][colIdx + offset] = chars[offset];
+        }
+      }
+
+      return { signature: patternSignature, grid: next };
+    });
+  }, [pattern, patternSignature]);
+
+  const handleDraftChange = useCallback((lineIdx: number, colIdx: number, value: string) => {
+    if (composingRef.current) {
+      setDraft(value);
+      return;
+    }
+
+    const chars = normalizePoemInput(value);
+    if (chars.length > 0) {
+      writeCharsAt(lineIdx, colIdx, chars);
+      setDraft("");
+    } else {
+      setDraft(value);
+    }
+  }, [writeCharsAt]);
 
   const evaluations = useMemo(() => {
     const rhymeAnchors = new Map<Tone, string>();
@@ -204,13 +289,48 @@ export default function Composer({
               constraint={constraint}
               value={grid[li]?.[ci] ?? ""}
               evaluation={evaluations[li]?.[ci] ?? { status: "empty", label: constraintLabel(constraint), title: "" }}
-              onChange={(ch) => handleChange(li, ci, ch)}
-              onAdvance={() => {
-                if (ci + 1 < row.length) inputRefs.current[li]?.[ci + 1]?.focus();
+              active={activeCell?.line === li && activeCell.col === ci}
+              draft={activeCell?.line === li && activeCell.col === ci ? draft : ""}
+              inputRef={(input) => {
+                if (activeCell?.line === li && activeCell.col === ci) activeInputRef.current = input;
               }}
-              ref={(input) => {
-                if (!inputRefs.current[li]) inputRefs.current[li] = [];
-                inputRefs.current[li][ci] = input;
+              onDraftChange={(value) => handleDraftChange(li, ci, value)}
+              onCompositionStart={() => {
+                composingRef.current = true;
+                setDraft("");
+              }}
+              onCompositionEnd={(value) => {
+                composingRef.current = false;
+                writeCharsAt(li, ci, normalizePoemInput(value));
+                setDraft("");
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  moveActiveCell(li, ci, -1);
+                } else if (event.key === "ArrowRight") {
+                  event.preventDefault();
+                  moveActiveCell(li, ci, 1);
+                } else if (event.key === "Backspace" && draft === "") {
+                  event.preventDefault();
+                  if (grid[li]?.[ci]) {
+                    clearCellAt(li, ci);
+                  } else {
+                    moveActiveCell(li, ci, -1);
+                  }
+                } else if (event.key === "Delete" && draft === "") {
+                  event.preventDefault();
+                  clearCellAt(li, ci);
+                }
+              }}
+              onPaste={(event) => {
+                event.preventDefault();
+                pasteAt(li, ci, event.clipboardData.getData("text"));
+                setDraft("");
+              }}
+              onSelect={() => {
+                setDraft("");
+                setActiveCell({ line: li, col: ci });
               }}
             />
           ))}
