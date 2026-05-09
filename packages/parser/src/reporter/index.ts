@@ -1,3 +1,4 @@
+import { CharValidationStatus } from "../core/types.js";
 import { AnalysisResult } from "../analyzer/index.js";
 
 export function toJSON(result: AnalysisResult): string {
@@ -10,7 +11,7 @@ export function toAnnotatedText(result: AnalysisResult): string {
       line.chars
         .map((char) => {
           const tone = char.tone ?? "未知";
-          const marker = char.validationStatus === "fail" ? "!" : "";
+          const marker = char.validationStatus === CharValidationStatus.Fail ? "!" : "";
           return `${char.char}(${tone}${marker})`;
         })
         .join(" "),

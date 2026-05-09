@@ -4,9 +4,9 @@
  * 负责单行验证、字符校验、拗救标记等核心校验逻辑。
  */
 
+import { CharValidationStatus } from '../core/types.js';
 import type {
   CharNode,
-  CharValidationStatus,
   Diagnostic,
   LineNode,
   LineValidationResult,
@@ -39,31 +39,31 @@ function validateSingleChar(
   constraint: ToneConstraint | undefined,
 ): { status: CharValidationStatus; isCheckable: boolean } {
   if (!constraint) {
-    return { status: 'unknown', isCheckable: false };
+    return { status: CharValidationStatus.Unknown, isCheckable: false };
   }
 
   switch (constraint.type) {
     case 'flexible':
-      return { status: 'flexible', isCheckable: false };
+      return { status: CharValidationStatus.Flexible, isCheckable: false };
 
     case 'fixed': {
       if (charNode.tone === null) {
-        return { status: 'unknown', isCheckable: true };
+        return { status: CharValidationStatus.Unknown, isCheckable: true };
       }
       const matches =
         charNode.tone === constraint.tone ||
         (charNode.toneOptions ?? []).includes(constraint.tone);
-      return { status: matches ? 'pass' : 'fail', isCheckable: true };
+      return { status: matches ? CharValidationStatus.Pass : CharValidationStatus.Fail, isCheckable: true };
     }
 
     case 'rhyme':
       return {
-        status: charNode.tone !== null ? 'pass' : 'unknown',
+        status: charNode.tone !== null ? CharValidationStatus.Pass : CharValidationStatus.Unknown,
         isCheckable: true,
       };
 
     default:
-      return { status: 'unknown', isCheckable: false };
+      return { status: CharValidationStatus.Unknown, isCheckable: false };
   }
 }
 
@@ -83,7 +83,7 @@ export function validateChars(
 
     if (isCheckable) {
       checkableCount += 1;
-      if (status === 'pass') matchCount += 1;
+      if (status === CharValidationStatus.Pass) matchCount += 1;
     }
 
     return {
@@ -176,7 +176,7 @@ export function validateLineAgainstPattern(
       });
       return {
         ...charNode,
-        validationStatus: 'unknown' as const,
+        validationStatus: CharValidationStatus.Unknown,
         expectedConstraint: undefined,
       };
     }
@@ -192,7 +192,7 @@ export function validateLineAgainstPattern(
       });
       return {
         ...charNode,
-        validationStatus: 'flexible' as const,
+        validationStatus: CharValidationStatus.Flexible,
         expectedConstraint: constraint,
       };
     }
@@ -217,7 +217,7 @@ export function validateLineAgainstPattern(
       });
       return {
         ...charNode,
-        validationStatus: 'pass' as const,
+        validationStatus: CharValidationStatus.Pass,
         expectedConstraint: constraint,
       };
     }
@@ -245,7 +245,7 @@ export function validateLineAgainstPattern(
 
     return {
       ...charNode,
-      validationStatus: 'fail' as const,
+      validationStatus: CharValidationStatus.Fail,
       expectedConstraint: constraint,
     };
   });
@@ -279,8 +279,8 @@ export function applyRescueMarks(
   return {
     ...currentLine,
     chars: currentLine.chars.map((char, idx) =>
-      rescuedCols.includes(idx) && char.validationStatus === 'fail'
-        ? { ...char, validationStatus: 'rescued' as const }
+      rescuedCols.includes(idx) && char.validationStatus === CharValidationStatus.Fail
+        ? { ...char, validationStatus: CharValidationStatus.Rescued }
         : char,
     ),
   };

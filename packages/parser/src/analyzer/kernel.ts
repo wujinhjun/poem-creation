@@ -7,6 +7,7 @@
  * @module analyzer/kernel
  */
 
+import { PoemType, CoupletRole } from "../core/types.js";
 import type {
   Diagnostic,
   LineNode,
@@ -25,7 +26,7 @@ import { runPipeline, PipelineInput, PipelineOutput } from "./pipeline.js";
 // ============ 公共类型 ============
 
 export interface AnalyzeOptionsInternal {
-  preferredType?: "lüshi" | "jueju" | "ci";
+  preferredType?: PoemType;
   variantId?: string;
   strictMode?: boolean;
 }
@@ -142,7 +143,7 @@ export function analyzeLineSync(
     rhymeChar: validatedChars.at(-1),
     expectedRhymeType: resolved.expectedRhymeType,
     rhymeSwitch: resolved.rhymeSwitch,
-    coupletRole: context.globalLineIndex % 2 === 0 ? "upper" : "lower",
+    coupletRole: context.globalLineIndex % 2 === 0 ? CoupletRole.Upper : CoupletRole.Lower,
     coupletPairIndex: Math.floor(context.globalLineIndex / 2),
     expectedPattern: resolved.expectedPattern,
     templateId: resolved.templateId,
@@ -170,7 +171,7 @@ export function analyzeLineSync(
 
   const finalizedLine = applyRescueMarks(line, rescues);
   const contextHints: string[] = [];
-  contextHints.push(finalizedLine.coupletRole === "lower" ? "本句为对句" : "本句为出句");
+  contextHints.push(finalizedLine.coupletRole === CoupletRole.Lower ? "本句为对句" : "本句为出句");
   if (context.adjacentLines?.previous || context.adjacentLines?.next) {
     contextHints.push("已注入相邻句，可进行对仗/拗救上下文分析");
   }

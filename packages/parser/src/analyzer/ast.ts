@@ -5,8 +5,8 @@
  * AST 是整个分析流程的核心数据结构。
  */
 
-import type {
-  CharNode,
+import {
+  PoemType, CoupletRole, RhymeTone, CharNode,
   CoupletNode,
   LineNode,
   PoemAST,
@@ -15,8 +15,8 @@ import type {
 } from "../core/types.js";
 import { lex } from "../lexer/index.js";
 import { annotate, AnnotationResult } from "../phonology/index.js";
-import type { RhymeDict } from "../rhyme-dict/index.js";
-import type { MeterTemplate } from "../templates/index.js";
+import { RhymeDict } from "../rhyme-dict/index.js";
+import { MeterTemplate } from "../templates/index.js";
 
 /**
  * 对单行文本做词法分析+音韵标注，返回标注后的字符数组和歧义信息。
@@ -47,7 +47,7 @@ export function annotateLineText(
  * @returns 构建好的 PoemAST
  */
 export function buildAstFromAnnotation(
-  type: "lüshi" | "jueju" | "ci",
+  type: PoemType,
   annotation: AnnotationResult,
   rawLines: string[],
   rhymeDictType: RhymeDictType,
@@ -84,16 +84,16 @@ export function buildCouplets(ast: PoemAST): CoupletNode[] {
   for (let i = 0; i + 1 < ast.lines.length; i += 2) {
     const pairIndex = Math.floor(i / 2);
     // 颔联（第二联）和颈联（第三联）要求对仗
-    const requiresDuizhang = ast.type === "lüshi" && (pairIndex === 1 || pairIndex === 2);
+    const requiresDuizhang = ast.type === PoemType.Lüshi && (pairIndex === 1 || pairIndex === 2);
 
     const upper = ast.lines[i];
     const lower = ast.lines[i + 1];
 
-    upper.coupletRole = "upper";
+    upper.coupletRole = CoupletRole.Upper;
     upper.coupletPairIndex = pairIndex;
     upper.requiresDuizhang = requiresDuizhang;
 
-    lower.coupletRole = "lower";
+    lower.coupletRole = CoupletRole.Lower;
     lower.coupletPairIndex = pairIndex;
     lower.requiresDuizhang = requiresDuizhang;
 
@@ -129,7 +129,7 @@ export function applyMeterTemplateToAst(ast: PoemAST, template: MeterTemplate): 
 
     if (line.isRhymeLine) {
       line.rhymeChar = line.chars.at(-1);
-      line.expectedRhymeType = "ping";
+      line.expectedRhymeType = RhymeTone.Ping;
     }
   }
 

@@ -3,11 +3,11 @@
  *
  * 无 fs / path / process 依赖，可被 kernel 直接导入。
  */
-import { Tone, ToneConstraint } from "../core/types.js";
+import { Tone, ToneConstraint, PoemType } from "../core/types.js";
 
 export interface MeterTemplate {
   id: string;
-  type: "lüshi" | "jueju";
+  type: PoemType;
   name: string;
   charPerLine: 5 | 7;
   lineCount: 4 | 8;
@@ -35,7 +35,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
   return [
     {
       id: "qilü-shouju-ping",
-      type: "lüshi",
+      type: PoemType.Lüshi,
       name: "七律·首句入韵·平起",
       charPerLine: 7,
       lineCount: 8,
@@ -53,7 +53,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
     },
     {
       id: "qilü-shouju-ze",
-      type: "lüshi",
+      type: PoemType.Lüshi,
       name: "七律·首句入韵·仄起",
       charPerLine: 7,
       lineCount: 8,
@@ -71,7 +71,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
     },
     {
       id: "wulü-shouju-ping",
-      type: "lüshi",
+      type: PoemType.Lüshi,
       name: "五律·首句入韵·平起",
       charPerLine: 5,
       lineCount: 8,
@@ -89,7 +89,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
     },
     {
       id: "wulü-shouju-ze",
-      type: "lüshi",
+      type: PoemType.Lüshi,
       name: "五律·首句入韵·仄起",
       charPerLine: 5,
       lineCount: 8,
@@ -107,7 +107,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
     },
     {
       id: "qijue-pingqi",
-      type: "jueju",
+      type: PoemType.Jueju,
       name: "七绝·平起·首句不入韵",
       charPerLine: 7,
       lineCount: 4,
@@ -121,7 +121,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
     },
     {
       id: "qijue-zeqi",
-      type: "jueju",
+      type: PoemType.Jueju,
       name: "七绝·仄起·首句不入韵",
       charPerLine: 7,
       lineCount: 4,
@@ -135,7 +135,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
     },
     {
       id: "wujue-pingqi",
-      type: "jueju",
+      type: PoemType.Jueju,
       name: "五绝·平起·首句不入韵",
       charPerLine: 5,
       lineCount: 4,
@@ -144,7 +144,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
     },
     {
       id: "wujue-zeqi",
-      type: "jueju",
+      type: PoemType.Jueju,
       name: "五绝·仄起·首句不入韵",
       charPerLine: 5,
       lineCount: 4,

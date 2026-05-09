@@ -7,7 +7,7 @@
  * @module templates
  */
 
-import type { ToneConstraint } from "../core/types.js";
+import type { ToneConstraint, RhymeTone } from "../core/types.js";
 
 // ========== 格律模板 ==========
 
@@ -20,8 +20,8 @@ export interface CiTemplateLine {
   charCount: number;
   pattern: ToneConstraint[];
   isRhymeLine: boolean;
-  rhymeType?: "ping" | "ze";
-  rhymeSwitch?: "ping" | "ze";
+  rhymeType?: RhymeTone;
+  rhymeSwitch?: RhymeTone;
 }
 
 export interface CiTemplateSection {
@@ -35,7 +35,7 @@ export interface CiTemplateVariant {
   sketch?: string;
   author?: string;
   source?: string;
-  rhymeType?: "ping" | "ze" | "mixed";
+  rhymeType?: RhymeTone | "mixed";
   sections: CiTemplateSection[];
 }
 

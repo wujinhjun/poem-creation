@@ -2,26 +2,49 @@
  * @poem/shared —— 跨包共享类型与工具
  *
  * 供 parser、web、rn、agent 等包共同使用。
+ * 与 @poem/parser 导出的常量保持值对齐。
  */
 
-// ---- 诗词基础类型 ----
+// ========== 诗歌基础常量 ==========
 
 /** 诗歌体裁 */
-export type PoemGenre = "wujue" | "qijue" | "wulü" | "qilü" | "ci";
+export const PoemGenre = {
+  Wujue: "wujue",
+  Qijue: "qijue",
+  Wulü: "wulü",
+  Qilü: "qilü",
+  Ci: "ci",
+} as const;
+export type PoemGenre = (typeof PoemGenre)[keyof typeof PoemGenre];
 
 /** 韵书类型 */
-export type RhymeDictType = "pingshui" | "cilin" | "zhonghua_new";
+export const RhymeDictType = {
+  Pingshui: "pingshui",
+  Cilin: "cilin",
+  Zhonghua: "zhonghua_new",
+} as const;
+export type RhymeDictType = (typeof RhymeDictType)[keyof typeof RhymeDictType];
 
-/** 音调 */
-export const Tone = { Ping: "平", Ze: "仄", Unknown: "未知" } as const;
-export type Tone = (typeof Tone)[keyof typeof Tone];
+/** 韵脚声调 */
+export const RhymeTone = {
+  Ping: "ping",
+  Ze: "ze",
+} as const;
+export type RhymeTone = (typeof RhymeTone)[keyof typeof RhymeTone];
 
 /** 校验状态 */
-export type CharValidationStatus = "pass" | "fail" | "flexible" | "rescued" | "unknown";
+export const CharValidationStatus = {
+  Pass: "pass",
+  Fail: "fail",
+  Flexible: "flexible",
+  Rescued: "rescued",
+  Unknown: "unknown",
+} as const;
+export type CharValidationStatus = (typeof CharValidationStatus)[keyof typeof CharValidationStatus];
 
-// ---- 诗词元数据 ----
+// ========== API 类型 ==========
 
-/** 诗词作品元数据（用于数据库、API 传输） */
+/** 诗词作品元数据（数据库、API 传输） */
 export interface PoemMeta {
   id: string;
   title: string;
@@ -63,5 +86,5 @@ export interface CustomTuneLine {
   charCount: number;
   pattern: string; // "平仄中韵" 格式
   isRhymeLine: boolean;
-  rhymeType?: "ping" | "ze";
+  rhymeType?: RhymeTone;
 }

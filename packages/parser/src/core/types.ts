@@ -17,13 +17,65 @@ export enum Tone {
   Unknown = "未知",
 }
 
+// ========== 常量 ==========
+
+/**
+ * 诗歌体裁
+ * - Lüshi: 律诗（八句，含对仗要求）
+ * - Jueju: 绝句（四句，无对仗要求）
+ * - Ci: 词牌（长短句，按词谱填）
+ */
+export const PoemType = {
+  Lüshi: "lüshi",
+  Jueju: "jueju",
+  Ci: "ci",
+} as const;
+export type PoemType = (typeof PoemType)[keyof typeof PoemType];
+
+/**
+ * 韵脚声调
+ * - Ping: 平声韵（阴平、阳平）
+ * - Ze: 仄声韵（上声、去声、入声）
+ */
+export const RhymeTone = {
+  Ping: "ping",
+  Ze: "ze",
+} as const;
+export type RhymeTone = (typeof RhymeTone)[keyof typeof RhymeTone];
+
+/**
+ * 对句角色（一联中的相对位置）
+ * - Upper: 出句（上句）
+ * - Lower: 对句（下句）
+ */
+export const CoupletRole = {
+  Upper: "upper",
+  Lower: "lower",
+} as const;
+export type CoupletRole = (typeof CoupletRole)[keyof typeof CoupletRole];
+
+/**
+ * 词牌段落名
+ * - ShangQue: 上阕（前段）
+ * - XiaQue: 下阕（后段）
+ */
+export const SectionName = {
+  ShangQue: "上阕",
+  XiaQue: "下阕",
+} as const;
+
 /**
  * 韵书类型
- * - pingshui: 平水韵
- * - cilin: 词林正韵
- * - zhonghua_new: 中华新韵
+ * - Pingshui: 平水韵（南宋·刘渊，格律诗标准韵书）
+ * - Cilin: 词林正韵（清·戈载，词牌标准韵书）
+ * - Zhonghua: 中华新韵（现代普通话韵部）
  */
-export type RhymeDictType = "pingshui" | "cilin" | "zhonghua_new";
+export const RhymeDictType = {
+  Pingshui: "pingshui",
+  Cilin: "cilin",
+  Zhonghua: "zhonghua_new",
+} as const;
+export type RhymeDictType = (typeof RhymeDictType)[keyof typeof RhymeDictType];
 
 /**
  * 音调约束类型
@@ -39,19 +91,20 @@ export type ToneConstraint =
 
 /**
  * 字符校验状态
- * 描述字符是否符合模板约束
+ * - Pass: 符合约束
+ * - Fail: 违反约束
+ * - Flexible: 处于可平可仄位，不参与判律
+ * - Rescued: 本身违反但被拗救覆盖
+ * - Unknown: 无法确定（多音字、生僻字等）
  */
-export type CharValidationStatus =
-  /** 符合约束 */
-  | "pass"
-  /** 违反约束 */
-  | "fail"
-  /** 处于可平可仄位 */
-  | "flexible"
-  /** 本身违反但被拗救覆盖 */
-  | "rescued"
-  /** 无法确定（多音字等） */
-  | "unknown";
+export const CharValidationStatus = {
+  Pass: "pass",
+  Fail: "fail",
+  Flexible: "flexible",
+  Rescued: "rescued",
+  Unknown: "unknown",
+} as const;
+export type CharValidationStatus = (typeof CharValidationStatus)[keyof typeof CharValidationStatus];
 
 /**
  * 拗救类型
@@ -152,13 +205,13 @@ export interface LineNode {
   /** 韵脚字符 */
   rhymeChar?: CharNode;
   /** 期望韵脚类型 */
-  expectedRhymeType?: "ping" | "ze";
+  expectedRhymeType?: RhymeTone;
   /** 期望韵部 */
   expectedRhymeGroup?: string;
   /** 韵脚转换 */
-  rhymeSwitch?: "ping" | "ze";
+  rhymeSwitch?: RhymeTone;
   /** 对句角色 */
-  coupletRole?: "upper" | "lower";
+  coupletRole?: CoupletRole;
   /** 对句对编号 */
   coupletPairIndex?: number;
   /** 是否要求对仗 */
@@ -226,7 +279,7 @@ export interface RhymeInfo {
  */
 export interface PoemAST {
   /** 诗歌类型 */
-  type: "lüshi" | "jueju" | "ci";
+  type: PoemType;
   /** 标题（若有） */
   title?: string;
   /** 所有行 */

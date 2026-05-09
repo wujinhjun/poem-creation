@@ -7,6 +7,7 @@
  * @module analyzer/pipeline
  */
 
+import { PoemType } from "../core/types.js";
 import type { RhymeDictType, ToneAmbiguity, PoemAST } from "../core/types.js";
 import { lex, splitSentences, LexResult } from "../lexer/index.js";
 import { matchTemplate, MatchResult } from "../matcher/index.js";
@@ -24,7 +25,7 @@ export interface PipelineInput {
   input: string;
   template: AnyTemplate;
   dict: RhymeDict;
-  preferredType?: "lüshi" | "jueju" | "ci";
+  preferredType?: PoemType;
   variantId?: string;
 }
 
@@ -71,7 +72,7 @@ export function annotateStep(lexResult: LexResult, dict: RhymeDict): AnnotationR
 export function buildAst(
   annotation: AnnotationResult,
   rawLines: string[],
-  type: "lüshi" | "jueju" | "ci",
+  type: PoemType,
   dictType: RhymeDictType,
 ): PoemAST {
   return buildAstFromAnnotation(type, annotation, rawLines, dictType);
@@ -157,10 +158,10 @@ function _filterByBestTemplate(
   return ambiguities.filter((amb) => {
     const constraint = bestTemplate.pattern[amb.position.line]?.[amb.position.col];
     if (!constraint) return true;
-    if (ast.type === "jueju" && constraint.type !== "fixed") return false;
+    if (ast.type === PoemType.Jueju && constraint.type !== "fixed") return false;
     if (constraint.type !== "fixed") return true;
     const matchedOptions = amb.options.filter((item) => item.tone === constraint.tone);
-    if (ast.type === "jueju" && matchedOptions.length === 1) return false;
+    if (ast.type === PoemType.Jueju && matchedOptions.length === 1) return false;
     return true;
   });
 }
@@ -226,7 +227,7 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
   const annotation = annotateStep(lexResult, dict);
 
   // 3. 建 AST
-  const type = preferredType ?? (isCi ? "ci" : "jueju");
+  const type = preferredType ?? (isCi ? PoemType.Ci : PoemType.Jueju);
   const ast = buildAst(annotation, rawLines, type, dict.type);
 
   // 4. 匹配

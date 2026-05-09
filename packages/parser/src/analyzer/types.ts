@@ -8,6 +8,7 @@
 import type {
   CharNode,
   Diagnostic,
+  RhymeTone,
   ToneConstraint,
 } from "../core/types.js";
 import type {
@@ -36,9 +37,9 @@ export interface ResolvedLineTemplate {
   /** 词牌变体 ID（仅词牌格式） */
   variantId?: string;
   /** 期望的韵脚类型 */
-  expectedRhymeType?: "ping" | "ze";
+  expectedRhymeType?: RhymeTone;
   /** 韵脚转换标记 */
-  rhymeSwitch?: "ping" | "ze";
+  rhymeSwitch?: RhymeTone;
 }
 
 /**

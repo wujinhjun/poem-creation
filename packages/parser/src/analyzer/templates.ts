@@ -6,6 +6,7 @@
  * @module analyzer/templates
  */
 
+import { PoemType } from "../core/types.js";
 import type {
   AnyTemplate,
   CiTemplate,
@@ -17,10 +18,10 @@ import type { ResolvedLineTemplate } from "./types.js";
 /**
  * 判断模板类型（纯函数，仅基于 ID 字符串判断）
  */
-export function getTemplateType(templateId: string): "lüshi" | "jueju" | "ci" {
-  if (templateId.includes("lü")) return "lüshi";
-  if (templateId.includes("jue")) return "jueju";
-  return "ci";
+export function getTemplateType(templateId: string): PoemType {
+  if (templateId.includes("lü")) return PoemType.Lüshi;
+  if (templateId.includes("jue")) return PoemType.Jueju;
+  return PoemType.Ci;
 }
 
 /**

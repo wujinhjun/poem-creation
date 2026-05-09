@@ -4,6 +4,7 @@
  * 负责词牌的变体选择、模式匹配和 AST 应用。
  */
 
+import { PoemType } from "../core/types.js";
 import type { LineNode, PoemAST } from "../core/types.js";
 import type { CiTemplate, CiTemplateLine, CiTemplateVariant } from "../templates/index.js";
 import type { CiVariantScore } from "./types.js";
@@ -86,7 +87,7 @@ export function applyCiVariantToAst(
   const expectedLines = flattenCiVariantLines(variant);
 
   ast.templateId = template.id;
-  ast.type = "ci";
+  ast.type = PoemType.Ci;
   ast.sections = variant.sections.map((section, sectionIndex) => ({
     sectionIndex,
     name: section.name,
