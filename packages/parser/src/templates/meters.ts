@@ -3,7 +3,7 @@
  *
  * 无 fs / path / process 依赖，可被 kernel 直接导入。
  */
-import { Tone, ToneConstraint, PoemType } from "../core/types.js";
+import { Tone, ToneConstraint, PoemType } from '../core/types.js';
 
 export interface MeterTemplate {
   id: string;
@@ -16,17 +16,17 @@ export interface MeterTemplate {
   variants?: string[];
 }
 
-const P = (tone: Tone): ToneConstraint => ({ type: "fixed", tone });
-const Z = (tone: Tone): ToneConstraint => ({ type: "fixed", tone });
-const F: ToneConstraint = { type: "flexible" };
-const R: ToneConstraint = { type: "rhyme" };
+const P = (tone: Tone): ToneConstraint => ({ type: 'fixed', tone });
+const Z = (tone: Tone): ToneConstraint => ({ type: 'fixed', tone });
+const F: ToneConstraint = { type: 'flexible' };
+const R: ToneConstraint = { type: 'rhyme' };
 
 function pz(pattern: string): ToneConstraint[] {
   return [...pattern].map((ch) => {
-    if (ch === "平") return P(Tone.Ping);
-    if (ch === "仄") return Z(Tone.Ze);
-    if (ch === "中") return F;
-    if (ch === "韵") return R;
+    if (ch === '平') return P(Tone.Ping);
+    if (ch === '仄') return Z(Tone.Ze);
+    if (ch === '中') return F;
+    if (ch === '韵') return R;
     return F;
   });
 }
@@ -34,121 +34,260 @@ function pz(pattern: string): ToneConstraint[] {
 export function loadMeterTemplates(): MeterTemplate[] {
   return [
     {
-      id: "qilü-shouju-ping",
+      id: 'qilü-shouju-ping',
       type: PoemType.Lüshi,
-      name: "七律·首句入韵·平起",
+      name: '七律·首句入韵·平起',
       charPerLine: 7,
       lineCount: 8,
       pattern: [
-        pz("中平中仄仄平韵"),
-        pz("中仄平平中仄韵"),
-        pz("中仄中平平仄仄"),
-        pz("中平中仄仄平韵"),
-        pz("中平中仄平平仄"),
-        pz("中仄平平中仄韵"),
-        pz("中仄中平平仄仄"),
-        pz("中平中仄仄平韵"),
+        pz('中平中仄仄平韵'),
+        pz('中仄平平中仄韵'),
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
       ],
       rhymeLineIndices: [0, 1, 3, 5, 7],
     },
     {
-      id: "qilü-shouju-ze",
+      id: 'qilü-shouju-ze',
       type: PoemType.Lüshi,
-      name: "七律·首句入韵·仄起",
+      name: '七律·首句入韵·仄起',
       charPerLine: 7,
       lineCount: 8,
       pattern: [
-        pz("中仄中平平仄韵"),
-        pz("中平中仄仄平韵"),
-        pz("中平中仄平平仄"),
-        pz("中仄平平中仄韵"),
-        pz("中仄中平平仄仄"),
-        pz("中平中仄仄平韵"),
-        pz("中平中仄平平仄"),
-        pz("中仄平平中仄韵"),
+        pz('中仄中平平仄韵'),
+        pz('中平中仄仄平韵'),
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
       ],
       rhymeLineIndices: [0, 1, 3, 5, 7],
     },
     {
-      id: "wulü-shouju-ping",
+      id: 'qilü-pingqi',
       type: PoemType.Lüshi,
-      name: "五律·首句入韵·平起",
+      name: '七律·首句不入韵·平起',
+      charPerLine: 7,
+      lineCount: 8,
+      pattern: [
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
+      ],
+      rhymeLineIndices: [1, 3, 5, 7],
+    },
+    {
+      id: 'qilü-zeqi',
+      type: PoemType.Lüshi,
+      name: '七律·首句不入韵·仄起',
+      charPerLine: 7,
+      lineCount: 8,
+      pattern: [
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
+      ],
+      rhymeLineIndices: [1, 3, 5, 7],
+    },
+    {
+      id: 'wulü-shouju-ping',
+      type: PoemType.Lüshi,
+      name: '五律·首句入韵·平起',
       charPerLine: 5,
       lineCount: 8,
       pattern: [
-        pz("中平中仄韵"),
-        pz("中仄仄平韵"),
-        pz("中仄平平仄"),
-        pz("中平仄仄韵"),
-        pz("中平中仄仄"),
-        pz("中仄仄平韵"),
-        pz("中仄平平仄"),
-        pz("中平仄仄韵"),
+        pz('中平中仄韵'),
+        pz('中仄仄平韵'),
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
       ],
       rhymeLineIndices: [0, 1, 3, 5, 7],
     },
     {
-      id: "wulü-shouju-ze",
+      id: 'wulü-shouju-ze',
       type: PoemType.Lüshi,
-      name: "五律·首句入韵·仄起",
+      name: '五律·首句入韵·仄起',
       charPerLine: 5,
       lineCount: 8,
       pattern: [
-        pz("中仄中平韵"),
-        pz("中平仄仄韵"),
-        pz("中平中仄仄"),
-        pz("中仄仄平韵"),
-        pz("中仄平平仄"),
-        pz("中平仄仄韵"),
-        pz("中平中仄仄"),
-        pz("中仄仄平韵"),
+        pz('中仄中平韵'),
+        pz('中平仄仄韵'),
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
       ],
       rhymeLineIndices: [0, 1, 3, 5, 7],
     },
     {
-      id: "qijue-pingqi",
+      id: 'wulü-pingqi',
+      type: PoemType.Lüshi,
+      name: '五律·首句不入韵·平起',
+      charPerLine: 5,
+      lineCount: 8,
+      pattern: [
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
+      ],
+      rhymeLineIndices: [1, 3, 5, 7],
+    },
+    {
+      id: 'wulü-zeqi',
+      type: PoemType.Lüshi,
+      name: '五律·首句不入韵·仄起',
+      charPerLine: 5,
+      lineCount: 8,
+      pattern: [
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
+      ],
+      rhymeLineIndices: [1, 3, 5, 7],
+    },
+    {
+      id: 'qijue-shouju-ping',
       type: PoemType.Jueju,
-      name: "七绝·平起·首句不入韵",
+      name: '七绝·首句入韵·平起',
       charPerLine: 7,
       lineCount: 4,
       pattern: [
-        pz("中平中仄平平仄"),
-        pz("中仄平平中仄韵"),
-        pz("中仄中平平仄仄"),
-        pz("中平中仄仄平韵"),
+        pz('中平中仄仄平韵'),
+        pz('中仄平平中仄韵'),
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
+      ],
+      rhymeLineIndices: [0, 1, 3],
+    },
+    {
+      id: 'qijue-shouju-ze',
+      type: PoemType.Jueju,
+      name: '七绝·首句入韵·仄起',
+      charPerLine: 7,
+      lineCount: 4,
+      pattern: [
+        pz('中仄平平中仄韵'),
+        pz('中平中仄仄平韵'),
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
+      ],
+      rhymeLineIndices: [0, 1, 3],
+    },
+    {
+      id: 'qijue-pingqi',
+      type: PoemType.Jueju,
+      name: '七绝·平起·首句不入韵',
+      charPerLine: 7,
+      lineCount: 4,
+      pattern: [
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
       ],
       rhymeLineIndices: [1, 3],
     },
     {
-      id: "qijue-zeqi",
+      id: 'qijue-zeqi',
       type: PoemType.Jueju,
-      name: "七绝·仄起·首句不入韵",
+      name: '七绝·仄起·首句不入韵',
       charPerLine: 7,
       lineCount: 4,
       pattern: [
-        pz("中仄中平平仄仄"),
-        pz("中平中仄仄平韵"),
-        pz("中平中仄平平仄"),
-        pz("中仄平平中仄韵"),
+        pz('中仄中平平仄仄'),
+        pz('中平中仄仄平韵'),
+        pz('中平中仄平平仄'),
+        pz('中仄平平中仄韵'),
+      ],
+      rhymeLineIndices: [1, 3],
+    },
+
+    {
+      id: 'wujue-shouju-ping',
+      type: PoemType.Jueju,
+      name: '五绝·首句入韵·平起',
+      charPerLine: 5,
+      lineCount: 4,
+      pattern: [
+        pz('中平仄仄韵'),
+        pz('中仄仄平韵'),
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
+      ],
+      rhymeLineIndices: [0, 1, 3],
+    },
+    {
+      id: 'wujue-shouju-ze',
+      type: PoemType.Jueju,
+      name: '五绝·首句入韵·仄起',
+      charPerLine: 5,
+      lineCount: 4,
+      pattern: [
+        pz('中仄仄平韵'),
+        pz('中平仄仄韵'),
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
+      ],
+      rhymeLineIndices: [0, 1, 3],
+    },
+    {
+      id: 'wujue-pingqi',
+      type: PoemType.Jueju,
+      name: '五绝·平起·首句不入韵',
+      charPerLine: 5,
+      lineCount: 4,
+      pattern: [
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
       ],
       rhymeLineIndices: [1, 3],
     },
     {
-      id: "wujue-pingqi",
+      id: 'wujue-zeqi',
       type: PoemType.Jueju,
-      name: "五绝·平起·首句不入韵",
+      name: '五绝·仄起·首句不入韵',
       charPerLine: 5,
       lineCount: 4,
-      pattern: [pz("中平中仄仄"), pz("中仄仄平韵"), pz("中仄平平仄"), pz("中平仄仄韵")],
-      rhymeLineIndices: [1, 3],
-    },
-    {
-      id: "wujue-zeqi",
-      type: PoemType.Jueju,
-      name: "五绝·仄起·首句不入韵",
-      charPerLine: 5,
-      lineCount: 4,
-      pattern: [pz("中仄平平仄"), pz("中平仄仄韵"), pz("中平中仄仄"), pz("中仄仄平韵")],
+      pattern: [
+        pz('中仄平平仄'),
+        pz('中平仄仄韵'),
+        pz('中平中仄仄'),
+        pz('中仄仄平韵'),
+      ],
       rhymeLineIndices: [1, 3],
     },
   ];
