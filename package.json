@@ -1,0 +1,11 @@
+{
+  "name": "poem-workspace",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r --filter './packages/*' build",
+    "typecheck": "pnpm -r --filter './packages/*' typecheck",
+    "test": "pnpm -r --filter './packages/*' test",
+    "examples": "pnpm --filter @poem/parser examples"
+  }
+}
