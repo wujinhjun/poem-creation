@@ -1,57 +1,97 @@
 /**
  * 浏览器兼容的韵书实现
  *
- * 通过 fetch 加载 tone-lookup.json，构造轻量 RhymeDict。
- * 仅含平仄查询，不含完整韵部信息（rhymeGroup）。
+ * 通过 fetch 加载 rhyme-char-index.json，构造浏览器端 RhymeDict。
  */
 
-import type { RhymeDict, RhymeEntry } from "@poem/parser/kernel";
-import { Tone } from "@poem/parser/kernel";
+import type { RhymeDict, RhymeDictType, RhymeEntry } from "@poem/parser/kernel";
+import { Tone, RhymeDictType as DictType } from "@poem/parser/kernel";
 
+type RhymeIndexEntry = {
+  dictType: string;
+  tone: "平" | "仄" | "未知";
+  rhymeGroup: string;
+  pronunciation?: string;
+};
+
+type RhymeCharIndex = Record<string, RhymeIndexEntry[]>;
 type ToneLookup = Record<string, "平" | "仄" | "多" | "未知">;
 
-let _cache: ToneLookup | null = null;
+let _cache: RhymeCharIndex | null = null;
+let _toneCache: ToneLookup | null = null;
 
-/** 从 JSON 加载音调查询表（~200KB，gzip ~60KB） */
-async function loadToneLookup(): Promise<ToneLookup> {
+/** 从 JSON 加载完整韵字索引（dev server /data 已可访问） */
+async function loadRhymeIndex(): Promise<RhymeCharIndex> {
   if (_cache) return _cache;
-  const res = await fetch("/data/tone-lookup.json");
-  _cache = (await res.json()) as ToneLookup;
+  const res = await fetch("/data/rhyme-char-index.json");
+  _cache = (await res.json()) as RhymeCharIndex;
   return _cache!;
 }
 
-/** 浏览器 RhymeDict：仅 support 基本平仄查询 */
-class BrowserRhymeDict implements RhymeDict {
-  type = "pingshui" as const; // 平仄查询跟韵书类型无关，type 仅占位
-  private lookup_: ToneLookup;
+async function loadToneLookup(): Promise<ToneLookup> {
+  if (_toneCache) return _toneCache;
+  const res = await fetch("/data/tone-lookup.json");
+  _toneCache = (await res.json()) as ToneLookup;
+  return _toneCache!;
+}
 
-  constructor(lookup: ToneLookup) {
-    this.lookup_ = lookup;
+function toneLookupToTones(info: ToneLookup[string] | undefined): Tone[] {
+  if (info === "平") return [Tone.Ping];
+  if (info === "仄") return [Tone.Ze];
+  if (info === "多") return [Tone.Ping, Tone.Ze];
+  return [];
+}
+
+class BrowserRhymeDict implements RhymeDict {
+  type: RhymeDictType;
+  private index: RhymeCharIndex;
+  private toneLookup: ToneLookup;
+
+  constructor(index: RhymeCharIndex, toneLookup: ToneLookup, type: RhymeDictType) {
+    this.index = index;
+    this.toneLookup = toneLookup;
+    this.type = type;
   }
 
   lookup(char: string): RhymeEntry[] {
-    const info = this.lookup_[char];
-    if (!info || info === "未知") return [];
-    if (info === "平") return [{ char, tone: Tone.Ping, rhymeGroup: "" }];
-    if (info === "仄") return [{ char, tone: Tone.Ze, rhymeGroup: "" }];
-    // 多 → 返回两种可能
-    return [
-      { char, tone: Tone.Ping, rhymeGroup: "" },
-      { char, tone: Tone.Ze, rhymeGroup: "" },
-    ];
+    const entries = (this.index[char] ?? []).filter((entry) => entry.dictType === this.type);
+    const fallbackTones = toneLookupToTones(this.toneLookup[char]);
+    const result = entries.flatMap((entry) => {
+      const tones = entry.tone === Tone.Unknown
+        ? fallbackTones
+        : [entry.tone === Tone.Ping ? Tone.Ping : Tone.Ze];
+
+      return tones.map((tone) => ({
+        char,
+        tone,
+        rhymeGroup: entry.rhymeGroup,
+        pronunciation: entry.pronunciation,
+      }));
+    });
+
+    if (result.length > 0) return result;
+
+    return fallbackTones.map((tone) => ({
+      char,
+      tone,
+      rhymeGroup: "",
+    }));
   }
 
-  getRhymeGroup(_char: string): string[] {
-    return []; // 浏览器轻量版不查韵部
+  getRhymeGroup(char: string): string[] {
+    return [...new Set(this.lookup(char).map((entry) => entry.rhymeGroup))];
   }
 
-  isSameRhyme(_a: string, _b: string): boolean {
-    return false; // 浏览器轻量版不查韵部一致性
+  isSameRhyme(a: string, b: string): boolean {
+    const aGroups = new Set(this.getRhymeGroup(a));
+    return this.getRhymeGroup(b).some((group) => aGroups.has(group));
   }
 }
 
 /** 创建浏览器韵书实例 */
-export async function createBrowserDict(): Promise<RhymeDict> {
-  const lookup = await loadToneLookup();
-  return new BrowserRhymeDict(lookup);
+export async function createBrowserDict(
+  type: RhymeDictType = DictType.Pingshui,
+): Promise<RhymeDict> {
+  const [index, toneLookup] = await Promise.all([loadRhymeIndex(), loadToneLookup()]);
+  return new BrowserRhymeDict(index, toneLookup, type);
 }
