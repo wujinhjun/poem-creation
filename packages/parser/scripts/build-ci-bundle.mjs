@@ -51,3 +51,23 @@ writeFileSync(BUNDLE_PATH, JSON.stringify(newBundle, null, 2));
 console.log(`写入: ${BUNDLE_PATH}`);
 console.log(`词牌数: ${Object.keys(newBundle).length}`);
 console.log(`文件大小: ${(Buffer.byteLength(JSON.stringify(newBundle)) / 1024 / 1024).toFixed(1)} MB`);
+
+// ---- 生成轻量目录 ci-catalog.json ----
+const CATALOG_PATH = resolve(DATA_DIR, "ci-catalog.json");
+const catalog = Object.create(null);
+
+for (const [name, tune] of Object.entries(newBundle)) {
+  catalog[name] = {
+    variantCount: tune.variants.length,
+    variants: tune.variants.map((v) => ({
+      id: v.id,
+      author: v.author,
+      sketch: v.sketch,
+      charCount: v.sections.reduce((sum, s) => sum + s.lines.reduce((s2, l) => s2 + l.charCount, 0), 0),
+    })),
+  };
+}
+
+writeFileSync(CATALOG_PATH, JSON.stringify(catalog, null, 2));
+console.log(`Catalog: ${CATALOG_PATH}`);
+console.log(`文件大小: ${(Buffer.byteLength(JSON.stringify(catalog)) / 1024).toFixed(1)} KB`);

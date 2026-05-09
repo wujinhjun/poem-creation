@@ -9,6 +9,7 @@
 @poem/parser/kernel   ← 纯核态（零 fs/path 依赖，浏览器/Worker 可用）
 @poem/parser/types    ← 仅核心类型
 @poem/parser/loader   ← Node 环境韵书加载器（createRhymeDict）
+@poem/parser/catalog  ← 词牌目录查询（818 首索引，供 Web/RN 选择器）
 ```
 
 ## 快速开始
@@ -264,6 +265,28 @@ Node 环境专用，从磁盘 JSON 构造韵书。
 |------|------|------|
 | `createRhymeDict` | `(type: RhymeDictType, dataDir: string) → Promise<RhymeDict>` | 异步加载韵书索引和音调查询表，返回 `JsonRhymeDict` 实例 |
 | `clearRhymeCache` | `() → void` | 清空内部缓存（测试隔离用） |
+
+## 词牌目录 `@poem/parser/catalog`
+
+轻量索引（373KB / gzip ~110KB），供 Web/RN 构建词牌选择器。不含完整格律 pattern，仅展示所需信息。
+
+```ts
+import { ciCatalog, listTuneNames, findTune, filterByCharCount, filterByAuthor } from "@poem/parser/catalog";
+
+// 818 首词牌 → 下拉选择器
+listTuneNames();  // ["一七令", "一丛花", "一剪梅", ...]
+
+// 查看某词牌的所有变体
+findTune("水调歌头")  // { variantCount: 11, variants: [{ id, author, sketch, charCount }] }
+
+// 按字数筛选
+filterByCharCount(50, 60);  // 小令
+
+// 按作者筛选
+filterByAuthor("苏轼");     // 52 个变体
+```
+
+完整格律（CiTemplate）从 `ci-tunes-bundle.json` 按需加载，不走 catalog。
 
 ## 自定义韵书
 
