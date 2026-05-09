@@ -47,8 +47,7 @@ export type {
   RescueDetail,
   LineValidationResult,
 } from "./core/types.js";
-export { Tone } from "./core/types.js";
-export type { RhymeDictType } from "./core/types.js";
+export { Tone, RhymeDictType } from "./core/types.js";
 
 // 格律模板定义（纯数据，硬编码，零 fs 依赖）
 export { loadMeterTemplates } from "./templates/meters.js";

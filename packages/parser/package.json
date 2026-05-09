@@ -6,7 +6,8 @@
   "exports": {
     ".": "./dist/index.js",
     "./kernel": "./dist/kernel.js",
-    "./types": "./dist/core/types.js"
+    "./types": "./dist/core/types.js",
+    "./loader": "./dist/loader.js"
   },
   "scripts": {
     "clean:data": "node scripts/clean-data.mjs",
