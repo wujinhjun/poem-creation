@@ -195,12 +195,35 @@ select {
 }
 
 .composer-line {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   gap: 5px;
   padding: 4px 0 12px;
   border-bottom: 1px solid rgba(120, 88, 56, 0.15);
+}
+
+.active-cell-editor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 40px;
+  height: 42px;
+  border: 0;
+  padding: 0;
+  color: #201610;
+  background: transparent;
+  caret-color: #8b2d24;
+  text-align: center;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.active-cell-editor:focus {
+  outline: none;
 }
 
 .line-number {
@@ -212,6 +235,8 @@ select {
 }
 
 .char-slot {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -235,6 +260,8 @@ select {
 }
 
 .char-input {
+  display: inline-grid;
+  place-items: center;
   width: 40px;
   height: 42px;
   border: 1px solid #907155;
@@ -246,9 +273,15 @@ select {
   font-size: 23px;
   line-height: 1;
   transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  cursor: text;
 }
 
 .char-input:focus {
+  border-color: #8b2d24;
+  box-shadow: 0 0 0 3px rgba(139, 45, 36, 0.13);
+}
+
+.char-input.is-active {
   border-color: #8b2d24;
   box-shadow: 0 0 0 3px rgba(139, 45, 36, 0.13);
 }
