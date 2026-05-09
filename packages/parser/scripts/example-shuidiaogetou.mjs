@@ -19,7 +19,7 @@ const text = [
 
 const dict = await createRhymeDict("cilin", DATA_DIR);
 const template = loadCiBundle()["水调歌头"];
-const result = analyzeSync(text, template, dict, { variantId: "水调歌头-v3" });
+const result = analyzeSync(text, template, dict, { variantId: "水调歌头-苏轼体1" });
 
 console.log(`模板: ${result.bestMatch?.templateId}`);
 console.log(`合律率: ${(result.complianceRate * 100).toFixed(1)}%`);

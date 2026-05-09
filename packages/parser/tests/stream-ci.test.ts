@@ -20,10 +20,10 @@ describe("流式解析 analyzeStream", () => {
     const result = await analyzeStream(
       "明月几时有？把酒问青天。不知天上宫阙，今夕是何年。",
       "水调歌头",
-      { variantId: "水调歌头-v3", rhymeDictType: "cilin" }
+      { variantId: "水调歌头-苏轼体1", rhymeDictType: "cilin" }
     );
     expect(result.templateId).toBe("水调歌头");
-    expect(result.variantId).toBe("水调歌头-v3");
+    expect(result.variantId).toBe("水调歌头-苏轼体1");
     expect(result.totalSentences).toBe(19);
     expect(result.sentenceCharCounts.length).toBe(19);
   });
@@ -33,7 +33,7 @@ describe("流式解析 analyzeStream", () => {
     const result = await analyzeStream(
       "明月几时有？把酒问青天。",
       "水调歌头",
-      { variantId: "水调歌头-v3", rhymeDictType: "cilin" }
+      { variantId: "水调歌头-苏轼体1", rhymeDictType: "cilin" }
     );
     expect(result.parsedSentenceCount).toBe(2);
     expect(result.sentenceSummaries[0].isComplete).toBe(true);
@@ -46,7 +46,7 @@ describe("流式解析 analyzeStream", () => {
     const result = await analyzeStream(
       "明月几时有？把酒问青天。不知天上宫阙，今夕是何年。我欲乘风归去，又恐琼楼玉宇，高处不胜寒。起舞弄清影，何似在",
       "水调歌头",
-      { variantId: "水调歌头-v3", rhymeDictType: "cilin" }
+      { variantId: "水调歌头-苏轼体1", rhymeDictType: "cilin" }
     );
     // 第9句只有3字，模板期望5字
     expect(result.sentenceSummaries[8].charCount).toBe(3);
@@ -60,7 +60,7 @@ describe("流式解析 analyzeStream", () => {
     const result = await analyzeStream(
       "明月几时有？",
       "水调歌头",
-      { variantId: "水调歌头-v3", rhymeDictType: "cilin" }
+      { variantId: "水调歌头-苏轼体1", rhymeDictType: "cilin" }
     );
     expect(result.segments.length).toBe(5);
     expect(result.segments[0].text).toBe("明");
@@ -74,7 +74,7 @@ describe("流式解析 analyzeStream", () => {
     const result = await analyzeStream(
       "明月几时有？",
       "水调歌头",
-      { variantId: "水调歌头-v3", rhymeDictType: "cilin" }
+      { variantId: "水调歌头-苏轼体1", rhymeDictType: "cilin" }
     );
     // 第1句是韵脚行
     expect(result.sentenceSummaries[0].isComplete).toBe(true);
@@ -112,7 +112,7 @@ describe("流式解析 analyzeStream", () => {
   // 空输入
   it("应处理空输入", async () => {
     const result = await analyzeStream("", "水调歌头", {
-      variantId: "水调歌头-v3",
+      variantId: "水调歌头-苏轼体1",
       rhymeDictType: "cilin",
     });
     expect(result.totalCharCount).toBe(0);
@@ -123,7 +123,7 @@ describe("流式解析 analyzeStream", () => {
   // 纯标点输入 - 标点被split过滤，但totalCharCount计算的是原始输入长度
   it("应处理纯标点输入", async () => {
     const result = await analyzeStream("，。！？", "水调歌头", {
-      variantId: "水调歌头-v3",
+      variantId: "水调歌头-苏轼体1",
       rhymeDictType: "cilin",
     });
     // 纯标点被filter掉，segments为空，但totalCharCount统计原始输入
@@ -137,7 +137,7 @@ describe("流式解析 analyzeStream", () => {
     const result = await analyzeStream(
       "但愿人长久",
       "水调歌头",
-      { variantId: "水调歌头-v3", rhymeDictType: "cilin" }
+      { variantId: "水调歌头-苏轼体1", rhymeDictType: "cilin" }
     );
     // 最后一字 "久" 是韵脚
     const lastSeg = result.segments[result.segments.length - 1];
@@ -154,11 +154,12 @@ describe("词牌变体选择 chooseCiVariant", () => {
       templateId: "水调歌头",
       rhymeDictType: "cilin",
       preferredType: "ci",
+      variantId: "水调歌头-苏轼体1",
     });
 
     // 流式解析的结果
     const streamResult = await analyzeStream(fullText, "水调歌头", {
-      variantId: undefined,
+      variantId: "水调歌头-苏轼体1",
       rhymeDictType: "cilin",
     });
 
@@ -170,8 +171,8 @@ describe("词牌变体选择 chooseCiVariant", () => {
     const streamResult = await analyzeStream(
       "明月几时有？",
       "水调歌头",
-      { variantId: "水调歌头-v3", rhymeDictType: "cilin" }
+      { variantId: "水调歌头-苏轼体1", rhymeDictType: "cilin" }
     );
-    expect(streamResult.variantId).toBe("水调歌头-v3");
+    expect(streamResult.variantId).toBe("水调歌头-苏轼体1");
   });
 });

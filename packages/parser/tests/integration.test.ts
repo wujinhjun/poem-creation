@@ -22,17 +22,16 @@ describe("analyze 异步 API", () => {
 });
 
 describe("analyzeSync 无匹配变体", () => {
-  it("ci 模板无匹配变体时 bestMatch 应为 null", async () => {
+  it("ci 模板不传 variantId 应抛出错误", async () => {
     const dict = await createRhymeDict("cilin", "./data");
-    // 创建一个只有空变体的 ci 模板
     const template: CiTemplate = {
       id: "empty-tune",
       name: "空调",
       variants: [],
     };
-    const result = analyzeSync("测试文本", template, dict);
-    expect(result.bestMatch).toBeNull();
-    expect(result.summary).toContain("未命中可用变体");
+    expect(() => analyzeSync("测试文本", template, dict)).toThrow(
+      "词牌分析必须指定 variantId",
+    );
   });
 });
 

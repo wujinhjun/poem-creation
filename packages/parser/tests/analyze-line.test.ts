@@ -10,7 +10,7 @@ describe("analyzeLine 单行解析", () => {
       "明月几时有",
       {
         templateId: "水调歌头",
-        variantId: "水调歌头-v3",
+        variantId: "水调歌头-苏轼体1",
         globalLineIndex: 0,
       },
       { rhymeDictType: "cilin" }
@@ -24,7 +24,7 @@ describe("analyzeLine 单行解析", () => {
       "明月几",
       {
         templateId: "水调歌头",
-        variantId: "水调歌头-v3",
+        variantId: "水调歌头-苏轼体1",
         globalLineIndex: 0,
       },
       { rhymeDictType: "cilin" }

@@ -16,7 +16,7 @@ import type { RhymeDict } from "../rhyme-dict/index.js";
 import type { CiTemplate, MeterTemplate, AnyTemplate } from "../templates/index.js";
 import { buildAstFromAnnotation, applyMeterTemplateToAst, buildLexResultFromRawLines } from "./ast.js";
 import { validateLineAgainstPattern, LineValidationSummary } from "./validation.js";
-import { chooseCiVariant, applyCiVariantToAst } from "./ci.js";
+import { scoreCiVariant, applyCiVariantToAst } from "./ci.js";
 import { getTemplateType } from "./templates.js";
 
 // ============ 公共类型 ============
@@ -81,8 +81,8 @@ export function buildAst(
 // ============ 步骤4：模板匹配 ============
 
 /**
- * 模板匹配 —— 诗体比较 pattern，词牌选择最佳变体。
- * 注意：词牌匹配会将变体信息写回 AST（副作用），诗体不写回。
+ * 模板匹配 —— 诗体比较 pattern，词牌应用指定变体。
+ * 词牌必须由调用方指定 variantId（已在 runPipeline 预检中校验）。
  */
 export function matchStep(
   ast: PoemAST,
@@ -91,13 +91,15 @@ export function matchStep(
 ): { matchResults: MatchResult[]; bestMatch: MatchResult | null } {
   if (!("pattern" in template)) {
     const ciTemplate = template as CiTemplate;
-    const variantScore = chooseCiVariant(ciTemplate, ast.lines, variantId);
-    if (!variantScore) return { matchResults: [], bestMatch: null };
+    const variant = ciTemplate.variants.find((v) => v.id === variantId);
+    // variantId 有效性已在 runPipeline 预检，此处为防御
+    if (!variant) return { matchResults: [], bestMatch: null };
 
-    applyCiVariantToAst(ast, ciTemplate, variantScore);
+    const scored = scoreCiVariant(ast.lines, variant);
+    applyCiVariantToAst(ast, ciTemplate, scored);
     const bestMatch: MatchResult = {
       templateId: ciTemplate.id,
-      confidence: variantScore.confidence,
+      confidence: scored.confidence,
       toneDeviations: [],
     };
     return { matchResults: [bestMatch], bestMatch };
@@ -212,13 +214,33 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
   const { lexResult, isCi } = lexStep(text, template);
   const rawLines = lexResult.lines.map((l) => l.raw);
 
-  // 1.5 字数预检（诗体）
+  // 1.5 字数预检
   if ("pattern" in template) {
     const expected = template.charPerLine * template.lineCount;
     const actual = countHanzi(text);
     if (actual !== expected) {
       throw new Error(
         `字数不匹配：期望 ${expected} 字（${template.charPerLine}字×${template.lineCount}行），实际 ${actual} 字`,
+      );
+    }
+  } else {
+    // 词牌：用户必须指定变体
+    if (!variantId) {
+      throw new Error("词牌分析必须指定 variantId（变体 ID），不支持自动推断");
+    }
+    const ciTemplate = template as CiTemplate;
+    const variant = ciTemplate.variants.find((v) => v.id === variantId);
+    if (!variant) {
+      throw new Error(`变体不存在: ${variantId}`);
+    }
+    const expected = variant.sections.reduce(
+      (sum, s) => sum + s.lines.reduce((s2, l) => s2 + l.charCount, 0),
+      0,
+    );
+    const actual = countHanzi(text);
+    if (actual !== expected) {
+      throw new Error(
+        `字数不匹配：期望 ${expected} 字（词牌 ${ciTemplate.name}，变体 ${variant.name}），实际 ${actual} 字`,
       );
     }
   }

@@ -1,8 +1,13 @@
 /**
- * 词牌合并脚本
+ * 词牌合并 / ID 清洗脚本
  *
- * 将 data/ci-tunes/ 下所有词牌解析为 CiTemplate 格式，
- * 合并输出为单个 data/ci-tunes-bundle.json。
+ * 两种模式：
+ * 1. 从 ci-tunes-index.json + ci-tunes/*.json 构建 → 不再使用（源文件已删除）
+ * 2. 从 ci-tunes-bundle.json 重建 ID（当前模式）：基于 author 重命名 variant ID
+ *
+ * ID 命名规则：
+ *   {词牌名}-{作者}体           （单一变体）
+ *   {词牌名}-{作者}体{N}        （多版本，N 按原始顺序 1-indexed）
  *
  * 用法: node scripts/build-ci-bundle.mjs
  */
@@ -11,87 +16,38 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const DATA_DIR = resolve("./data");
-const INDEX_PATH = resolve(DATA_DIR, "ci-tunes-index.json");
 const BUNDLE_PATH = resolve(DATA_DIR, "ci-tunes-bundle.json");
 
-// ---- 解析逻辑（与 src/templates/index.ts 一致） ----
+const oldBundle = JSON.parse(readFileSync(BUNDLE_PATH, "utf8"));
+const newBundle = Object.create(null);
 
-function toneToConstraint(tune, rhythm) {
-  if (rhythm === "韵") return { type: "rhyme" };
-  if (tune === "平") return { type: "fixed", tone: "平" };
-  if (tune === "仄") return { type: "fixed", tone: "仄" };
-  return { type: "flexible" };
-}
+for (const [name, oldTune] of Object.entries(oldBundle)) {
+  // 统计每个作者的出现次数
+  const authorCounts = {};
+  for (const v of oldTune.variants) {
+    const a = v.author || "未知";
+    authorCounts[a] = (authorCounts[a] || 0) + 1;
+  }
+  const authorRemain = { ...authorCounts };
 
-function parseRawTune(raw) {
-  const variants = raw.formats.map((fmt, index) => {
-    const lines = [];
-    let currentLine = { charCount: 0, pattern: [], isRhymeLine: false };
-
-    for (const item of fmt.tunes) {
-      currentLine.pattern.push(toneToConstraint(item.tune, item.rhythm));
-      currentLine.charCount += 1;
-      if (item.rhythm === "韵") {
-        currentLine.isRhymeLine = true;
-        currentLine.rhymeType = item.tune === "仄" ? "ze" : "ping";
-      }
-      if (item.shift) {
-        currentLine.rhymeSwitch = item.tune === "仄" ? "ze" : "ping";
-      }
-      if (item.rhythm === "句" || item.rhythm === "韵") {
-        lines.push(currentLine);
-        currentLine = { charCount: 0, pattern: [], isRhymeLine: false };
-      }
-    }
-    if (currentLine.pattern.length > 0) lines.push(currentLine);
-
-    const middle = Math.ceil(lines.length / 2);
-    const sections = [
-      { name: "上阕", lines: lines.slice(0, middle) },
-      { name: "下阕", lines: lines.slice(middle) },
-    ].filter((s) => s.lines.length > 0);
+  const newVariants = oldTune.variants.map((v) => {
+    const author = v.author || "未知";
+    const total = authorCounts[author];
+    const seq = total > 1 ? total - authorRemain[author] + 1 : 0;
+    authorRemain[author] -= 1;
 
     return {
-      id: `${raw.name}-v${index + 1}`,
-      name: fmt.sketch ?? `变体${index + 1}`,
-      sketch: fmt.sketch,
-      author: fmt.author,
-      source: fmt.desc,
-      rhymeType: "mixed",
-      sections,
+      ...v,
+      id: total <= 1
+        ? `${name}-${author}体`
+        : `${name}-${author}体${seq}`,
     };
   });
 
-  return { id: raw.name, name: raw.name, variants };
+  newBundle[name] = { ...oldTune, variants: newVariants };
 }
 
-// ---- 主流程 ----
-
-const index = JSON.parse(readFileSync(INDEX_PATH, "utf8"));
-
-// 收集所有需要读取的文件（去重）
-const fileSet = new Set();
-for (const group of index.groups) {
-  fileSet.add(resolve(DATA_DIR, group.path));
-}
-
-const bundle = Object.create(null);
-let total = 0;
-
-for (const filePath of fileSet) {
-  const data = JSON.parse(readFileSync(filePath, "utf8"));
-
-  // 分组文件是数组，单文件是对象
-  const tunes = Array.isArray(data) ? data : [data];
-
-  for (const raw of tunes) {
-    if (bundle[raw.name]) continue; // 去重
-    bundle[raw.name] = parseRawTune(raw);
-    total++;
-  }
-}
-
-writeFileSync(BUNDLE_PATH, JSON.stringify(bundle, null, 2));
+writeFileSync(BUNDLE_PATH, JSON.stringify(newBundle, null, 2));
 console.log(`写入: ${BUNDLE_PATH}`);
-console.log(`词牌数: ${total}`);
-console.log(`文件大小: ${(Buffer.byteLength(JSON.stringify(bundle)) / 1024 / 1024).toFixed(1)} MB`);
+console.log(`词牌数: ${Object.keys(newBundle).length}`);
+console.log(`文件大小: ${(Buffer.byteLength(JSON.stringify(newBundle)) / 1024 / 1024).toFixed(1)} MB`);
