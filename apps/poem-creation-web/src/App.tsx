@@ -243,6 +243,22 @@ function ciVariantPattern(
   return v.sections.flatMap((s) => s.lines.map((l) => l.pattern));
 }
 
+function ciSectionBreakBeforeLines(
+  tune: CiTemplate | undefined,
+  variantId: string,
+): number[] {
+  const variant = tune?.variants.find((v) => v.id === variantId);
+  if (!variant) return [];
+
+  const breaks: number[] = [];
+  let lineOffset = 0;
+  variant.sections.forEach((section, index) => {
+    if (index > 0 && section.lines.length > 0) breaks.push(lineOffset);
+    lineOffset += section.lines.length;
+  });
+  return breaks;
+}
+
 function inferCiRhymeTone(text: string): Tone | null {
   const hasPing = text.includes('平韵');
   const hasZe = text.includes('仄韵');
@@ -281,6 +297,7 @@ export default function App() {
   const [ciPatternState, setCiPatternState] = useState<{
     key: string;
     pattern: ToneConstraint[][];
+    sectionBreakBeforeLines: number[];
   } | null>(null);
   const ciBundleRef = useRef<Record<string, CiTemplate> | null>(null);
   const dict = dictState?.type === rhymeType ? dictState.dict : null;
@@ -603,6 +620,10 @@ export default function App() {
         setCiPatternState({
           key,
           pattern: ciVariantPattern(tune, selectedVariant),
+          sectionBreakBeforeLines: ciSectionBreakBeforeLines(
+            tune,
+            selectedVariant,
+          ),
         });
     })();
     return () => {
@@ -628,6 +649,14 @@ export default function App() {
       `${selectedCiVariant.author} ${selectedCiVariant.sketch}`,
     );
   }, [genre, selectedCiVariant]);
+
+  const sectionBreakBeforeLines = useMemo(() => {
+    if (genre !== 'ci' || !selectedVariant) return [];
+    const key = `${selectedTune}::${selectedVariant}`;
+    return ciPatternState?.key === key
+      ? ciPatternState.sectionBreakBeforeLines
+      : [];
+  }, [ciPatternState, genre, selectedTune, selectedVariant]);
 
   const handleAnalyze = useCallback(
     async (sourceChars = chars) => {
@@ -793,15 +822,6 @@ export default function App() {
 
   return (
     <main className='mx-auto w-[min(1180px,calc(100%-32px))] py-7 max-[820px]:w-[min(calc(100%_-_20px),720px)] max-[820px]:pt-2.5'>
-      <section className='hero-panel' aria-label='诗词创作'>
-        <div>
-          <p className='eyebrow'>诗律 · 词谱 · 韵检</p>
-          <h1>诗词创作</h1>
-          <p className='hero-copy'>按格入字，随写随验平仄与韵脚。</p>
-        </div>
-        <img src={heroImage} alt='' className='hero-seal' />
-      </section>
-
       <section className='mt-[18px] grid grid-cols-[300px_minmax(0,1fr)] items-start gap-[18px] max-[820px]:grid-cols-1'>
         <aside className='grid gap-[18px] border border-[#5c3f22]/25 bg-[#fff9eb]/85 p-5 shadow-[0_14px_34px_rgba(60,40,21,0.08)]'>
           <div className='grid gap-3'>
@@ -886,6 +906,7 @@ export default function App() {
                 pattern={pattern}
                 dict={dict}
                 expectedRhymeTone={expectedRhymeTone}
+                sectionBreakBeforeLines={sectionBreakBeforeLines}
                 initialChars={chars}
                 onChange={setChars}
                 onComplete={handleAnalyze}

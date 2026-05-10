@@ -36,10 +36,13 @@ type GridState = {
   grid: string[][];
 };
 
-function createInitialGrid(pattern: ToneConstraint[][], initialChars?: string[][]): string[][] {
+function createInitialGrid(
+  pattern: ToneConstraint[][],
+  initialChars?: string[][],
+): string[][] {
   if (!initialChars) return createEmptyEditorGrid(pattern);
   return pattern.map((row, lineIdx) =>
-    row.map((_, colIdx) => initialChars[lineIdx]?.[colIdx] ?? ""),
+    row.map((_, colIdx) => initialChars[lineIdx]?.[colIdx] ?? ''),
   );
 }
 
@@ -107,6 +110,7 @@ export default function Composer({
   pattern,
   dict,
   expectedRhymeTone,
+  sectionBreakBeforeLines = [],
   initialChars,
   onChange,
   onComplete,
@@ -114,6 +118,7 @@ export default function Composer({
   pattern: ToneConstraint[][];
   dict: RhymeDict | null;
   expectedRhymeTone: Tone | null;
+  sectionBreakBeforeLines?: number[];
   initialChars?: string[][];
   onChange: (chars: string[][]) => void;
   onComplete: (chars: string[][]) => void;
@@ -154,7 +159,13 @@ export default function Composer({
           prev.signature === patternSignature
             ? prev.grid
             : createEmptyEditorGrid(pattern);
-        const result = writeEditorCharsAt(source, pattern, lineIdx, colIdx, chars);
+        const result = writeEditorCharsAt(
+          source,
+          pattern,
+          lineIdx,
+          colIdx,
+          chars,
+        );
         if (result.completed) pendingCompleteRef.current = result.grid;
         return { signature: patternSignature, grid: result.grid };
       });
@@ -181,31 +192,76 @@ export default function Composer({
     [pattern, patternSignature],
   );
 
-  const moveActiveCell = useCallback(
-    (lineIdx: number, colIdx: number, delta: number) => {
+  const lastFilledCol = useCallback(
+    (lineIdx: number) => {
+      const row = grid[lineIdx] ?? [];
+      for (let idx = row.length - 1; idx >= 0; idx -= 1) {
+        if (row[idx]) return idx;
+      }
+      return -1;
+    },
+    [grid],
+  );
+
+  const moveActiveCellHorizontal = useCallback(
+    (lineIdx: number, colIdx: number, delta: -1 | 1) => {
       const rowLength = pattern[lineIdx]?.length ?? 0;
       if (rowLength === 0) return;
+
+      if (delta === -1 && colIdx === 0) {
+        const prevLine = lineIdx - 1;
+        const prevRowLength = pattern[prevLine]?.length ?? 0;
+        if (prevRowLength > 0) {
+          const filledCol = lastFilledCol(prevLine);
+          setDraft('');
+          setActiveCell({
+            line: prevLine,
+            col: filledCol >= 0 ? filledCol : prevRowLength - 1,
+          });
+        }
+        return;
+      }
+
+      if (delta === 1 && colIdx === rowLength - 1) {
+        const nextLine = lineIdx + 1;
+        const nextRowLength = pattern[nextLine]?.length ?? 0;
+        if (nextRowLength > 0) {
+          setDraft('');
+          setActiveCell({ line: nextLine, col: 0 });
+        }
+        return;
+      }
+
       setDraft('');
       setActiveCell({
         line: lineIdx,
         col: Math.max(0, Math.min(colIdx + delta, rowLength - 1)),
       });
     },
-    [pattern],
+    [lastFilledCol, pattern],
   );
 
   const moveActiveCellVertical = useCallback(
-    (lineIdx: number, colIdx: number, delta: number) => {
-      const nextLine = Math.max(0, Math.min(lineIdx + delta, pattern.length - 1));
+    (lineIdx: number, colIdx: number, delta: -1 | 1) => {
+      const nextLine = Math.max(
+        0,
+        Math.min(lineIdx + delta, pattern.length - 1),
+      );
       const nextRowLength = pattern[nextLine]?.length ?? 0;
       if (nextRowLength === 0) return;
+
+      const filledCol = lastFilledCol(nextLine);
+      const targetCol =
+        filledCol >= 0
+          ? filledCol
+          : Math.max(0, Math.min(colIdx, nextRowLength - 1));
       setDraft('');
       setActiveCell({
         line: nextLine,
-        col: Math.max(0, Math.min(colIdx, nextRowLength - 1)),
+        col: targetCol,
       });
     },
-    [pattern],
+    [lastFilledCol, pattern],
   );
 
   const pasteAt = useCallback(
@@ -215,7 +271,13 @@ export default function Composer({
           prev.signature === patternSignature
             ? prev.grid
             : createEmptyEditorGrid(pattern);
-        const result = pasteEditorTextAt(source, pattern, lineIdx, colIdx, text);
+        const result = pasteEditorTextAt(
+          source,
+          pattern,
+          lineIdx,
+          colIdx,
+          text,
+        );
         if (result.completed) pendingCompleteRef.current = result.grid;
         return { signature: patternSignature, grid: result.grid };
       });
@@ -328,7 +390,10 @@ export default function Composer({
   return (
     <div className='composer-grid'>
       {pattern.map((row, li) => (
-        <div key={li} className='composer-line'>
+        <div
+          key={li}
+          className={`composer-line${sectionBreakBeforeLines.includes(li) ? ' is-section-break' : ''}`}
+        >
           <span className='line-number'>{li + 1}</span>
           {row.map((constraint, ci) => (
             <CharSlot
@@ -363,10 +428,10 @@ export default function Composer({
               onKeyDown={(event) => {
                 if (event.key === 'ArrowLeft') {
                   event.preventDefault();
-                  moveActiveCell(li, ci, -1);
+                  moveActiveCellHorizontal(li, ci, -1);
                 } else if (event.key === 'ArrowRight') {
                   event.preventDefault();
-                  moveActiveCell(li, ci, 1);
+                  moveActiveCellHorizontal(li, ci, 1);
                 } else if (event.key === 'ArrowUp') {
                   event.preventDefault();
                   moveActiveCellVertical(li, ci, -1);
@@ -378,7 +443,7 @@ export default function Composer({
                   if (grid[li]?.[ci]) {
                     clearCellAt(li, ci);
                   } else {
-                    moveActiveCell(li, ci, -1);
+                    moveActiveCellHorizontal(li, ci, -1);
                   }
                 } else if (event.key === 'Delete' && draft === '') {
                   event.preventDefault();
