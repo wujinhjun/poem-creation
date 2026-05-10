@@ -206,11 +206,10 @@ select {
 
 .active-cell-editor {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 2px;
   bottom: 0;
   z-index: 3;
-  width: 40px;
+  width: 36px;
   height: 42px;
   border: 0;
   padding: 0;
@@ -220,6 +219,12 @@ select {
   text-align: center;
   font-size: 23px;
   line-height: 1;
+}
+
+.active-cell-editor.after-char {
+  left: calc(50% + 8px);
+  width: 12px;
+  text-align: left;
 }
 
 .active-cell-editor:focus {
