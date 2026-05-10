@@ -3,6 +3,7 @@ import type { ClipboardEvent, KeyboardEvent } from 'react';
 import {
   createEditorPatternSignature,
   createEmptyEditorGrid,
+  lineEndsWithRhyme,
   normalizeEditorInput,
   pasteEditorTextAt,
   writeEditorCharsAt,
@@ -23,7 +24,7 @@ function rhymeToneLabel(tone: Tone): string {
 }
 
 function linePunctuation(patternLine: ToneConstraint[] | undefined): string {
-  return patternLine?.at(-1)?.type === 'rhyme' ? '。' : '，';
+  return lineEndsWithRhyme(patternLine) ? '。' : '，';
 }
 
 /** 单个字位 */

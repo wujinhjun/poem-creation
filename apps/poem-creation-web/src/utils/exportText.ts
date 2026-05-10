@@ -1,9 +1,6 @@
 import type { ToneConstraint } from '@poem/parser/kernel';
 import type { Genre } from '../constants/poem';
-
-function lineEndsWithRhyme(patternLine: ToneConstraint[] | undefined): boolean {
-  return patternLine?.at(-1)?.type === 'rhyme';
-}
+import { lineEndsWithRhyme } from '@poem/shared';
 
 function formatBodyLines(chars: string[][], pattern: ToneConstraint[][]): string[] {
   const body: string[] = [];
