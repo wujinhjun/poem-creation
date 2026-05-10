@@ -16,6 +16,12 @@ function isMeterTemplate(template: AnyTemplate): template is MeterTemplate {
   return (template as MeterTemplate).pattern !== undefined;
 }
 
+/**
+ * 模板匹配：逐字对比 AST 与模板 pattern 的 fixed 位
+ * @param ast       诗歌 AST
+ * @param templates 候选模板列表
+ * @returns 按置信度降序排列的匹配结果
+ */
 export function matchTemplate(
   ast: PoemAST,
   templates: AnyTemplate[],

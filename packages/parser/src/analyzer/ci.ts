@@ -55,6 +55,10 @@ export function scoreCiVariant(lines: LineNode[], variant: CiTemplateVariant): C
  * @param variantId - 可选的指定变体 ID
  * @returns 评分最高的变体，或 null
  */
+/**
+ * 选择最佳词牌变体（已废弃自动推断，请显式传入 variantId）
+ * @deprecated 使用 runPipeline 时 variantId 为必传，本函数保留供手动调用
+ */
 export function chooseCiVariant(
   template: CiTemplate,
   astLines: LineNode[],
@@ -77,6 +81,9 @@ export function chooseCiVariant(
 
 /**
  * 将词牌变体应用到 AST
+ */
+/**
+ * 将词牌变体应用到 AST：设置每行的 expectedPattern、section 结构
  */
 export function applyCiVariantToAst(
   ast: PoemAST,

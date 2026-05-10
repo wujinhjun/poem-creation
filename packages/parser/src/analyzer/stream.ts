@@ -120,6 +120,16 @@ function getExpectedConstraint(
  * @param dict     韵书实例（外部注入）
  * @param options  可选配置
  */
+/**
+ * 流式解析（同步，依赖注入）
+ *
+ * 按顺序逐字校验与模板的匹配情况。输入不完整时只校验已有部分。
+ *
+ * @param input    输入文本
+ * @param template 模板对象（外部注入）
+ * @param dict     韵书实例（外部注入）
+ * @param options  可选：variantId
+ */
 export function analyzeStreamSync(
   input: string,
   template: AnyTemplate,
