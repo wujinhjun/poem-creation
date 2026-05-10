@@ -22,6 +22,10 @@ function rhymeToneLabel(tone: Tone): string {
   return tone === Tone.Ping ? '平韵' : '仄韵';
 }
 
+function linePunctuation(patternLine: ToneConstraint[] | undefined): string {
+  return patternLine?.at(-1)?.type === 'rhyme' ? '。' : '，';
+}
+
 /** 单个字位 */
 type SlotStatus = 'empty' | 'pass' | 'fail' | 'pending';
 
@@ -110,7 +114,8 @@ export default function Composer({
   pattern,
   dict,
   expectedRhymeTone,
-  sectionBreakBeforeLines = [],
+  visualLineGroups,
+  sectionBreakBeforeGroups = [],
   initialChars,
   onChange,
   onComplete,
@@ -118,7 +123,8 @@ export default function Composer({
   pattern: ToneConstraint[][];
   dict: RhymeDict | null;
   expectedRhymeTone: Tone | null;
-  sectionBreakBeforeLines?: number[];
+  visualLineGroups?: number[][];
+  sectionBreakBeforeGroups?: number[];
   initialChars?: string[][];
   onChange: (chars: string[][]) => void;
   onComplete: (chars: string[][]) => void;
@@ -143,6 +149,13 @@ export default function Composer({
     col: number;
   } | null>(null);
   const [draft, setDraft] = useState('');
+  const groups = useMemo(
+    () =>
+      visualLineGroups && visualLineGroups.length > 0
+        ? visualLineGroups
+        : pattern.map((_, index) => [index]),
+    [pattern, visualLineGroups],
+  );
 
   useEffect(() => {
     if (!activeCell) return;
@@ -389,77 +402,83 @@ export default function Composer({
 
   return (
     <div className='composer-grid'>
-      {pattern.map((row, li) => (
+      {groups.map((group, groupIdx) => (
         <div
-          key={li}
-          className={`composer-line${sectionBreakBeforeLines.includes(li) ? ' is-section-break' : ''}`}
+          key={group.join('-')}
+          className={`composer-line${sectionBreakBeforeGroups.includes(groupIdx) ? ' is-section-break' : ''}`}
         >
-          <span className='line-number'>{li + 1}</span>
-          {row.map((constraint, ci) => (
-            <CharSlot
-              key={ci}
-              constraint={constraint}
-              value={grid[li]?.[ci] ?? ''}
-              evaluation={
-                evaluations[li]?.[ci] ?? {
-                  status: 'empty',
-                  label: constraintLabel(constraint),
-                  title: '',
-                }
-              }
-              active={activeCell?.line === li && activeCell.col === ci}
-              draft={
-                activeCell?.line === li && activeCell.col === ci ? draft : ''
-              }
-              inputRef={(input) => {
-                if (activeCell?.line === li && activeCell.col === ci)
-                  activeInputRef.current = input;
-              }}
-              onDraftChange={(value) => handleDraftChange(li, ci, value)}
-              onCompositionStart={() => {
-                composingRef.current = true;
-                setDraft('');
-              }}
-              onCompositionEnd={(value) => {
-                composingRef.current = false;
-                writeCharsAt(li, ci, normalizeEditorInput(value));
-                setDraft('');
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'ArrowLeft') {
-                  event.preventDefault();
-                  moveActiveCellHorizontal(li, ci, -1);
-                } else if (event.key === 'ArrowRight') {
-                  event.preventDefault();
-                  moveActiveCellHorizontal(li, ci, 1);
-                } else if (event.key === 'ArrowUp') {
-                  event.preventDefault();
-                  moveActiveCellVertical(li, ci, -1);
-                } else if (event.key === 'ArrowDown') {
-                  event.preventDefault();
-                  moveActiveCellVertical(li, ci, 1);
-                } else if (event.key === 'Backspace' && draft === '') {
-                  event.preventDefault();
-                  if (grid[li]?.[ci]) {
-                    clearCellAt(li, ci);
-                  } else {
-                    moveActiveCellHorizontal(li, ci, -1);
+          {group.map((li) => (
+            <span key={li} className='composer-logical-line'>
+              {pattern[li]?.map((constraint, ci) => (
+                <CharSlot
+                  key={`${li}-${ci}`}
+                  constraint={constraint}
+                  value={grid[li]?.[ci] ?? ''}
+                  evaluation={
+                    evaluations[li]?.[ci] ?? {
+                      status: 'empty',
+                      label: constraintLabel(constraint),
+                      title: '',
+                    }
                   }
-                } else if (event.key === 'Delete' && draft === '') {
-                  event.preventDefault();
-                  clearCellAt(li, ci);
-                }
-              }}
-              onPaste={(event) => {
-                event.preventDefault();
-                pasteAt(li, ci, event.clipboardData.getData('text'));
-                setDraft('');
-              }}
-              onSelect={() => {
-                setDraft('');
-                setActiveCell({ line: li, col: ci });
-              }}
-            />
+                  active={activeCell?.line === li && activeCell.col === ci}
+                  draft={
+                    activeCell?.line === li && activeCell.col === ci ? draft : ''
+                  }
+                  inputRef={(input) => {
+                    if (activeCell?.line === li && activeCell.col === ci)
+                      activeInputRef.current = input;
+                  }}
+                  onDraftChange={(value) => handleDraftChange(li, ci, value)}
+                  onCompositionStart={() => {
+                    composingRef.current = true;
+                    setDraft('');
+                  }}
+                  onCompositionEnd={(value) => {
+                    composingRef.current = false;
+                    writeCharsAt(li, ci, normalizeEditorInput(value));
+                    setDraft('');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'ArrowLeft') {
+                      event.preventDefault();
+                      moveActiveCellHorizontal(li, ci, -1);
+                    } else if (event.key === 'ArrowRight') {
+                      event.preventDefault();
+                      moveActiveCellHorizontal(li, ci, 1);
+                    } else if (event.key === 'ArrowUp') {
+                      event.preventDefault();
+                      moveActiveCellVertical(li, ci, -1);
+                    } else if (event.key === 'ArrowDown') {
+                      event.preventDefault();
+                      moveActiveCellVertical(li, ci, 1);
+                    } else if (event.key === 'Backspace' && draft === '') {
+                      event.preventDefault();
+                      if (grid[li]?.[ci]) {
+                        clearCellAt(li, ci);
+                      } else {
+                        moveActiveCellHorizontal(li, ci, -1);
+                      }
+                    } else if (event.key === 'Delete' && draft === '') {
+                      event.preventDefault();
+                      clearCellAt(li, ci);
+                    }
+                  }}
+                  onPaste={(event) => {
+                    event.preventDefault();
+                    pasteAt(li, ci, event.clipboardData.getData('text'));
+                    setDraft('');
+                  }}
+                  onSelect={() => {
+                    setDraft('');
+                    setActiveCell({ line: li, col: ci });
+                  }}
+                />
+              ))}
+              <span className='line-punctuation'>
+                {linePunctuation(pattern[li])}
+              </span>
+            </span>
           ))}
         </div>
       ))}

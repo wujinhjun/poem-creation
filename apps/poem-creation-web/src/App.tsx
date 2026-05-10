@@ -3,279 +3,68 @@ import { listAllTemplates, findCiTune } from '@poem/parser/catalog';
 import { loadMeterTemplates, Tone } from '@poem/parser/kernel';
 import type { ToneConstraint, CiTemplate } from '@poem/parser/kernel';
 import { RhymeDictType } from '@poem/parser/kernel';
-import { createBrowserDict } from './rhymeDict.ts';
+import { createBrowserDict } from './utils/rhymeDict.ts';
 import type { RhymeDict } from '@poem/parser/kernel';
-import Composer from './Composer.tsx';
 import { IndexedDbDraftStore } from './persist';
 import type { PoemCreationDraft, PoemCreationDraftSummary } from './persist';
-import heroImage from './assets/hero.png';
+import type { Genre } from './constants/poem';
+import { EntryPage } from './components/EntryPage';
+import { EditorPage } from './components/EditorPage';
+import { SettingsPage } from './components/SettingsPage';
+import type { SelectOption } from './components/CustomSelect';
+import { createEmptyDraft, normalizeDraft } from './utils/draft';
+import { copyText, formatPoemText } from './utils/exportText';
+import {
+  ciPatternForEditor,
+  inferCiRhymeTone,
+  loadCiBundle,
+} from './utils/ciTemplate';
+import { pushRoute, readRoute, replaceRoute } from './utils/routing';
+import {
+  loadUserSettings,
+  saveUserSettings,
+} from './utils/settings';
+import type { UserSettings } from './utils/settings';
 import './style.css';
-
-const RHYME_OPTIONS = [
-  { value: RhymeDictType.Pingshui, label: '平水韵' },
-  { value: RhymeDictType.Cilin, label: '词林正韵' },
-  { value: RhymeDictType.Zhonghua, label: '中华新韵' },
-] as const;
-
-type SelectOption<T extends string> = {
-  value: T;
-  label: string;
-};
-
-type AppRoute = { mode: 'entry' } | { mode: 'editor'; draftId: string };
-
-function CustomSelect<T extends string>({
-  value,
-  options,
-  placeholder,
-  searchable = false,
-  searchPlaceholder = '搜索',
-  onChange,
-}: {
-  value: T | '';
-  options: SelectOption<T>[];
-  placeholder: string;
-  searchable?: boolean;
-  searchPlaceholder?: string;
-  onChange: (value: T | '') => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const searchRef = useRef<HTMLInputElement | null>(null);
-  const selected = options.find((option) => option.value === value);
-  const filteredOptions = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
-    if (!keyword) return options;
-    return options.filter(
-      (option) =>
-        option.label.toLowerCase().includes(keyword) ||
-        option.value.toLowerCase().includes(keyword),
-    );
-  }, [options, query]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-        setQuery('');
-      }
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [open]);
-
-  useEffect(() => {
-    if (open && searchable)
-      requestAnimationFrame(() => searchRef.current?.focus());
-  }, [open, searchable]);
-
-  return (
-    <div ref={rootRef} className='relative'>
-      <button
-        type='button'
-        className='flex min-h-12 w-full items-center justify-between border border-[#9b7a5d] bg-[#fff9ea] px-4 text-left text-[18px] text-[#2d2118] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)] transition hover:border-[#704f36] focus:border-[#8b2d24] focus:outline-none focus:ring-2 focus:ring-[#8b2d24]/15'
-        onClick={() => setOpen((next) => !next)}
-      >
-        <span className={selected ? '' : 'text-[#8f7b66]'}>
-          {selected?.label ?? placeholder}
-        </span>
-        <span
-          className={`ml-3 text-[20px] leading-none transition ${open ? 'rotate-180' : ''}`}
-        >
-          ⌄
-        </span>
-      </button>
-      {open && (
-        <div className='absolute left-0 right-0 top-[calc(100%+6px)] z-20 border border-[#8b6a4c] bg-[#fffaf0] py-1 shadow-[0_18px_38px_rgba(54,35,18,0.2)]'>
-          {searchable && (
-            <div className='sticky top-0 z-10 border-b border-[#8b6a4c]/30 bg-[#fffaf0] p-2'>
-              <input
-                ref={searchRef}
-                value={query}
-                placeholder={searchPlaceholder}
-                className='h-10 w-full border border-[#b29273] bg-[#fff9ea] px-3 text-[16px] text-[#2d2118] outline-none placeholder:text-[#9a8066] focus:border-[#8b2d24] focus:ring-2 focus:ring-[#8b2d24]/15'
-                onChange={(event) => setQuery(event.currentTarget.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') {
-                    setOpen(false);
-                    setQuery('');
-                  }
-                }}
-              />
-            </div>
-          )}
-          <div className='max-h-72 overflow-auto'>
-            <button
-              type='button'
-              className='block min-h-11 w-full px-4 text-left text-[17px] text-[#806851] transition hover:bg-[#efe1c6]'
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                onChange('');
-                setQuery('');
-                setOpen(false);
-              }}
-            >
-              {placeholder}
-            </button>
-            {filteredOptions.map((option) => (
-              <button
-                key={option.value}
-                type='button'
-                className={`block min-h-11 w-full px-4 text-left text-[17px] transition ${option.value === value ? 'bg-[#5f3928] text-[#fffaf0]' : 'text-[#2d2118] hover:bg-[#efe1c6]'}`}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => {
-                  onChange(option.value);
-                  setQuery('');
-                  setOpen(false);
-                }}
-              >
-                {option.value === value ? '✓ ' : ''}
-                {option.label}
-              </button>
-            ))}
-            {filteredOptions.length === 0 && (
-              <div className='px-4 py-3 text-[16px] text-[#806851]'>
-                无匹配结果
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 const allTemplates = listAllTemplates();
 const meterMap = new Map(loadMeterTemplates().map((t) => [t.id, t]));
 const draftStore = new IndexedDbDraftStore();
 
-function readRoute(): AppRoute {
-  const match = window.location.pathname.match(/^\/edit\/([^/]+)$/);
-  if (match) return { mode: 'editor', draftId: decodeURIComponent(match[1]) };
-  return { mode: 'entry' };
-}
-
-function pushRoute(route: AppRoute): void {
-  const path =
-    route.mode === 'editor'
-      ? `/edit/${encodeURIComponent(route.draftId)}`
-      : '/';
-  window.history.pushState(route, '', path);
-}
-
-function replaceRoute(route: AppRoute): void {
-  const path =
-    route.mode === 'editor'
-      ? `/edit/${encodeURIComponent(route.draftId)}`
-      : '/';
-  window.history.replaceState(route, '', path);
-}
-
-function createDraftId(): string {
-  if ('crypto' in window && 'randomUUID' in crypto) return crypto.randomUUID();
-  return `draft-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function createEmptyDraft(): PoemCreationDraft {
-  return {
-    schemaVersion: 1,
-    id: createDraftId(),
-    title: '',
-    description: '',
-    author: '',
-    genre: 'meter',
-    selectedTune: '',
-    selectedVariant: '',
-    rhymeType: RhymeDictType.Pingshui,
-    chars: [],
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-function formatDraftTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
-
-function inferTemplateNameFromVariant(variantId: string): string {
-  for (const entry of allTemplates) {
-    if (entry.variants.some((variant) => variant.id === variantId)) {
-      return entry.name;
-    }
+function pairLineGroups(pattern: ToneConstraint[][]): number[][] {
+  const groups: number[][] = [];
+  for (let index = 0; index < pattern.length; index += 2) {
+    groups.push(
+      index + 1 < pattern.length ? [index, index + 1] : [index],
+    );
   }
-  return '';
+  return groups;
 }
 
-function normalizeDraft(draft: PoemCreationDraft): PoemCreationDraft {
-  if (draft.selectedTune || !draft.selectedVariant) return draft;
-  return {
-    ...draft,
-    selectedTune: inferTemplateNameFromVariant(draft.selectedVariant),
-  };
-}
-
-// 懒加载词牌完整格律（8.7MB，gzip ~2MB，fetch 一次全缓存）
-let ciBundlePromise: Promise<Record<string, CiTemplate>> | null = null;
-function loadCiBundle(): Promise<Record<string, CiTemplate>> {
-  if (!ciBundlePromise) {
-    ciBundlePromise = fetch('/data/ci-tunes-bundle.json').then((r) => r.json());
+function variantSummary(genre: Genre, tuneName: string, variantId: string): string {
+  if (!variantId) return '';
+  const template = allTemplates.find(
+    (entry) => entry.genre === genre && entry.name === tuneName,
+  );
+  const variant = template?.variants.find((item) => item.id === variantId);
+  if (!variant) return variantId;
+  if (genre === 'meter') {
+    return `${variant.rhymeFirst ? '首句押韵' : '首句不押韵'} · ${variant.author}`;
   }
-  return ciBundlePromise;
-}
-
-/** 从词牌变体中提取平仄 pattern */
-function ciVariantPattern(
-  tune: CiTemplate,
-  variantId: string,
-): ToneConstraint[][] {
-  const v = tune.variants.find((v) => v.id === variantId);
-  if (!v) return [];
-  return v.sections.flatMap((s) => s.lines.map((l) => l.pattern));
-}
-
-function ciSectionBreakBeforeLines(
-  tune: CiTemplate | undefined,
-  variantId: string,
-): number[] {
-  const variant = tune?.variants.find((v) => v.id === variantId);
-  if (!variant) return [];
-
-  const breaks: number[] = [];
-  let lineOffset = 0;
-  variant.sections.forEach((section, index) => {
-    if (index > 0 && section.lines.length > 0) breaks.push(lineOffset);
-    lineOffset += section.lines.length;
-  });
-  return breaks;
-}
-
-function inferCiRhymeTone(text: string): Tone | null {
-  const hasPing = text.includes('平韵');
-  const hasZe = text.includes('仄韵');
-  if (hasPing && !hasZe) return Tone.Ping;
-  if (hasZe && !hasPing) return Tone.Ze;
-  return null;
+  return `${variant.author} · ${variant.sketch}`;
 }
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<'entry' | 'editor'>('entry');
-  const [entryGenre, setEntryGenre] = useState<'meter' | 'ci'>('meter');
+  const [viewMode, setViewMode] = useState<'entry' | 'editor' | 'settings'>(
+    'entry',
+  );
+  const [entryGenre, setEntryGenre] = useState<Genre>('meter');
   const [entrySelectedTune, setEntrySelectedTune] = useState('');
   const [entrySelectedVariant, setEntrySelectedVariant] = useState('');
   const [entryRhymeType, setEntryRhymeType] = useState<RhymeDictType>(
     RhymeDictType.Pingshui,
   );
-  const [genre, setGenre] = useState<'meter' | 'ci'>('meter');
+  const [genre, setGenre] = useState<Genre>('meter');
   const [selectedTune, setSelectedTune] = useState('');
   const [selectedVariant, setSelectedVariant] = useState('');
   const [rhymeType, setRhymeType] = useState<RhymeDictType>(
@@ -284,6 +73,9 @@ export default function App() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [author, setAuthor] = useState('');
+  const [userSettings, setUserSettings] = useState<UserSettings>(
+    () => loadUserSettings(),
+  );
   const [activeDraftId, setActiveDraftId] = useState('');
   const [draftRevision, setDraftRevision] = useState(0);
   const [drafts, setDrafts] = useState<PoemCreationDraftSummary[]>([]);
@@ -293,17 +85,22 @@ export default function App() {
   } | null>(null);
   const [chars, setChars] = useState<string[][]>([]);
   const [analyzeResult, setAnalyzeResult] = useState('');
+  const [exportStatus, setExportStatus] = useState('');
+  const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [persistReady, setPersistReady] = useState(false);
   const [ciPatternState, setCiPatternState] = useState<{
     key: string;
     pattern: ToneConstraint[][];
-    sectionBreakBeforeLines: number[];
+    visualLineGroups: number[][];
+    sectionBreakBeforeGroups: number[];
   } | null>(null);
   const ciBundleRef = useRef<Record<string, CiTemplate> | null>(null);
   const dict = dictState?.type === rhymeType ? dictState.dict : null;
 
+  // Applying a draft is the only place that hydrates editor state from storage.
+  // Keeping it centralized prevents route/list actions from drifting apart.
   const applyDraft = useCallback((sourceDraft: PoemCreationDraft) => {
-    const draft = normalizeDraft(sourceDraft);
+    const draft = normalizeDraft(sourceDraft, allTemplates);
     setActiveDraftId(draft.id);
     setDraftRevision((revision) => revision + 1);
     setTitle(draft.title);
@@ -355,6 +152,7 @@ export default function App() {
     }
     const nextDraft = {
       ...createEmptyDraft(),
+      author: userSettings.defaultAuthor,
       genre: entryGenre,
       selectedTune: entrySelectedTune,
       selectedVariant: entrySelectedVariant,
@@ -374,6 +172,7 @@ export default function App() {
     entrySelectedVariant,
     persistReady,
     refreshDraftList,
+    userSettings.defaultAuthor,
     viewMode,
   ]);
 
@@ -436,7 +235,15 @@ export default function App() {
         if (!alive) return;
         setDrafts(summaries);
 
+        // On a static host the URL hash is the source of truth for whether the
+        // user should land in the entry screen or a specific draft editor.
         const route = readRoute();
+        if (route.mode === 'settings') {
+          setViewMode('settings');
+          setPersistReady(true);
+          return;
+        }
+
         if (route.mode === 'editor') {
           const draft = await draftStore.loadDraft(route.draftId);
           if (!alive) return;
@@ -487,6 +294,10 @@ export default function App() {
         setViewMode('entry');
         return;
       }
+      if (route.mode === 'settings') {
+        setViewMode('settings');
+        return;
+      }
 
       void draftStore.loadDraft(route.draftId).then((draft) => {
         if (!draft) {
@@ -501,11 +312,16 @@ export default function App() {
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
   }, [applyDraft]);
 
   useEffect(() => {
     if (!persistReady || !activeDraftId || viewMode !== 'editor') return;
+    // Debounce IndexedDB writes so IME composition and rapid typing stay smooth.
     const timer = window.setTimeout(() => {
       const draft: PoemCreationDraft = {
         schemaVersion: 1,
@@ -548,6 +364,21 @@ export default function App() {
     setViewMode('entry');
     pushRoute({ mode: 'entry' });
   }, [buildCurrentDraft, refreshDraftList, viewMode]);
+
+  const handleOpenSettings = useCallback(async () => {
+    const current = buildCurrentDraft();
+    if (viewMode === 'editor' && current) {
+      await draftStore.saveDraft(current);
+      await refreshDraftList();
+    }
+    setViewMode('settings');
+    pushRoute({ mode: 'settings' });
+  }, [buildCurrentDraft, refreshDraftList, viewMode]);
+
+  const handleSettingsChange = useCallback((settings: UserSettings) => {
+    setUserSettings(settings);
+    saveUserSettings(settings);
+  }, []);
 
   // 加载浏览器韵书
   useEffect(() => {
@@ -616,14 +447,13 @@ export default function App() {
       ciBundleRef.current = bundle;
       const tune = bundle[selectedTune];
       if (!tune) return;
+      const patternForEditor = ciPatternForEditor(tune, selectedVariant);
       if (alive)
         setCiPatternState({
           key,
-          pattern: ciVariantPattern(tune, selectedVariant),
-          sectionBreakBeforeLines: ciSectionBreakBeforeLines(
-            tune,
-            selectedVariant,
-          ),
+          pattern: patternForEditor.lines,
+          visualLineGroups: patternForEditor.rhymeGroups,
+          sectionBreakBeforeGroups: patternForEditor.sectionBreaks,
         });
     })();
     return () => {
@@ -650,13 +480,27 @@ export default function App() {
     );
   }, [genre, selectedCiVariant]);
 
-  const sectionBreakBeforeLines = useMemo(() => {
+  const visualLineGroups = useMemo(() => {
+    if (!selectedVariant) return [];
+    if (genre === 'meter') return pairLineGroups(pattern);
+    const key = `${selectedTune}::${selectedVariant}`;
+    return ciPatternState?.key === key
+      ? ciPatternState.visualLineGroups
+      : [];
+  }, [ciPatternState, genre, pattern, selectedTune, selectedVariant]);
+
+  const sectionBreakBeforeGroups = useMemo(() => {
     if (genre !== 'ci' || !selectedVariant) return [];
     const key = `${selectedTune}::${selectedVariant}`;
     return ciPatternState?.key === key
-      ? ciPatternState.sectionBreakBeforeLines
+      ? ciPatternState.sectionBreakBeforeGroups
       : [];
   }, [ciPatternState, genre, selectedTune, selectedVariant]);
+
+  const selectedVariantLabel = useMemo(
+    () => variantSummary(genre, selectedTune, selectedVariant),
+    [genre, selectedTune, selectedVariant],
+  );
 
   const handleAnalyze = useCallback(
     async (sourceChars = chars) => {
@@ -686,246 +530,111 @@ export default function App() {
     [dict, selectedVariant, chars, pattern, genre, selectedTune],
   );
 
+  const exportPreviewText = useMemo(
+    () =>
+      formatPoemText({
+        title,
+        author,
+        description,
+        genre,
+        selectedTune,
+        chars,
+        pattern,
+      }),
+    [author, chars, description, genre, pattern, selectedTune, title],
+  );
+
+  const handleEntryGenreChange = useCallback((nextGenre: Genre) => {
+    setEntryGenre(nextGenre);
+    setEntrySelectedTune('');
+    setEntrySelectedVariant('');
+    setEntryRhymeType(
+      nextGenre === 'meter' ? RhymeDictType.Pingshui : RhymeDictType.Cilin,
+    );
+  }, []);
+
+  const handleEntryTuneChange = useCallback(
+    (nextTune: string) => {
+      setEntrySelectedTune(nextTune);
+      const templates = entryGenre === 'meter' ? meterOptions : ciOptions;
+      const nextVariant =
+        templates.find((template) => template.name === nextTune)?.variants[0]
+          ?.id ?? '';
+      setEntrySelectedVariant(nextVariant);
+    },
+    [ciOptions, entryGenre, meterOptions],
+  );
+
+  const handleExportText = useCallback(async () => {
+    await copyText(exportPreviewText);
+    setExportStatus('文字已复制');
+    window.setTimeout(() => setExportStatus(''), 1800);
+  }, [exportPreviewText]);
+
+  if (viewMode === 'settings') {
+    return (
+      <SettingsPage
+        settings={userSettings}
+        onSettingsChange={handleSettingsChange}
+        onReturn={() => void handleReturnToEntry()}
+      />
+    );
+  }
+
   if (viewMode === 'entry') {
     return (
-      <main className='mx-auto w-[min(1180px,calc(100%-32px))] py-7 max-[820px]:w-[min(calc(100%_-_20px),720px)] max-[820px]:pt-2.5'>
-        <section className='mt-[18px] grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-[18px] max-[820px]:grid-cols-1'>
-          <section className='grid gap-[18px] border border-[#5c3f22]/25 bg-[#fff9eb]/85 p-5 shadow-[0_14px_34px_rgba(60,40,21,0.08)]'>
-            <h2 className='m-0 text-[24px] font-bold text-[#4b3729]'>
-              本次编辑
-            </h2>
-            <div>
-              <span className='grid gap-2 text-sm font-bold text-[#5e4735]'>
-                体裁
-              </span>
-              <div className='mt-2 grid grid-cols-2 border border-[#8b6a4c]'>
-                <button
-                  type='button'
-                  className={`min-h-[42px] border-r border-[#8b6a4c] text-[22px] transition ${entryGenre === 'meter' ? 'bg-[#5f3928] text-[#fffaf0]' : 'bg-transparent text-[#5b402f] hover:bg-[#efe1c6]'}`}
-                  onClick={() => {
-                    setEntryGenre('meter');
-                    setEntrySelectedTune('');
-                    setEntrySelectedVariant('');
-                  }}
-                >
-                  诗
-                </button>
-                <button
-                  type='button'
-                  className={`min-h-[42px] text-[22px] transition ${entryGenre === 'ci' ? 'bg-[#5f3928] text-[#fffaf0]' : 'bg-transparent text-[#5b402f] hover:bg-[#efe1c6]'}`}
-                  onClick={() => {
-                    setEntryGenre('ci');
-                    setEntrySelectedTune('');
-                    setEntrySelectedVariant('');
-                  }}
-                >
-                  词
-                </button>
-              </div>
-            </div>
-
-            <div className='grid gap-2 text-sm font-bold text-[#5e4735]'>
-              模板
-              <CustomSelect
-                value={entrySelectedTune}
-                options={templateOptions}
-                placeholder='请选择'
-                searchable
-                searchPlaceholder='搜索模板'
-                onChange={(next) => {
-                  setEntrySelectedTune(next);
-                  setEntrySelectedVariant('');
-                }}
-              />
-            </div>
-
-            {variantOptions.length > 0 && (
-              <div className='grid gap-2 text-sm font-bold text-[#5e4735]'>
-                变体
-                <CustomSelect
-                  value={entrySelectedVariant}
-                  options={variantOptions}
-                  placeholder='请选择'
-                  searchable
-                  searchPlaceholder='搜索变体'
-                  onChange={setEntrySelectedVariant}
-                />
-              </div>
-            )}
-
-            <div className='grid gap-2 text-sm font-bold text-[#5e4735]'>
-              韵书
-              <CustomSelect
-                value={entryRhymeType}
-                options={[...RHYME_OPTIONS]}
-                placeholder='请选择'
-                onChange={(next) => {
-                  if (next) setEntryRhymeType(next);
-                }}
-              />
-            </div>
-
-            <button
-              type='button'
-              className='primary-button w-fit'
-              disabled={!entrySelectedVariant}
-              onClick={() => void handleNewDraft()}
-            >
-              开始新作
-            </button>
-          </section>
-
-          <section className='grid gap-[18px] border border-[#5c3f22]/25 bg-[#fff9eb]/85 p-5 shadow-[0_14px_34px_rgba(60,40,21,0.08)]'>
-            <h2 className='m-0 text-[24px] font-bold text-[#4b3729]'>作品</h2>
-            <div className='grid max-h-[520px] gap-2 overflow-auto border border-[#8b6a4c]/40 bg-[#fff9ea]/70 p-2'>
-              {drafts.length === 0 && (
-                <div className='px-2 py-3 text-[14px] text-[#806851]'>
-                  暂无旧作
-                </div>
-              )}
-              {drafts.map((draft) => (
-                <div
-                  key={draft.id}
-                  className='grid grid-cols-[minmax(0,1fr)_auto] gap-2 border border-[#c8ad8a] px-3 py-2 transition hover:bg-[#efe1c6]'
-                >
-                  <button
-                    type='button'
-                    className='grid min-w-0 gap-1 text-left'
-                    onClick={() => void handleOpenDraft(draft.id)}
-                  >
-                    <span className='truncate text-[16px] font-bold text-[#2d2118]'>
-                      {draft.title || '未题'}
-                    </span>
-                    <span className='truncate text-[13px] text-[#806851]'>
-                      {draft.author || '佚名'} ·{' '}
-                      {draft.selectedTune || '未选模板'}
-                    </span>
-                    <span className='text-[12px] text-[#9a8066]'>
-                      {formatDraftTime(draft.updatedAt)}
-                    </span>
-                  </button>
-                  <button
-                    type='button'
-                    className='self-start border border-[#a43c2f] px-2 py-1 text-[12px] text-[#8b2d24] transition hover:bg-[#f6e2dc]'
-                    onClick={() => void handleDeleteDraft(draft.id)}
-                  >
-                    删除
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-        </section>
-      </main>
+      <EntryPage
+        genre={entryGenre}
+        selectedTune={entrySelectedTune}
+        selectedVariant={entrySelectedVariant}
+        rhymeType={entryRhymeType}
+        templateOptions={templateOptions}
+        variantOptions={variantOptions}
+        drafts={drafts}
+        onGenreChange={handleEntryGenreChange}
+        onTuneChange={handleEntryTuneChange}
+        onVariantChange={setEntrySelectedVariant}
+        onRhymeTypeChange={setEntryRhymeType}
+        onStartDraft={() => void handleNewDraft()}
+        onOpenDraft={(id) => void handleOpenDraft(id)}
+        onDeleteDraft={(id) => void handleDeleteDraft(id)}
+        onOpenSettings={() => void handleOpenSettings()}
+      />
     );
   }
 
   return (
-    <main className='mx-auto w-[min(1180px,calc(100%-32px))] py-7 max-[820px]:w-[min(calc(100%_-_20px),720px)] max-[820px]:pt-2.5'>
-      <section className='mt-[18px] grid grid-cols-[300px_minmax(0,1fr)] items-start gap-[18px] max-[820px]:grid-cols-1'>
-        <aside className='grid gap-[18px] border border-[#5c3f22]/25 bg-[#fff9eb]/85 p-5 shadow-[0_14px_34px_rgba(60,40,21,0.08)]'>
-          <div className='grid gap-3'>
-            <button
-              type='button'
-              className='w-fit border border-[#8b6a4c] px-4 py-2 text-[15px] text-[#5b402f] transition hover:bg-[#efe1c6]'
-              onClick={() => void handleReturnToEntry()}
-            >
-              返回
-            </button>
-            <div className='border border-[#8b6a4c]/40 bg-[#fff9ea]/70 p-3 text-[14px] leading-7 text-[#806851]'>
-              <div>体裁：{genre === 'meter' ? '诗' : '词'}</div>
-              <div>模板：{selectedTune || '未选模板'}</div>
-              <div>变体：{selectedVariant || '未选变体'}</div>
-              <div>
-                韵书：
-                {RHYME_OPTIONS.find((option) => option.value === rhymeType)
-                  ?.label ?? rhymeType}
-              </div>
-            </div>
-          </div>
-
-          <div className='grid gap-2 text-sm font-bold text-[#5e4735]'>
-            标题
-            <input
-              value={title}
-              placeholder='未题'
-              className='h-12 w-full border border-[#9b7a5d] bg-[#fff9ea] px-4 text-[18px] text-[#2d2118] outline-none placeholder:text-[#9a8066] focus:border-[#8b2d24] focus:ring-2 focus:ring-[#8b2d24]/15'
-              onChange={(event) => setTitle(event.currentTarget.value)}
-            />
-          </div>
-
-          <div className='grid gap-2 text-sm font-bold text-[#5e4735]'>
-            说明
-            <input
-              value={description}
-              placeholder='题记、说明或备注'
-              className='h-12 w-full border border-[#9b7a5d] bg-[#fff9ea] px-4 text-[18px] text-[#2d2118] outline-none placeholder:text-[#9a8066] focus:border-[#8b2d24] focus:ring-2 focus:ring-[#8b2d24]/15'
-              onChange={(event) => setDescription(event.currentTarget.value)}
-            />
-          </div>
-
-          <div className='grid gap-2 text-sm font-bold text-[#5e4735]'>
-            署名
-            <input
-              value={author}
-              placeholder='佚名'
-              className='h-12 w-full border border-[#9b7a5d] bg-[#fff9ea] px-4 text-[18px] text-[#2d2118] outline-none placeholder:text-[#9a8066] focus:border-[#8b2d24] focus:ring-2 focus:ring-[#8b2d24]/15'
-              onChange={(event) => setAuthor(event.currentTarget.value)}
-            />
-          </div>
-
-          <div className='flex flex-wrap gap-4 text-[13px] text-[#725c47]'>
-            <span className='inline-flex items-center gap-1.5'>
-              <i className='h-3 w-3 border border-[#4d7a35] bg-[#e8f1df]' />合
-            </span>
-            <span className='inline-flex items-center gap-1.5'>
-              <i className='h-3 w-3 border border-[#a43c2f] bg-[#f6e2dc]' />误
-            </span>
-            <span className='inline-flex items-center gap-1.5'>
-              <i className='h-3 w-3 border border-[#9b7a5d] bg-[#fffaf0]' />
-              待填
-            </span>
-          </div>
-        </aside>
-
-        <section className='min-h-[430px] border border-[#5c3f22]/25 bg-[#fff9eb]/85 p-6 shadow-[0_14px_34px_rgba(60,40,21,0.08)] max-[820px]:overflow-x-auto max-[820px]:px-3.5 max-[820px]:py-[18px]'>
-          {!dict && <p className='loading-text'>加载韵书中...</p>}
-
-          {genre === 'ci' && selectedVariant && pattern.length === 0 && (
-            <p className='loading-text'>加载词牌格律中...</p>
-          )}
-
-          {pattern.length === 0 && (
-            <div className='empty-state'>择一格律，即可开始填字。</div>
-          )}
-
-          {pattern.length > 0 && dict && persistReady && (
-            <>
-              <Composer
-                key={`${activeDraftId}:${selectedVariant}:${draftRevision}`}
-                pattern={pattern}
-                dict={dict}
-                expectedRhymeTone={expectedRhymeTone}
-                sectionBreakBeforeLines={sectionBreakBeforeLines}
-                initialChars={chars}
-                onChange={setChars}
-                onComplete={handleAnalyze}
-              />
-              <div className='analysis-bar'>
-                <button
-                  className='primary-button'
-                  onClick={() => handleAnalyze()}
-                >
-                  分析
-                </button>
-                {analyzeResult && (
-                  <span className='analysis-result'>{analyzeResult}</span>
-                )}
-              </div>
-            </>
-          )}
-        </section>
-      </section>
-    </main>
+    <EditorPage
+      activeDraftId={activeDraftId}
+      draftRevision={draftRevision}
+      genre={genre}
+      selectedTune={selectedTune}
+      selectedVariant={selectedVariant}
+      selectedVariantLabel={selectedVariantLabel}
+      rhymeType={rhymeType}
+      title={title}
+      description={description}
+      author={author}
+      chars={chars}
+      dict={dict}
+      pattern={pattern}
+      expectedRhymeTone={expectedRhymeTone}
+      visualLineGroups={visualLineGroups}
+      sectionBreakBeforeGroups={sectionBreakBeforeGroups}
+      analyzeResult={analyzeResult}
+      exportStatus={exportStatus}
+      exportPreviewText={exportPreviewText}
+      exportPreviewOpen={exportPreviewOpen}
+      persistReady={persistReady}
+      onTitleChange={setTitle}
+      onDescriptionChange={setDescription}
+      onAuthorChange={setAuthor}
+      onCharsChange={setChars}
+      onAnalyze={(nextChars) => void handleAnalyze(nextChars)}
+      onOpenExportPreview={() => setExportPreviewOpen(true)}
+      onCloseExportPreview={() => setExportPreviewOpen(false)}
+      onCopyExportText={() => void handleExportText()}
+      onReturn={() => void handleReturnToEntry()}
+    />
   );
 }
