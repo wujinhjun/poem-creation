@@ -194,6 +194,20 @@ export default function Composer({
     [pattern],
   );
 
+  const moveActiveCellVertical = useCallback(
+    (lineIdx: number, colIdx: number, delta: number) => {
+      const nextLine = Math.max(0, Math.min(lineIdx + delta, pattern.length - 1));
+      const nextRowLength = pattern[nextLine]?.length ?? 0;
+      if (nextRowLength === 0) return;
+      setDraft('');
+      setActiveCell({
+        line: nextLine,
+        col: Math.max(0, Math.min(colIdx, nextRowLength - 1)),
+      });
+    },
+    [pattern],
+  );
+
   const pasteAt = useCallback(
     (lineIdx: number, colIdx: number, text: string) => {
       setGridState((prev) => {
@@ -353,6 +367,12 @@ export default function Composer({
                 } else if (event.key === 'ArrowRight') {
                   event.preventDefault();
                   moveActiveCell(li, ci, 1);
+                } else if (event.key === 'ArrowUp') {
+                  event.preventDefault();
+                  moveActiveCellVertical(li, ci, -1);
+                } else if (event.key === 'ArrowDown') {
+                  event.preventDefault();
+                  moveActiveCellVertical(li, ci, 1);
                 } else if (event.key === 'Backspace' && draft === '') {
                   event.preventDefault();
                   if (grid[li]?.[ci]) {

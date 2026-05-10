@@ -54,6 +54,7 @@ function legacyDraftToCurrent(draft: PoemCreationDraft | (Omit<PoemCreationDraft
   return {
     ...draft,
     id: draft.id ?? ACTIVE_DRAFT_ID,
+    description: draft.description ?? "",
   };
 }
 
@@ -61,6 +62,7 @@ function toSummary(draft: PoemCreationDraft): PoemCreationDraftSummary {
   return {
     id: draft.id,
     title: draft.title,
+    description: draft.description,
     author: draft.author,
     genre: draft.genre,
     selectedTune: draft.selectedTune,

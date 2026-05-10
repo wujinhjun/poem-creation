@@ -4,6 +4,7 @@ export type PoemCreationDraft = {
   schemaVersion: 1;
   id: string;
   title: string;
+  description: string;
   author: string;
   genre: "meter" | "ci";
   selectedTune: string;
@@ -16,6 +17,7 @@ export type PoemCreationDraft = {
 export type PoemCreationDraftSummary = {
   id: string;
   title: string;
+  description: string;
   author: string;
   genre: "meter" | "ci";
   selectedTune: string;
