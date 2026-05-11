@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "诗词创作",
+    "slug": "poem-creation-app",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "scheme": "poemcreation",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.poem.creation"
+    },
+    "android": {
+      "package": "com.poem.creation"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
