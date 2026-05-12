@@ -182,6 +182,9 @@ export function analyzeStreamSync(
           matched = true;
           sentenceMatched++;
         }
+        if (!matched) {
+          sentenceMismatches.push({ col: ci, char, expected: expectedStr, actual: actualStr, reason });
+        }
       } else {
         matched = true;
       }

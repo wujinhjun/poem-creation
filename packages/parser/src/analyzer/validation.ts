@@ -111,6 +111,8 @@ export interface CharCheck {
   reason?: string;
   /** 是否为多音字（歧义字） */
   isAmbiguous: boolean;
+  /** 该字的校验状态（供调用方写回 AST） */
+  status: CharValidationStatus;
 }
 
 export interface LineValidationSummary {
@@ -125,7 +127,10 @@ export interface LineValidationSummary {
 }
 
 /**
- * 验证行是否符合平仄模式
+ * 验证行是否符合平仄模式（纯函数，不改动传入的 `line`）。
+ *
+ * 每个字的校验状态记录在 `charChecks[].status`；如需写回 AST，
+ * 调用 {@link applyValidationToLine}。
  */
 export function validateLineAgainstPattern(
   line: LineNode,
@@ -147,6 +152,7 @@ export function validateLineAgainstPattern(
         actual: charNode.tone ?? '未知',
         matched: true,
         isAmbiguous: isAmbiguousChar(ambiguities, line.globalLineIndex, idx),
+        status: CharValidationStatus.Unknown,
       })),
     };
   }
@@ -157,7 +163,7 @@ export function validateLineAgainstPattern(
   let nonAmbiguousMismatchCount = 0;
   const charChecks: CharCheck[] = [];
 
-  line.chars = line.chars.map((charNode, idx) => {
+  line.chars.forEach((charNode, idx) => {
     const constraint = expectedPattern[idx];
     const charIsAmbiguous = isAmbiguousChar(
       ambiguities,
@@ -173,12 +179,9 @@ export function validateLineAgainstPattern(
         actual: charNode.tone ?? '未知',
         matched: true,
         isAmbiguous: charIsAmbiguous,
+        status: CharValidationStatus.Unknown,
       });
-      return {
-        ...charNode,
-        validationStatus: CharValidationStatus.Unknown,
-        expectedConstraint: undefined,
-      };
+      return;
     }
 
     if (constraint.type === 'flexible') {
@@ -189,12 +192,9 @@ export function validateLineAgainstPattern(
         actual: charNode.tone ?? '未知',
         matched: true,
         isAmbiguous: charIsAmbiguous,
+        status: CharValidationStatus.Flexible,
       });
-      return {
-        ...charNode,
-        validationStatus: CharValidationStatus.Flexible,
-        expectedConstraint: constraint,
-      };
+      return;
     }
 
     checkableCount += 1;
@@ -214,12 +214,9 @@ export function validateLineAgainstPattern(
         actual: charNode.tone ?? '未知',
         matched: true,
         isAmbiguous: charIsAmbiguous,
+        status: CharValidationStatus.Pass,
       });
-      return {
-        ...charNode,
-        validationStatus: CharValidationStatus.Pass,
-        expectedConstraint: constraint,
-      };
+      return;
     }
 
     mismatchCount += 1;
@@ -241,13 +238,8 @@ export function validateLineAgainstPattern(
           ? 'tone_mismatch'
           : 'rhyme_unresolved',
       isAmbiguous: charIsAmbiguous,
+      status: CharValidationStatus.Fail,
     });
-
-    return {
-      ...charNode,
-      validationStatus: CharValidationStatus.Fail,
-      expectedConstraint: constraint,
-    };
   });
 
   return {
@@ -259,6 +251,23 @@ export function validateLineAgainstPattern(
     isCompliant: mismatchCount === 0,
     charChecks,
   };
+}
+
+/**
+ * 把 {@link validateLineAgainstPattern} 的结果写回 AST 行：
+ * 为每个字设置 `validationStatus` 与 `expectedConstraint`。
+ */
+export function applyValidationToLine(
+  line: LineNode,
+  summary: LineValidationSummary,
+  expectedPattern: ToneConstraint[] | undefined,
+): void {
+  for (const check of summary.charChecks) {
+    const node = line.chars[check.col];
+    if (!node) continue;
+    node.validationStatus = check.status;
+    node.expectedConstraint = expectedPattern?.[check.col];
+  }
 }
 
 /**

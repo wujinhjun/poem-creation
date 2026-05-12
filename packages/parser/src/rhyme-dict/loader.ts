@@ -61,7 +61,11 @@ class JsonRhymeDict implements RhymeDict {
           toneEntries.push({ char, tone: Tone.Ze, rhymeGroup: group });
         }
       } else if (toneInfo === "多") {
-        for (const group of rhymeGroupsForType.length > 0 ? rhymeGroupsForType : [""]) {
+        const pingGroups = raw
+          .filter((entry) => entry.dictType === this.type && entry.tone === "平")
+          .map((entry) => entry.rhymeGroup)
+          .filter(Boolean);
+        for (const group of pingGroups.length > 0 ? pingGroups : [""]) {
           toneEntries.push({ char, tone: Tone.Ping, rhymeGroup: group });
         }
         const zeGroups = raw

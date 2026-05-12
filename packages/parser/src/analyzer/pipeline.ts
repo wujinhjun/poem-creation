@@ -15,7 +15,7 @@ import { annotate, AnnotationResult } from "../phonology/index.js";
 import type { RhymeDict } from "../rhyme-dict/index.js";
 import type { CiTemplate, MeterTemplate, AnyTemplate } from "../templates/index.js";
 import { buildAstFromAnnotation, applyMeterTemplateToAst, buildLexResultFromRawLines } from "./ast.js";
-import { validateLineAgainstPattern, LineValidationSummary } from "./validation.js";
+import { validateLineAgainstPattern, applyValidationToLine, LineValidationSummary } from "./validation.js";
 import { scoreCiVariant, applyCiVariantToAst } from "./ci.js";
 import { getTemplateType } from "./templates.js";
 
@@ -180,9 +180,11 @@ export function validate(
   isCompliant: boolean;
   fullyCompliant: boolean;
 } {
-  const lineValidations = ast.lines.map((line) =>
-    validateLineAgainstPattern(line, line.expectedPattern, uniqueAmbiguities),
-  );
+  const lineValidations = ast.lines.map((line) => {
+    const summary = validateLineAgainstPattern(line, line.expectedPattern, uniqueAmbiguities);
+    applyValidationToLine(line, summary, line.expectedPattern);
+    return summary;
+  });
 
   const totalCheckable = lineValidations.reduce((sum, item) => sum + item.checkableCount, 0);
   const totalMatched = lineValidations.reduce((sum, item) => sum + item.matchedCount, 0);
