@@ -1,3 +1,5 @@
+import { HANZI_RE } from "../core/types.js";
+
 export interface LexLine {
   raw: string;
   chars: string[];
@@ -11,8 +13,6 @@ export interface LexResult {
     charsPerLine: number[];
   };
 }
-
-const HANZI_RE = /[\u4e00-\u9fff]/u;
 const LINE_END_PUNC_RE = /[，。！？；：,.!?;:]$/u;
 
 /** 中文标点分隔符 —— 诗词和词牌的通用分句模式 */

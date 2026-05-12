@@ -1,5 +1,5 @@
 import { PoemAST, ToneConstraint } from "../core/types.js";
-import { AnyTemplate, MeterTemplate } from "../templates/index.js";
+import { AnyTemplate, isMeterTemplate } from "../templates/index.js";
 
 export interface MatchResult {
   templateId: string;
@@ -10,10 +10,6 @@ export interface MatchResult {
     expected: ToneConstraint;
     actual: string;
   }>;
-}
-
-function isMeterTemplate(template: AnyTemplate): template is MeterTemplate {
-  return (template as MeterTemplate).pattern !== undefined;
 }
 
 export function matchTemplate(

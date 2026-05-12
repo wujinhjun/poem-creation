@@ -32,9 +32,13 @@ function isAmbiguousChar(
 }
 
 /**
- * 验证单个字符是否符合模板约束
+ * 验证单个字符是否符合模板约束（核心公共函数）
+ *
+ * 同时被 {@link validateChars}（单行分析路径）和
+ * {@link validateLineAgainstPattern}（整诗管线路径）调用，
+ * 保证两边的 Pass/Fail/Flexible/Unknown 判定一致。
  */
-function validateSingleChar(
+export function validateChar(
   charNode: CharNode,
   constraint: ToneConstraint | undefined,
 ): { status: CharValidationStatus; isCheckable: boolean } {
@@ -48,7 +52,7 @@ function validateSingleChar(
 
     case 'fixed': {
       if (charNode.tone === null) {
-        return { status: CharValidationStatus.Unknown, isCheckable: true };
+        return { status: CharValidationStatus.Fail, isCheckable: true };
       }
       const matches =
         charNode.tone === constraint.tone ||
@@ -58,7 +62,7 @@ function validateSingleChar(
 
     case 'rhyme':
       return {
-        status: charNode.tone !== null ? CharValidationStatus.Pass : CharValidationStatus.Unknown,
+        status: charNode.tone !== null ? CharValidationStatus.Pass : CharValidationStatus.Fail,
         isCheckable: true,
       };
 
@@ -79,7 +83,7 @@ export function validateChars(
 
   const validatedChars = chars.map((charNode, i) => {
     const constraint = expectedPattern[i];
-    const { status, isCheckable } = validateSingleChar(charNode, constraint);
+    const { status, isCheckable } = validateChar(charNode, constraint);
 
     if (isCheckable) {
       checkableCount += 1;
@@ -171,74 +175,40 @@ export function validateLineAgainstPattern(
       idx,
     );
 
-    if (!constraint) {
-      charChecks.push({
-        col: idx,
-        char: charNode.char,
-        expected: 'unknown',
-        actual: charNode.tone ?? '未知',
-        matched: true,
-        isAmbiguous: charIsAmbiguous,
-        status: CharValidationStatus.Unknown,
-      });
-      return;
+    const { status, isCheckable } = validateChar(charNode, constraint);
+
+    if (isCheckable) checkableCount += 1;
+    if (status === CharValidationStatus.Pass) matchedCount += 1;
+    if (status === CharValidationStatus.Fail) {
+      mismatchCount += 1;
+      if (!charIsAmbiguous) nonAmbiguousMismatchCount += 1;
     }
 
-    if (constraint.type === 'flexible') {
-      charChecks.push({
-        col: idx,
-        char: charNode.char,
-        expected: '中',
-        actual: charNode.tone ?? '未知',
-        matched: true,
-        isAmbiguous: charIsAmbiguous,
-        status: CharValidationStatus.Flexible,
-      });
-      return;
-    }
-
-    checkableCount += 1;
-    const matchesFixed =
-      constraint.type === 'fixed' &&
-      (charNode.tone === constraint.tone ||
-        (charNode.toneOptions ?? []).includes(constraint.tone));
-    const matchesRhyme = constraint.type === 'rhyme' && charNode.tone !== null;
-    const isMatch = matchesFixed || matchesRhyme;
-
-    if (isMatch) {
-      matchedCount += 1;
-      charChecks.push({
-        col: idx,
-        char: charNode.char,
-        expected: constraint.type === 'fixed' ? constraint.tone : '韵',
-        actual: charNode.tone ?? '未知',
-        matched: true,
-        isAmbiguous: charIsAmbiguous,
-        status: CharValidationStatus.Pass,
-      });
-      return;
-    }
-
-    mismatchCount += 1;
-    if (!charIsAmbiguous) {
-      nonAmbiguousMismatchCount += 1;
-    }
+    const matched = status !== CharValidationStatus.Fail;
     const actualTone = charNode.tone ?? '未知';
     const unresolved = actualTone === '未知';
 
     charChecks.push({
       col: idx,
       char: charNode.char,
-      expected: constraint.type === 'fixed' ? constraint.tone : '韵',
+      expected: constraint
+        ? constraint.type === 'fixed'
+          ? constraint.tone
+          : constraint.type === 'rhyme'
+            ? '韵'
+            : '中'
+        : 'unknown',
       actual: actualTone,
-      matched: false,
-      reason: unresolved
-        ? 'tone_unresolved'
-        : constraint.type === 'fixed'
-          ? 'tone_mismatch'
-          : 'rhyme_unresolved',
+      matched,
+      reason: status === CharValidationStatus.Fail
+        ? unresolved
+          ? 'tone_unresolved'
+          : constraint?.type === 'rhyme'
+            ? 'rhyme_unresolved'
+            : 'tone_mismatch'
+        : undefined,
       isAmbiguous: charIsAmbiguous,
-      status: CharValidationStatus.Fail,
+      status,
     });
   });
 

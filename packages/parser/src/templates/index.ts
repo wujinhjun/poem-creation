@@ -50,4 +50,15 @@ export interface CiTemplate {
 // ========== 联合类型 ==========
 
 import type { MeterTemplate } from "./meters.js";
+export type { MeterTemplate };
 export type AnyTemplate = MeterTemplate | CiTemplate;
+
+/** Type guard: MeterTemplate has a `pattern` field */
+export function isMeterTemplate(template: AnyTemplate): template is MeterTemplate {
+  return "pattern" in template;
+}
+
+/** Type guard: CiTemplate has `variants` instead of `pattern` */
+export function isCiTemplate(template: AnyTemplate): template is CiTemplate {
+  return !("pattern" in template);
+}

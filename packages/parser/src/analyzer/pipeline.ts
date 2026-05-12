@@ -7,12 +7,13 @@
  * @module analyzer/pipeline
  */
 
-import { PoemType } from "../core/types.js";
+import { PoemType, HANZI_RE } from "../core/types.js";
 import type { RhymeDictType, ToneAmbiguity, PoemAST } from "../core/types.js";
 import { lex, splitSentences, LexResult } from "../lexer/index.js";
 import { matchTemplate, MatchResult } from "../matcher/index.js";
 import { annotate, AnnotationResult } from "../phonology/index.js";
 import type { RhymeDict } from "../rhyme-dict/index.js";
+import { isMeterTemplate, isCiTemplate } from "../templates/index.js";
 import type { CiTemplate, MeterTemplate, AnyTemplate } from "../templates/index.js";
 import { buildAstFromAnnotation, applyMeterTemplateToAst, buildLexResultFromRawLines } from "./ast.js";
 import { validateLineAgainstPattern, applyValidationToLine, LineValidationSummary } from "./validation.js";
@@ -52,7 +53,7 @@ export interface LexStepResult {
  * 诗体用标准词法分析（含标题检测），词牌按标点分句后构造 LexResult。
  */
 export function lexStep(input: string, template: AnyTemplate): LexStepResult {
-  const isCi = !("pattern" in template);
+  const isCi = isCiTemplate(template);
   if (isCi) {
     return { lexResult: buildLexResultFromRawLines(splitSentences(input)), isCi };
   }
@@ -81,7 +82,7 @@ export function buildAst(
 // ============ 步骤4：模板匹配 ============
 
 /**
- * 模板匹配 —— 诗体比较 pattern，词牌应用指定变体。
+ * 模板匹配 —— 纯计算，不改动 AST。
  * 词牌必须由调用方指定 variantId（已在 runPipeline 预检中校验）。
  */
 export function matchStep(
@@ -89,24 +90,21 @@ export function matchStep(
   template: AnyTemplate,
   variantId?: string,
 ): { matchResults: MatchResult[]; bestMatch: MatchResult | null } {
-  if (!("pattern" in template)) {
-    const ciTemplate = template as CiTemplate;
-    const variant = ciTemplate.variants.find((v) => v.id === variantId);
+  if (isCiTemplate(template)) {
+    const variant = template.variants.find((v) => v.id === variantId);
     // variantId 有效性已在 runPipeline 预检，此处为防御
     if (!variant) return { matchResults: [], bestMatch: null };
 
     const scored = scoreCiVariant(ast.lines, variant);
-    applyCiVariantToAst(ast, ciTemplate, scored);
     const bestMatch: MatchResult = {
-      templateId: ciTemplate.id,
+      templateId: template.id,
       confidence: scored.confidence,
       toneDeviations: [],
     };
     return { matchResults: [bestMatch], bestMatch };
   }
 
-  const meterTemplate = template as MeterTemplate;
-  const matchResults = matchTemplate(ast, [meterTemplate]);
+  const matchResults = matchTemplate(ast, [template]);
   return { matchResults, bestMatch: matchResults[0] ?? null };
 }
 
@@ -117,12 +115,18 @@ export function applyTemplate(
   ast: PoemAST,
   template: AnyTemplate,
   bestMatch: MatchResult | null,
+  variantId?: string,
 ): void {
   ast.templateId = bestMatch?.templateId ?? template.id;
   ast.type = getTemplateType(ast.templateId);
 
-  if ("pattern" in template) {
-    applyMeterTemplateToAst(ast, template as MeterTemplate);
+  if (isMeterTemplate(template)) {
+    applyMeterTemplateToAst(ast, template);
+  } else if (isCiTemplate(template) && variantId) {
+    const variant = template.variants.find((v) => v.id === variantId);
+    if (variant) {
+      applyCiVariantToAst(ast, template, scoreCiVariant(ast.lines, variant));
+    }
   }
 }
 
@@ -139,7 +143,7 @@ export function resolveAmbiguities(
   bestMatch: MatchResult | null,
 ): ToneAmbiguity[] {
   const bestMeterTemplate =
-    bestMatch && "pattern" in template ? (template as MeterTemplate) : null;
+    bestMatch && isMeterTemplate(template) ? template : null;
   const filtered = _filterByBestTemplate(ambiguities, ast, bestMeterTemplate);
 
   const seenChars = new Set<string>();
@@ -199,7 +203,6 @@ export function validate(
 
 /** 计算输入中的汉字总数 */
 function countHanzi(input: string): number {
-  const HANZI_RE = /[\u4e00-\u9fff]/u;
   let count = 0;
   for (const ch of input) {
     if (HANZI_RE.test(ch)) count += 1;
@@ -217,7 +220,7 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
   const rawLines = lexResult.lines.map((l) => l.raw);
 
   // 1.5 字数预检
-  if ("pattern" in template) {
+  if (isMeterTemplate(template)) {
     const expected = template.charPerLine * template.lineCount;
     const actual = countHanzi(text);
     if (actual !== expected) {
@@ -230,8 +233,7 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
     if (!variantId) {
       throw new Error("词牌分析必须指定 variantId（变体 ID），不支持自动推断");
     }
-    const ciTemplate = template as CiTemplate;
-    const variant = ciTemplate.variants.find((v) => v.id === variantId);
+    const variant = template.variants.find((v) => v.id === variantId);
     if (!variant) {
       throw new Error(`变体不存在: ${variantId}`);
     }
@@ -242,7 +244,7 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
     const actual = countHanzi(text);
     if (actual !== expected) {
       throw new Error(
-        `字数不匹配：期望 ${expected} 字（词牌 ${ciTemplate.name}，变体 ${variant.name}），实际 ${actual} 字`,
+        `字数不匹配：期望 ${expected} 字（词牌 ${template.name}，变体 ${variant.name}），实际 ${actual} 字`,
       );
     }
   }
@@ -258,7 +260,7 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
   const { matchResults, bestMatch } = matchStep(ast, template, variantId);
 
   // 5. 应用模板
-  applyTemplate(ast, template, bestMatch);
+  applyTemplate(ast, template, bestMatch, variantId);
 
   // 6. 解析歧义
   const uniqueAmbiguities = resolveAmbiguities(annotation.ambiguities, ast, template, bestMatch);

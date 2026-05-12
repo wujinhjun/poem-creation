@@ -9,9 +9,11 @@
  * @module analyzer/stream
  */
 
+import { HANZI_RE } from "../core/types.js";
 import type { ToneConstraint } from "../core/types.js";
 import { splitSentences } from "../lexer/index.js";
 import type { RhymeDict } from "../rhyme-dict/index.js";
+import { isCiTemplate, isMeterTemplate } from "../templates/index.js";
 import type { AnyTemplate, CiTemplate, MeterTemplate } from "../templates/index.js";
 
 export interface StreamSegment {
@@ -75,15 +77,15 @@ export interface StreamAnalyzeResult {
 
 /** 从模板中提取每句的期望字数 */
 export function getSentenceCharCounts(template: AnyTemplate, variantId?: string): number[] {
-  if (!("pattern" in template)) {
-    const ciTemplate = template as CiTemplate;
-    const variant = variantId
-      ? ciTemplate.variants.find((v) => v.id === variantId)
-      : ciTemplate.variants[0];
+  if (isCiTemplate(template)) {
+    if (!variantId) {
+      throw new Error("词牌必须指定 variantId（变体 ID）");
+    }
+    const variant = template.variants.find((v) => v.id === variantId);
     if (!variant) throw new Error(`变体不存在: ${variantId}`);
     return variant.sections.flatMap((s) => s.lines.map((l) => l.charCount));
   }
-  return (template as MeterTemplate).pattern.map((p) => p.length);
+  return template.pattern.map((p) => p.length);
 }
 
 /** 按句子索引和列索引获取模板约束 */
@@ -91,17 +93,16 @@ function getExpectedConstraint(
   template: AnyTemplate,
   sentenceIndex: number,
   col: number,
-  isCi: boolean,
   variantId?: string,
 ): ToneConstraint | undefined {
-  if (isCi) {
-    const ciTemplate = template as CiTemplate;
-    const variant = variantId
-      ? ciTemplate.variants.find((v) => v.id === variantId)
-      : ciTemplate.variants[0];
+  if (isCiTemplate(template)) {
+    if (!variantId) {
+      throw new Error("词牌必须指定 variantId（变体 ID）");
+    }
+    const variant = template.variants.find((v) => v.id === variantId);
     return variant?.sections.flatMap((s) => s.lines)[sentenceIndex]?.pattern[col];
   }
-  return (template as MeterTemplate).pattern[sentenceIndex]?.[col];
+  return template.pattern[sentenceIndex]?.[col];
 }
 
 // ============ 同步核心 ============
@@ -126,7 +127,6 @@ export function analyzeStreamSync(
   dict: RhymeDict,
   options: { variantId?: string } = {},
 ): StreamAnalyzeResult {
-  const isCi = !("pattern" in template);
   const sentences = splitSentences(input);
   const sentenceCharCounts = getSentenceCharCounts(template, options.variantId);
 
@@ -147,7 +147,7 @@ export function analyzeStreamSync(
 
     for (let ci = 0; ci < sentenceChars.length; ci++) {
       const char = sentenceChars[ci];
-      const expected = getExpectedConstraint(template, si, ci, isCi, options.variantId);
+      const expected = getExpectedConstraint(template, si, ci, options.variantId);
 
       // 查韵书获取音韵
       const entries = dict.lookup(char);
@@ -228,7 +228,7 @@ export function analyzeStreamSync(
     variantId: options.variantId,
     totalSentences: sentenceCharCounts.length,
     sentenceCharCounts,
-    totalCharCount: input.replace(/\s+/g, "").length,
+    totalCharCount: [...input].filter((ch) => HANZI_RE.test(ch)).length,
     parsedSentenceCount,
     segments,
     sentenceSummaries,

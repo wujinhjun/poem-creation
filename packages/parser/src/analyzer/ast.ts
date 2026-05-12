@@ -6,7 +6,7 @@
  */
 
 import {
-  PoemType, CoupletRole, RhymeTone, CharNode,
+  PoemType, CoupletRole, RhymeTone, CharNode, HANZI_RE,
   CoupletNode,
   LineNode,
   PoemAST,
@@ -150,8 +150,6 @@ export function buildLexResultFromRawLines(
   lines: Array<{ raw: string; chars: string[]; punctuation: string }>;
   metadata: { totalLines: number; charsPerLine: number[] };
 } {
-  const HANZI_RE = /[\u4e00-\u9fff]/u;
-
   const lines = rawLines.map((raw) => ({
     raw,
     chars: [...raw].filter((ch) => HANZI_RE.test(ch)),

@@ -7,6 +7,7 @@
  */
 
 import { PoemType } from "../core/types.js";
+import { isMeterTemplate, isCiTemplate } from "../templates/index.js";
 import type {
   AnyTemplate,
   CiTemplate,
@@ -35,26 +36,24 @@ export function resolveLineTemplate(
   globalLineIndex: number,
   variantId?: string,
 ): ResolvedLineTemplate {
-  if ("pattern" in template) {
-    const meter = template as MeterTemplate;
-    const expectedPattern = meter.pattern[globalLineIndex];
+  if (isMeterTemplate(template)) {
+    const expectedPattern = template.pattern[globalLineIndex];
     if (!expectedPattern) {
-      throw new Error(`Line index ${globalLineIndex} out of range for ${meter.id}`);
+      throw new Error(`Line index ${globalLineIndex} out of range for ${template.id}`);
     }
     return {
-      templateId: meter.id,
+      templateId: template.id,
       expectedPattern,
       charCount: expectedPattern.length,
-      isRhymeLine: meter.rhymeLineIndices.includes(globalLineIndex),
+      isRhymeLine: template.rhymeLineIndices.includes(globalLineIndex),
     };
   }
 
-  const ciTemplate = template as CiTemplate;
   const variant: CiTemplateVariant | undefined = variantId
-    ? ciTemplate.variants.find((item) => item.id === variantId)
-    : ciTemplate.variants[0];
+    ? template.variants.find((item) => item.id === variantId)
+    : template.variants[0];
   if (!variant) {
-    throw new Error(`Variant not found: ${ciTemplate.id}`);
+    throw new Error(`Variant not found: ${template.id}`);
   }
 
   const allLines = variant.sections.flatMap((section, sectionIndex) =>
@@ -68,12 +67,12 @@ export function resolveLineTemplate(
 
   const entry = allLines[globalLineIndex];
   if (!entry) {
-    throw new Error(`Global line index ${globalLineIndex} out of range for ${ciTemplate.id}`);
+    throw new Error(`Global line index ${globalLineIndex} out of range for ${template.id}`);
   }
 
   const resolvedLine = entry.line;
   return {
-    templateId: ciTemplate.id,
+    templateId: template.id,
     variantId: variant.id,
     expectedPattern: resolvedLine.pattern,
     charCount: resolvedLine.charCount,

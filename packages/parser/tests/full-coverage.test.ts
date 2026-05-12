@@ -12,7 +12,7 @@ import { matchStep, resolveAmbiguities, runPipeline } from "../src/analyzer/pipe
 import { lex } from "../src/lexer/index.js";
 import { buildAstFromAnnotation, annotateLineText, applyMeterTemplateToAst } from "../src/analyzer/ast.js";
 import { validateLineAgainstPattern } from "../src/analyzer/validation.js";
-import { chooseCiVariant, applyCiVariantToAst, flattenCiVariantLines } from "../src/analyzer/ci.js";
+import { scoreCiVariant, applyCiVariantToAst, flattenCiVariantLines } from "../src/analyzer/ci.js";
 import { loadMeterTemplates } from "../src/templates/index.js";
 import type { MeterTemplate, CiTemplate, CiTemplateVariant } from "../src/templates/index.js";
 
@@ -378,9 +378,9 @@ describe("analyzeLine - 出句传入相邻句做救拗", () => {
   });
 });
 
-// ============ ci L74: scored[0] ?? null ============
+// ============ ci: scoreCiVariant 基础 ============
 
-describe("ci - scored[0] ?? null 分支", () => {
+describe("ci - scoreCiVariant 基础", () => {
   it("scoreCiVariant 不应崩溃", () => {
     const variant: CiTemplateVariant = {
       id: "v1", name: "v1",
@@ -388,10 +388,7 @@ describe("ci - scored[0] ?? null 分支", () => {
     };
     // 按字数匹配
     const line: LineNode = { raw: "abcde", chars: [], charCount: 5, globalLineIndex: 0, isRhymeLine: false, diagnostics: [] };
-    const result = chooseCiVariant(
-      { id: "test", name: "test", variants: [variant] },
-      [line],
-    );
+    const result = scoreCiVariant([line], variant);
     expect(result).not.toBeNull();
     expect(result!.confidence).toBeGreaterThan(0);
   });

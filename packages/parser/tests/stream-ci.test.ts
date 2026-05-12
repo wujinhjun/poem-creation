@@ -126,8 +126,8 @@ describe("流式解析 analyzeStream", () => {
       variantId: "水调歌头-苏轼体1",
       rhymeDictType: "cilin",
     });
-    // 纯标点被filter掉，segments为空，但totalCharCount统计原始输入
-    expect(result.totalCharCount).toBe(4);
+    // 纯标点被filter掉，segments为空，totalCharCount 只统计汉字
+    expect(result.totalCharCount).toBe(0);
     expect(result.segments.length).toBe(0);
   });
 

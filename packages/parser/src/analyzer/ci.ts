@@ -48,34 +48,6 @@ export function scoreCiVariant(lines: LineNode[], variant: CiTemplateVariant): C
 }
 
 /**
- * 选择最佳词牌变体
- *
- * @param template - 词牌模板
- * @param astLines - AST 中的行
- * @param variantId - 可选的指定变体 ID
- * @returns 评分最高的变体，或 null
- */
-export function chooseCiVariant(
-  template: CiTemplate,
-  astLines: LineNode[],
-  variantId?: string,
-): CiVariantScore | null {
-  if (template.variants.length === 0) return null;
-
-  if (variantId) {
-    const specified = template.variants.find((item) => item.id === variantId);
-    if (!specified) {
-      throw new Error(`指定变体不存在: ${variantId}`);
-    }
-    return scoreCiVariant(astLines, specified);
-  }
-
-  const scored = template.variants.map((item) => scoreCiVariant(astLines, item));
-  scored.sort((a, b) => b.confidence - a.confidence);
-  return scored[0] ?? null;
-}
-
-/**
  * 将词牌变体应用到 AST
  */
 export function applyCiVariantToAst(

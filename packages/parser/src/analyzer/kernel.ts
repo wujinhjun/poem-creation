@@ -16,6 +16,7 @@ import type {
   ToneAmbiguity,
 } from "../core/types.js";
 import type { RhymeDict } from "../rhyme-dict/index.js";
+import { isMeterTemplate } from "../templates/index.js";
 import type { AnyTemplate, MeterTemplate } from "../templates/index.js";
 import { analyzeRescue } from "../rescue/index.js";
 import { annotateLineText } from "./ast.js";
@@ -152,8 +153,7 @@ export function analyzeLineSync(
 
   // 拗救分析（仅诗体）
   let rescues: import("../core/types.js").RescueDetail[] = [];
-  if ("pattern" in template) {
-    const asMeter = template as MeterTemplate;
+  if (isMeterTemplate(template)) {
     const isUpper = context.globalLineIndex % 2 === 0;
 
     const pairText = isUpper ? context.adjacentLines?.next : context.adjacentLines?.previous;
@@ -164,7 +164,7 @@ export function analyzeLineSync(
         const tempCouplet = isUpper
           ? { upper: line, lower: pairLineNode, coupletIndex: pairIndex, requiresDuizhang: false, diagnostics: [] }
           : { upper: pairLineNode, lower: line, coupletIndex: pairIndex, requiresDuizhang: false, diagnostics: [] };
-        rescues = analyzeRescue(tempCouplet, asMeter, dict);
+        rescues = analyzeRescue(tempCouplet, template, dict);
       }
     }
   }

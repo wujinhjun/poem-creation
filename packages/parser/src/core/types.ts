@@ -11,6 +11,9 @@
  * - Ze: 仄声（上去入）
  * - Unknown: 未知
  */
+/** 汉字匹配：基本多文种平面（U+4E00–9FFF）+ CJK 扩展 A（U+3400–4DBF） */
+export const HANZI_RE = /[\u3400-\u4dbf\u4e00-\u9fff]/u;
+
 export enum Tone {
   Ping = "平",
   Ze = "仄",

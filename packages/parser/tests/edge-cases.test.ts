@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getTemplateType, resolveLineTemplate } from "../src/analyzer/templates.js";
 import { validateLineAgainstPattern, applyRescueMarks, validateRhyme } from "../src/analyzer/validation.js";
-import { scoreCiVariant, chooseCiVariant, flattenCiVariantLines } from "../src/analyzer/ci.js";
+import { scoreCiVariant, flattenCiVariantLines } from "../src/analyzer/ci.js";
 import { splitSentences, lex } from "../src/lexer/index.js";
 import { annotateLineText, buildLexResultFromRawLines } from "../src/analyzer/ast.js";
 import { buildAst, annotateStep, lexStep } from "../src/analyzer/pipeline.js";
@@ -309,30 +309,15 @@ describe("ci - scoreCiVariant", () => {
   });
 });
 
-describe("ci - chooseCiVariant", () => {
-  it("无变体时应返回 null", () => {
-    const template: CiTemplate = {
-      id: "empty-tune",
-      name: "空调",
-      variants: [],
+describe("ci - scoreCiVariant 边角", () => {
+  it("空变体应返回置信度 0", () => {
+    const variant: CiTemplateVariant = {
+      id: "empty-variant",
+      name: "空变体",
+      sections: [],
     };
-    const result = chooseCiVariant(template, []);
-    expect(result).toBeNull();
-  });
-
-  it("指定不存在的变体应抛出错误", () => {
-    const template: CiTemplate = {
-      id: "test-tune",
-      name: "测试调",
-      variants: [
-        {
-          id: "test-tune-v1",
-          name: "变体1",
-          sections: [{ name: "上阕", lines: [] }],
-        },
-      ],
-    };
-    expect(() => chooseCiVariant(template, [], "不存在的变体")).toThrow("指定变体不存在");
+    const result = scoreCiVariant([], variant);
+    expect(result.confidence).toBe(0);
   });
 });
 
@@ -411,22 +396,17 @@ describe("ast - buildLexResultFromRawLines", () => {
 
 // ============ ci 模块补充 ============
 
-describe("ci - chooseCiVariant 指定变体成功路径", () => {
+describe("ci - scoreCiVariant 指定变体", () => {
   it("指定存在的变体应返回其评分结果", () => {
     const var1: CiTemplateVariant = {
       id: "test-tune-v1",
       name: "变体1",
       sections: [{ name: "上阕", lines: [{ charCount: 5, pattern: [], isRhymeLine: false }] }],
     };
-    const template: CiTemplate = {
-      id: "test-tune",
-      name: "测试调",
-      variants: [var1],
-    };
     const astLines = [{ raw: "测试一二三四五", chars: [{ char: "测", tone: null, position: { line: 0, col: 0, global: 0 } }], charCount: 5, globalLineIndex: 0, isRhymeLine: false, diagnostics: [] }];
-    const result = chooseCiVariant(template, astLines, "test-tune-v1");
+    const result = scoreCiVariant(astLines, var1);
     expect(result).not.toBeNull();
-    expect(result!.variant.id).toBe("test-tune-v1");
+    expect(result.variant.id).toBe("test-tune-v1");
   });
 });
 
