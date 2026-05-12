@@ -23,4 +23,11 @@ export type { PipelineInput, PipelineOutput } from "./pipeline.js";
 
 export type { MatchResult } from "../matcher/index.js";
 export type { LineValidationResult } from "../core/types.js";
+export { fuzzyMatchCi } from "./fuzzy-match.js";
+export type {
+  FuzzyMatchResult,
+  FuzzyLineDetail,
+  FuzzyMatchOptions,
+} from "./fuzzy-match.js";
+
 export type { AnyTemplate } from "../templates/index.js";
