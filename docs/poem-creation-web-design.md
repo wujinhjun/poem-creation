@@ -209,7 +209,7 @@ Web 端不直接把状态写死在组件里，而是通过 `PoemCreationDraftSto
 
 编辑器分为两层：
 
-- 纯逻辑层：`packages/shared/src/editor-core.ts`
+- 纯逻辑层：`packages/shared/src/editor/`
 - 平台 UI 层：Web 的 `Composer.tsx`，后续 RN 可以实现自己的 Composer UI。
 
 `editor-core` 不依赖 DOM、React 或浏览器 API，包含：
@@ -230,6 +230,55 @@ Web 端只负责：
 
 RN 版本应复用 `editor-core`，只替换字位组件、TextInput、键盘事件和样式。
 
+## React Native 初始化
+
+RN 客户端包位于 `apps/poem-creation-app`，使用 Expo managed workflow 初始化，不在仓库里直接生成 `ios/` 和 `android/` 原生目录。这样当前阶段可以先验证同构编辑器、数据模型和交互方案，真正需要原生配置时再执行 prebuild。
+
+包初始化策略：
+
+- 包名：`poem-creation-app`，避免和旧占位 `apps/rn` 的 `@poem/rn` 重名。
+- Expo SDK：使用 SDK 54 稳定组合，对应 React Native 0.81、React 19.1。
+- 入口：`index.ts` 通过 `registerRootComponent` 注册 `src/App.tsx`。
+- Metro：`metro.config.js` 增加 workspace root watch 和 node_modules 查找路径，让 pnpm workspace 中的 `@poem/*` 包可被 RN 解析。
+- TypeScript：`tsconfig.json` 继承 `expo/tsconfig.base`，开启 strict，并保留 `@/*` 到 `src/*` 的路径别名。
+
+RN 页面先保持轻量壳，不直接复制 Web 页面状态树。编辑器交互走 RN 专属的 `TextInput` 和触控字格，但底层写入逻辑继续复用共享编辑器核心。
+
+RN 编辑器当前已经从占位演示推进为可输入组件：
+
+- `components/RnComposer.tsx` 负责触控字格、当前格 `TextInput`、补位写入、删除、上一格/下一格和完成回调。
+- 输入归一化放在 `utils/editorInput.ts`，RN 侧只把已确认的汉字写入格子，避免拼音组合串提前落格。
+- iOS 拼音输入期间隐藏原生 `TextInput` caret，使用格子内固定视觉光标；汉字确认前光标不随拼音串移动，确认后才跳到下一字位。
+- 写入、pattern signature、空 grid、多行粘贴仍复用 `@poem/shared`，RN UI 不重新实现编辑器核心算法。
+- RN Composer 不在 mount 或父组件重渲染时主动把初始 grid 回写给父级，只在用户写入、粘贴或删除后触发 `onChange`。这样避免父级 `setDraft({ chars })` 造成编辑器反复重渲染并触发 maximum update depth。
+
+RN 不追求和 Web 完全一致。移动端能力会更强，所以当前按原生工作流拆为：
+
+- `HomeScreen`：创作首页，只放开始新作、作品夹和设置入口。
+- `EntryScreen`：入口选择面板，选择体裁、模板、变体和韵书；诗默认平水，词默认词林，选中模板后自动选第一个变体。
+- `WorksScreen`：作品夹，支持搜索、打开、删除本机草稿。
+- `SettingsScreen`：用户设置，目前维护默认署名。
+- `EditorScreen`：正文编辑器，标题、题记、署名和字格放在同一张纸面上，分析结果也在编辑页内显示。
+
+RN 本地持久化通过 `PoemCreationDraftStore` 抽象，不让页面直接依赖 AsyncStorage。当前实现是 `AsyncStorageDraftStore`：
+
+- 草稿索引：`poem-creation-app:draft-index`。
+- 当前草稿：`poem-creation-app:active-draft-id`。
+- 草稿实体：`poem-creation-app:draft:{id}`。
+
+后续如果接 SQLite、文件存储或后端同步，只需要新增 store 实现。RN UI 层保持面对同一套草稿接口。
+
+RN 侧已经接入正式模板、变体、韵书和分析：
+
+- 模板目录来自 `@poem/parser/catalog`。
+- 诗体 pattern 复用 `loadMeterTemplates()`。
+- 词牌完整 pattern 静态打包 `packages/parser/data/ci-tunes-bundle.json`，不依赖 Web 的 `/data` 路径。
+- 入口模板搜索展示完整候选数量，不默认截断词牌；搜索框采用非受控 `TextInput` 接收输入，避免中文 IME 组合过程中被 state 回写打断。
+- 韵书静态打包 `rhyme-char-index.json` 和 `tone-lookup.json`，由 `createAppDict()` 构造 RN 端 `RhymeDict`。
+- 分析调用 `@poem/parser/kernel` 的 `analyzeSync()`，和 Web 共用同一内核。
+
+当前 RN Composer 覆盖手机触控主路径。外接键盘方向键暂不做，移动端优先用触格、上一格、下一格和删除按钮完成定位。
+
 ## 技术实现
 
 主要文件：
@@ -249,7 +298,12 @@ RN 版本应复用 `editor-core`，只替换字位组件、TextInput、键盘事
 - `apps/poem-creation-web/src/utils/settings.ts`：用户设置读取和保存。
 - `apps/poem-creation-web/src/utils/rhymeDict.ts`：浏览器端韵书封装。
 - `apps/poem-creation-web/src/persist/`：Web 草稿持久化接口与 IndexedDB 实现。
-- `packages/shared/src/editor-core.ts`：Web/RN 可复用的编辑器纯逻辑。
+- `packages/shared/src/editor/`：Web/RN 可复用的编辑器纯逻辑。
+- `apps/poem-creation-app/`：React Native/Expo 客户端初始化包。
+- `apps/poem-creation-app/src/components/RnComposer.tsx`：RN 字格编辑器，复用共享编辑器核心。
+- `apps/poem-creation-app/src/persist/`：RN 草稿持久化接口与 AsyncStorage 实现。
+- `apps/poem-creation-app/src/utils/templates.ts`：RN 模板、词牌视觉分组和变体文案。
+- `apps/poem-creation-app/src/utils/rhymeDict.ts`：RN 端韵书封装。
 - `apps/poem-creation-web/src/style.css`：全局视觉和字位输入样式。
 
 拆分原则：

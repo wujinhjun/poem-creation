@@ -13,6 +13,7 @@ pnpm --filter poem-creation-app typecheck
 
 ## 当前边界
 
-- 原生端只放轻量壳和同构编辑器占位，不直接复制 Web 页面代码。
-- 编辑器纯逻辑从 `@poem/shared` 复用。
-- 持久化、路由、正式 Composer UI 后续按 RN 平台能力单独实现。
+- 首页、作品夹、设置页、入口选择面板和编辑器已拆分。
+- 编辑器纯逻辑从 `@poem/shared` 复用，RN 侧使用触控字格和原生 `TextInput`。
+- 本地持久化通过 `PoemCreationDraftStore` 抽象，当前实现为 AsyncStorage。
+- 模板、韵书和校验已接入 parser 数据与 kernel；外接键盘不作为移动端主路径。
