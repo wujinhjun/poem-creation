@@ -1,58 +1,29 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { listAllTemplates, findCiTune } from '@poem/parser/catalog';
-import { loadMeterTemplates, Tone } from '@poem/parser/kernel';
-import type { ToneConstraint, CiTemplate } from '@poem/parser/kernel';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { RhymeDictType } from '@poem/parser/kernel';
-import { createBrowserDict } from './utils/rhymeDict.ts';
-import type { RhymeDict } from '@poem/parser/kernel';
 import { IndexedDbDraftStore } from './persist';
 import type { PoemCreationDraft, PoemCreationDraftSummary } from './persist';
 import type { Genre } from './constants/poem';
+import { AppNotice } from './components/AppNotice';
 import { EntryPage } from './components/EntryPage';
 import { EditorPage } from './components/EditorPage';
 import { SettingsPage } from './components/SettingsPage';
-import type { SelectOption } from './components/CustomSelect';
+import { useBrowserDict } from './hooks/useBrowserDict';
+import { useEditorPattern } from './hooks/useEditorPattern';
+import { useEntrySelection } from './hooks/useEntrySelection';
+import { formatAnalysisReport } from './utils/analysisReport';
 import { createEmptyDraft, normalizeDraft } from './utils/draft';
+import { downloadDraftArchive, readDraftArchive } from './utils/draftArchive';
 import { copyText, formatPoemText } from './utils/exportText';
-import {
-  ciPatternForEditor,
-  inferCiRhymeTone,
-  loadCiBundle,
-} from './utils/ciTemplate';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
 import {
   loadUserSettings,
   saveUserSettings,
 } from './utils/settings';
 import type { UserSettings } from './utils/settings';
+import { allTemplates } from './utils/templateSelection';
 import './style.css';
 
-const allTemplates = listAllTemplates();
-const meterMap = new Map(loadMeterTemplates().map((t) => [t.id, t]));
 const draftStore = new IndexedDbDraftStore();
-
-function pairLineGroups(pattern: ToneConstraint[][]): number[][] {
-  const groups: number[][] = [];
-  for (let index = 0; index < pattern.length; index += 2) {
-    groups.push(
-      index + 1 < pattern.length ? [index, index + 1] : [index],
-    );
-  }
-  return groups;
-}
-
-function variantSummary(genre: Genre, tuneName: string, variantId: string): string {
-  if (!variantId) return '';
-  const template = allTemplates.find(
-    (entry) => entry.genre === genre && entry.name === tuneName,
-  );
-  const variant = template?.variants.find((item) => item.id === variantId);
-  if (!variant) return variantId;
-  if (genre === 'meter') {
-    return `${variant.rhymeFirst ? '首句押韵' : '首句不押韵'} · ${variant.author}`;
-  }
-  return `${variant.author} · ${variant.sketch}`;
-}
 
 export default function App() {
   const [viewMode, setViewMode] = useState<'entry' | 'editor' | 'settings'>(
@@ -79,23 +50,39 @@ export default function App() {
   const [activeDraftId, setActiveDraftId] = useState('');
   const [draftRevision, setDraftRevision] = useState(0);
   const [drafts, setDrafts] = useState<PoemCreationDraftSummary[]>([]);
-  const [dictState, setDictState] = useState<{
-    type: RhymeDictType;
-    dict: RhymeDict;
-  } | null>(null);
   const [chars, setChars] = useState<string[][]>([]);
   const [analyzeResult, setAnalyzeResult] = useState('');
+  const [appError, setAppError] = useState('');
   const [exportStatus, setExportStatus] = useState('');
   const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [persistReady, setPersistReady] = useState(false);
-  const [ciPatternState, setCiPatternState] = useState<{
-    key: string;
-    pattern: ToneConstraint[][];
-    visualLineGroups: number[][];
-    sectionBreakBeforeGroups: number[];
-  } | null>(null);
-  const ciBundleRef = useRef<Record<string, CiTemplate> | null>(null);
-  const dict = dictState?.type === rhymeType ? dictState.dict : null;
+  const { dict, dictError } = useBrowserDict(rhymeType);
+  const {
+    pattern,
+    expectedRhymeTone,
+    visualLineGroups,
+    sectionBreakBeforeGroups,
+    selectedVariantLabel,
+    analysisTemplate,
+  } = useEditorPattern({
+    genre,
+    selectedTune,
+    selectedVariant,
+    onError: setAppError,
+  });
+  const {
+    templateOptions,
+    variantOptions,
+    handleEntryGenreChange,
+    handleEntryTuneChange,
+  } = useEntrySelection({
+    entryGenre,
+    entrySelectedTune,
+    setEntryGenre,
+    setEntrySelectedTune,
+    setEntrySelectedVariant,
+    setEntryRhymeType,
+  });
 
   // Applying a draft is the only place that hydrates editor state from storage.
   // Keeping it centralized prevents route/list actions from drifting apart.
@@ -195,6 +182,11 @@ export default function App() {
 
   const handleDeleteDraft = useCallback(
     async (id: string) => {
+      const target = drafts.find((draft) => draft.id === id);
+      const label = target?.title || target?.selectedTune || '这首作品';
+      if (!window.confirm(`确定删除「${label}」吗？此操作不可恢复。`)) {
+        return;
+      }
       await draftStore.deleteDraft(id);
       const remaining = await draftStore.listDrafts();
       setDrafts(remaining);
@@ -221,7 +213,7 @@ export default function App() {
       pushRoute({ mode: 'entry' });
       await refreshDraftList();
     },
-    [activeDraftId, applyDraft, refreshDraftList, viewMode],
+    [activeDraftId, applyDraft, drafts, refreshDraftList, viewMode],
   );
 
   useEffect(() => {
@@ -276,8 +268,10 @@ export default function App() {
         }
         setViewMode('entry');
         if (alive) setPersistReady(true);
-      } catch {
+      } catch (error: unknown) {
         if (!alive) return;
+        const message = error instanceof Error ? error.message : String(error);
+        setAppError(`草稿加载失败：${message}`);
         applyDraft(createEmptyDraft());
         setPersistReady(true);
       }
@@ -336,7 +330,13 @@ export default function App() {
         chars,
         updatedAt: new Date().toISOString(),
       };
-      void draftStore.saveDraft(draft).then(refreshDraftList);
+      void draftStore
+        .saveDraft(draft)
+        .then(refreshDraftList)
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          setAppError(`草稿保存失败：${message}`);
+        });
     }, 350);
 
     return () => window.clearTimeout(timer);
@@ -380,154 +380,26 @@ export default function App() {
     saveUserSettings(settings);
   }, []);
 
-  // 加载浏览器韵书
-  useEffect(() => {
-    let alive = true;
-    createBrowserDict(rhymeType).then((loadedDict) => {
-      if (alive) setDictState({ type: rhymeType, dict: loadedDict });
-    });
-    return () => {
-      alive = false;
-    };
-  }, [rhymeType]);
-
-  const meterOptions = useMemo(
-    () => allTemplates.filter((t) => t.genre === 'meter'),
-    [],
-  );
-  const ciOptions = useMemo(
-    () => allTemplates.filter((t) => t.genre === 'ci'),
-    [],
-  );
-  const entryCurrentTemplates =
-    entryGenre === 'meter' ? meterOptions : ciOptions;
-  const entrySelectedCatalog = entryCurrentTemplates.find(
-    (t) => t.name === entrySelectedTune,
-  );
-  const entryTuneDetail =
-    entryGenre === 'ci' ? findCiTune(entrySelectedTune) : undefined;
-  const editorTuneDetail =
-    genre === 'ci' ? findCiTune(selectedTune) : undefined;
-  const selectedCiVariant = editorTuneDetail?.variants.find(
-    (v) => v.id === selectedVariant,
-  );
-  const templateOptions = useMemo<SelectOption<string>[]>(
-    () =>
-      entryCurrentTemplates.map((t) => ({
-        value: t.name,
-        label: `${t.name}（${t.variantCount} 体）`,
-      })),
-    [entryCurrentTemplates],
-  );
-  const variantOptions = useMemo<SelectOption<string>[]>(() => {
-    if (entryGenre === 'ci' && entryTuneDetail) {
-      return entryTuneDetail.variants.map((v) => ({
-        value: v.id,
-        label: `${v.author} · ${v.sketch}（${v.charCount}字）`,
-      }));
-    }
-
-    if (entryGenre === 'meter' && entrySelectedCatalog) {
-      return entrySelectedCatalog.variants.map((v) => ({
-        value: v.id,
-        label: `${v.rhymeFirst ? '首句押韵' : '首句不押韵'} · ${v.author}`,
-      }));
-    }
-
-    return [];
-  }, [entryGenre, entrySelectedCatalog, entryTuneDetail]);
-
-  // ci 变体变化时加载完整格律
-  useEffect(() => {
-    if (genre !== 'ci' || !selectedVariant) return;
-    const key = `${selectedTune}::${selectedVariant}`;
-    let alive = true;
-    (async () => {
-      const bundle = await loadCiBundle();
-      ciBundleRef.current = bundle;
-      const tune = bundle[selectedTune];
-      if (!tune) return;
-      const patternForEditor = ciPatternForEditor(tune, selectedVariant);
-      if (alive)
-        setCiPatternState({
-          key,
-          pattern: patternForEditor.lines,
-          visualLineGroups: patternForEditor.rhymeGroups,
-          sectionBreakBeforeGroups: patternForEditor.sectionBreaks,
-        });
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [genre, selectedTune, selectedVariant]);
-
-  // 获取当前模板的 pattern
-  const pattern: ToneConstraint[][] = useMemo(() => {
-    if (!selectedVariant) return [];
-    if (genre === 'meter') {
-      const t = meterMap.get(selectedVariant);
-      return t?.pattern ?? [];
-    }
-    const key = `${selectedTune}::${selectedVariant}`;
-    return ciPatternState?.key === key ? ciPatternState.pattern : [];
-  }, [genre, selectedTune, selectedVariant, ciPatternState]);
-
-  const expectedRhymeTone = useMemo(() => {
-    if (genre === 'meter') return Tone.Ping;
-    if (!selectedCiVariant) return null;
-    return inferCiRhymeTone(
-      `${selectedCiVariant.author} ${selectedCiVariant.sketch}`,
-    );
-  }, [genre, selectedCiVariant]);
-
-  const visualLineGroups = useMemo(() => {
-    if (!selectedVariant) return [];
-    if (genre === 'meter') return pairLineGroups(pattern);
-    const key = `${selectedTune}::${selectedVariant}`;
-    return ciPatternState?.key === key
-      ? ciPatternState.visualLineGroups
-      : [];
-  }, [ciPatternState, genre, pattern, selectedTune, selectedVariant]);
-
-  const sectionBreakBeforeGroups = useMemo(() => {
-    if (genre !== 'ci' || !selectedVariant) return [];
-    const key = `${selectedTune}::${selectedVariant}`;
-    return ciPatternState?.key === key
-      ? ciPatternState.sectionBreakBeforeGroups
-      : [];
-  }, [ciPatternState, genre, selectedTune, selectedVariant]);
-
-  const selectedVariantLabel = useMemo(
-    () => variantSummary(genre, selectedTune, selectedVariant),
-    [genre, selectedTune, selectedVariant],
-  );
-
   const handleAnalyze = useCallback(
     async (sourceChars = chars) => {
       if (!dict || !selectedVariant || !pattern.length) return;
       const text = sourceChars.map((row) => row.join('')).join('\n');
       if (!text.trim()) return;
 
-      const tpl =
-        genre === 'meter'
-          ? meterMap.get(selectedVariant)
-          : ciBundleRef.current?.[selectedTune];
-      if (!tpl) return;
+      if (!analysisTemplate) return;
 
       try {
         const { analyzeSync } = await import('@poem/parser/kernel');
-        const r = analyzeSync(text, tpl, dict, { variantId: selectedVariant });
-        setAnalyzeResult(
-          `合律率: ${(r.complianceRate * 100).toFixed(0)}% | ` +
-            `完全合律: ${r.fullyCompliant ? '是' : '否'} | ` +
-            `多音字: ${r.ambiguities.map((a) => a.char).join(', ') || '无'}`,
-        );
+        const r = analyzeSync(text, analysisTemplate, dict, {
+          variantId: selectedVariant,
+        });
+        setAnalyzeResult(formatAnalysisReport(r));
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
         setAnalyzeResult(`错误: ${message}`);
       }
     },
-    [dict, selectedVariant, chars, pattern, genre, selectedTune],
+    [analysisTemplate, chars, dict, pattern, selectedVariant],
   );
 
   const exportPreviewText = useMemo(
@@ -536,33 +408,22 @@ export default function App() {
         title,
         author,
         description,
-        genre,
         selectedTune,
         chars,
         pattern,
+        visualLineGroups,
+        sectionBreakBeforeGroups,
       }),
-    [author, chars, description, genre, pattern, selectedTune, title],
-  );
-
-  const handleEntryGenreChange = useCallback((nextGenre: Genre) => {
-    setEntryGenre(nextGenre);
-    setEntrySelectedTune('');
-    setEntrySelectedVariant('');
-    setEntryRhymeType(
-      nextGenre === 'meter' ? RhymeDictType.Pingshui : RhymeDictType.Cilin,
-    );
-  }, []);
-
-  const handleEntryTuneChange = useCallback(
-    (nextTune: string) => {
-      setEntrySelectedTune(nextTune);
-      const templates = entryGenre === 'meter' ? meterOptions : ciOptions;
-      const nextVariant =
-        templates.find((template) => template.name === nextTune)?.variants[0]
-          ?.id ?? '';
-      setEntrySelectedVariant(nextVariant);
-    },
-    [ciOptions, entryGenre, meterOptions],
+    [
+      author,
+      chars,
+      description,
+      pattern,
+      sectionBreakBeforeGroups,
+      selectedTune,
+      title,
+      visualLineGroups,
+    ],
   );
 
   const handleExportText = useCallback(async () => {
@@ -571,70 +432,108 @@ export default function App() {
     window.setTimeout(() => setExportStatus(''), 1800);
   }, [exportPreviewText]);
 
+  const handleExportDrafts = useCallback(async () => {
+    const fullDrafts = await Promise.all(
+      drafts.map((draft) => draftStore.loadDraft(draft.id)),
+    );
+    downloadDraftArchive(
+      fullDrafts.filter((draft): draft is PoemCreationDraft => Boolean(draft)),
+    );
+  }, [drafts]);
+
+  const handleImportDrafts = useCallback(
+    async (file: File) => {
+      try {
+        const importedDrafts = await readDraftArchive(file);
+        await Promise.all(importedDrafts.map((draft) => draftStore.saveDraft(draft)));
+        await refreshDraftList();
+        setAppError(`已导入 ${importedDrafts.length} 首作品`);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        setAppError(`导入失败：${message}`);
+      }
+    },
+    [refreshDraftList],
+  );
+
+  const errorMessage = dictError || appError;
+
   if (viewMode === 'settings') {
     return (
-      <SettingsPage
-        settings={userSettings}
-        onSettingsChange={handleSettingsChange}
-        onReturn={() => void handleReturnToEntry()}
-      />
+      <>
+        <AppNotice message={errorMessage} />
+        <SettingsPage
+          settings={userSettings}
+          onSettingsChange={handleSettingsChange}
+          onReturn={() => void handleReturnToEntry()}
+        />
+      </>
     );
   }
 
   if (viewMode === 'entry') {
     return (
-      <EntryPage
-        genre={entryGenre}
-        selectedTune={entrySelectedTune}
-        selectedVariant={entrySelectedVariant}
-        rhymeType={entryRhymeType}
-        templateOptions={templateOptions}
-        variantOptions={variantOptions}
-        drafts={drafts}
-        onGenreChange={handleEntryGenreChange}
-        onTuneChange={handleEntryTuneChange}
-        onVariantChange={setEntrySelectedVariant}
-        onRhymeTypeChange={setEntryRhymeType}
-        onStartDraft={() => void handleNewDraft()}
-        onOpenDraft={(id) => void handleOpenDraft(id)}
-        onDeleteDraft={(id) => void handleDeleteDraft(id)}
-        onOpenSettings={() => void handleOpenSettings()}
-      />
+      <>
+        <AppNotice message={errorMessage} />
+        <EntryPage
+          genre={entryGenre}
+          selectedTune={entrySelectedTune}
+          selectedVariant={entrySelectedVariant}
+          rhymeType={entryRhymeType}
+          templateOptions={templateOptions}
+          variantOptions={variantOptions}
+          drafts={drafts}
+          onGenreChange={handleEntryGenreChange}
+          onTuneChange={handleEntryTuneChange}
+          onVariantChange={setEntrySelectedVariant}
+          onRhymeTypeChange={setEntryRhymeType}
+          onStartDraft={() => void handleNewDraft()}
+          onOpenDraft={(id) => void handleOpenDraft(id)}
+          onDeleteDraft={(id) => void handleDeleteDraft(id)}
+          onExportDrafts={() => void handleExportDrafts()}
+          onImportDrafts={(file) => void handleImportDrafts(file)}
+          onOpenSettings={() => void handleOpenSettings()}
+        />
+      </>
     );
   }
 
   return (
-    <EditorPage
-      activeDraftId={activeDraftId}
-      draftRevision={draftRevision}
-      genre={genre}
-      selectedTune={selectedTune}
-      selectedVariant={selectedVariant}
-      selectedVariantLabel={selectedVariantLabel}
-      rhymeType={rhymeType}
-      title={title}
-      description={description}
-      author={author}
-      chars={chars}
-      dict={dict}
-      pattern={pattern}
-      expectedRhymeTone={expectedRhymeTone}
-      visualLineGroups={visualLineGroups}
-      sectionBreakBeforeGroups={sectionBreakBeforeGroups}
-      analyzeResult={analyzeResult}
-      exportStatus={exportStatus}
-      exportPreviewText={exportPreviewText}
-      exportPreviewOpen={exportPreviewOpen}
-      persistReady={persistReady}
-      onTitleChange={setTitle}
-      onDescriptionChange={setDescription}
-      onAuthorChange={setAuthor}
-      onCharsChange={setChars}
-      onAnalyze={(nextChars) => void handleAnalyze(nextChars)}
-      onOpenExportPreview={() => setExportPreviewOpen(true)}
-      onCloseExportPreview={() => setExportPreviewOpen(false)}
-      onCopyExportText={() => void handleExportText()}
-      onReturn={() => void handleReturnToEntry()}
-    />
+    <>
+      <AppNotice message={errorMessage} />
+      <EditorPage
+        activeDraftId={activeDraftId}
+        draftRevision={draftRevision}
+        genre={genre}
+        selectedTune={selectedTune}
+        selectedVariant={selectedVariant}
+        selectedVariantLabel={selectedVariantLabel}
+        rhymeType={rhymeType}
+        title={title}
+        description={description}
+        author={author}
+        chars={chars}
+        dict={dict}
+        pattern={pattern}
+        expectedRhymeTone={expectedRhymeTone}
+        visualLineGroups={visualLineGroups}
+        sectionBreakBeforeGroups={sectionBreakBeforeGroups}
+        analyzeResult={analyzeResult}
+        errorMessage={errorMessage}
+        exportStatus={exportStatus}
+        exportPreviewText={exportPreviewText}
+        exportPreviewOpen={exportPreviewOpen}
+        persistReady={persistReady}
+        onTitleChange={setTitle}
+        onDescriptionChange={setDescription}
+        onAuthorChange={setAuthor}
+        onCharsChange={setChars}
+        onAnalyze={(nextChars) => void handleAnalyze(nextChars)}
+        onOpenExportPreview={() => setExportPreviewOpen(true)}
+        onCloseExportPreview={() => setExportPreviewOpen(false)}
+        onCopyExportText={() => void handleExportText()}
+        onReturn={() => void handleReturnToEntry()}
+      />
+    </>
   );
 }

@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ClipboardEvent, KeyboardEvent } from 'react';
 import {
   createEditorPatternSignature,
   createEmptyEditorGrid,
-  lineEndsWithRhyme,
   normalizeEditorInput,
   pasteEditorTextAt,
   writeEditorCharsAt,
@@ -11,30 +9,13 @@ import {
 import { Tone } from '@poem/parser/kernel';
 import type { ToneConstraint } from '@poem/parser/kernel';
 import type { RhymeDict } from '@poem/parser/kernel';
-
-/** 约束 → 显示标签 */
-function constraintLabel(c: ToneConstraint): string {
-  if (c.type === 'flexible') return '中';
-  if (c.type === 'rhyme') return '韵';
-  return c.tone === Tone.Ping ? '平' : '仄';
-}
-
-function rhymeToneLabel(tone: Tone): string {
-  return tone === Tone.Ping ? '平韵' : '仄韵';
-}
-
-function linePunctuation(patternLine: ToneConstraint[] | undefined): string {
-  return lineEndsWithRhyme(patternLine) ? '。' : '，';
-}
-
-/** 单个字位 */
-type SlotStatus = 'empty' | 'pass' | 'fail' | 'pending';
-
-type SlotEvaluation = {
-  status: SlotStatus;
-  label: string;
-  title: string;
-};
+import { CharSlot } from './components/composer/CharSlot';
+import type { SlotEvaluation } from './components/composer/types';
+import {
+  constraintLabel,
+  linePunctuation,
+  rhymeToneLabel,
+} from './components/composer/utils';
 
 type GridState = {
   signature: string;
@@ -48,65 +29,6 @@ function createInitialGrid(
   if (!initialChars) return createEmptyEditorGrid(pattern);
   return pattern.map((row, lineIdx) =>
     row.map((_, colIdx) => initialChars[lineIdx]?.[colIdx] ?? ''),
-  );
-}
-
-function CharSlot({
-  constraint,
-  value,
-  evaluation,
-  active,
-  draft,
-  inputRef,
-  onDraftChange,
-  onCompositionStart,
-  onCompositionEnd,
-  onKeyDown,
-  onPaste,
-  onSelect,
-}: {
-  constraint: ToneConstraint;
-  value: string;
-  evaluation: SlotEvaluation;
-  active: boolean;
-  draft: string;
-  inputRef: (input: HTMLInputElement | null) => void;
-  onDraftChange: (value: string) => void;
-  onCompositionStart: () => void;
-  onCompositionEnd: (value: string) => void;
-  onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
-  onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
-  onSelect: () => void;
-}) {
-  return (
-    <span className='char-slot'>
-      <span className={`slot-label slot-label-${constraint.type}`}>
-        {evaluation.label}
-      </span>
-      <button
-        type='button'
-        aria-label={evaluation.title}
-        className={`char-input status-${evaluation.status}${active ? ' is-active' : ''}`}
-        title={evaluation.title}
-        onClick={onSelect}
-      >
-        {value}
-      </button>
-      {active && (
-        <input
-          ref={inputRef}
-          className={`active-cell-editor${value ? ' after-char' : ''}`}
-          value={draft}
-          onChange={(event) => onDraftChange(event.currentTarget.value)}
-          onCompositionStart={onCompositionStart}
-          onCompositionEnd={(event) =>
-            onCompositionEnd(event.currentTarget.value)
-          }
-          onKeyDown={onKeyDown}
-          onPaste={onPaste}
-        />
-      )}
-    </span>
   );
 }
 
