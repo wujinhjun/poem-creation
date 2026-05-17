@@ -7,12 +7,13 @@
  * @module templates
  */
 
-import type { ToneConstraint, RhymeTone } from "../core/types.js";
+import type { ToneConstraint, RhymeTone } from '../core/types.js';
 
 // ========== 格律模板 ==========
 
-export type { MeterTemplate } from "./meters.js";
-export { loadMeterTemplates } from "./meters.js";
+import type { MeterTemplate } from './meters.js';
+
+export { loadMeterTemplates } from './meters.js';
 
 // ========== 词牌模板 ==========
 
@@ -35,7 +36,7 @@ export interface CiTemplateVariant {
   sketch?: string;
   author?: string;
   source?: string;
-  rhymeType?: RhymeTone | "mixed";
+  rhymeType?: RhymeTone | 'mixed';
   sections: CiTemplateSection[];
 }
 
@@ -49,16 +50,17 @@ export interface CiTemplate {
 
 // ========== 联合类型 ==========
 
-import type { MeterTemplate } from "./meters.js";
 export type { MeterTemplate };
 export type AnyTemplate = MeterTemplate | CiTemplate;
 
 /** Type guard: MeterTemplate has a `pattern` field */
-export function isMeterTemplate(template: AnyTemplate): template is MeterTemplate {
-  return "pattern" in template;
+export function isMeterTemplate(
+  template: AnyTemplate,
+): template is MeterTemplate {
+  return 'pattern' in template;
 }
 
 /** Type guard: CiTemplate has `variants` instead of `pattern` */
 export function isCiTemplate(template: AnyTemplate): template is CiTemplate {
-  return !("pattern" in template);
+  return !('pattern' in template);
 }
