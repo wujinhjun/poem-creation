@@ -62,9 +62,14 @@ export type { LineValidationSummary };
 /**
  * 全诗分析 —— 核心纯函数
  *
- * 依赖通过参数注入，不访问文件系统：
- * - template: AnyTemplate 实例（由调用方加载）
- * - dict: RhymeDict 实例（由调用方加载，可使用固定小字典夹具）
+ * 传入诗词文本、格律/词牌模板和韵书实例，返回完整分析结果。
+ * 所有依赖通过参数注入，不访问文件系统。
+ *
+ * @param input    诗词文本（诗体按 \\n 分行，词牌按标点分句）
+ * @param template 格律或词牌模板，通过 `loadMeterTemplates()` 或从 `ci-tunes-bundle.json` 获取
+ * @param dict     韵书实例，实现 `RhymeDict` 接口
+ * @param options  可选配置：preferredType（优先体裁）、variantId（词牌变体，必传）
+ * @returns 完整分析结果：AST、匹配置信度、逐行校验、合规率
  */
 export function analyzeSync(
   input: string,
@@ -102,9 +107,14 @@ export function analyzeSync(
 /**
  * 单行分析 —— 核心纯函数
  *
- * 依赖通过参数注入：
- * - template: AnyTemplate 实例（由调用方加载）
- * - dict: RhymeDict 实例（由调用方加载）
+ * 对单句诗词做校验，支持注入相邻行进行拗救上下文分析。
+ * 所有依赖通过参数注入。
+ *
+ * @param input    单行诗词文本
+ * @param template 格律或词牌模板
+ * @param dict     韵书实例
+ * @param context  上下文：全局行索引、相邻行文本（用于拗救）、前置韵脚（用于韵部一致性）
+ * @returns 该行的完整校验结果
  */
 export function analyzeLineSync(
   input: string,

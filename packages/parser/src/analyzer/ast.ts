@@ -22,6 +22,11 @@ import { MeterTemplate } from "../templates/index.js";
  * 对单行文本做词法分析+音韵标注，返回标注后的字符数组和歧义信息。
  * 供 analyzeLine 和 buildAnnotatedLineNode 等场景复用。
  */
+/**
+ * 对单行文本做词法分析+音韵标注
+ * @param text 单行文本
+ * @param dict 韵书实例
+ */
 export function annotateLineText(
   text: string,
   dict: RhymeDict,
@@ -45,6 +50,13 @@ export function annotateLineText(
  * @param rawLines - 原始行文本
  * @param rhymeDictType - 韵书类型
  * @returns 构建好的 PoemAST
+ */
+/**
+ * 从标注结果构建 PoemAST
+ * @param annotation  音韵标注结果
+ * @param rawLines    原始行文本
+ * @param type        诗歌体裁
+ * @param rhymeDictType 韵书类型
  */
 export function buildAstFromAnnotation(
   type: PoemType,
@@ -117,6 +129,9 @@ export function buildCouplets(ast: PoemAST): CoupletNode[] {
  * @param ast - 诗歌 AST
  * @param template - 律诗模板
  */
+/**
+ * 将律诗模板应用到 AST：设置每行 expectedPattern、韵脚、对句结构
+ */
 export function applyMeterTemplateToAst(ast: PoemAST, template: MeterTemplate): void {
   for (let i = 0; i < ast.lines.length; i += 1) {
     const line = ast.lines[i];
@@ -143,6 +158,10 @@ export function applyMeterTemplateToAst(ast: PoemAST, template: MeterTemplate): 
  *
  * @param rawLines - 原始行数组
  * @returns 词法分析结果
+ */
+/**
+ * 从原始行文本构建 LexResult（用于词牌分析）
+ * @param rawLines 原始行数组
  */
 export function buildLexResultFromRawLines(
   rawLines: string[],

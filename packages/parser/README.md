@@ -58,7 +58,8 @@ flowchart TD
     %% ──── 词牌路径 ────
     SPLIT -->|"词牌 (CiTemplate)"| CISPLIT["splitSentences(input)<br/>按标点 (，。！？；、换行) 分句<br/>返回 string[]"]
     CISPLIT --> CILEX["buildLexResultFromRawLines(sentences)<br/>包装为 LexResult 格式"]
-    CILEX --> ANNO
+    CILEX --> CIPRE["词牌字数预检：变体必须指定<br/>总数 vs 变体各句 charCount 之和"]
+    CIPRE --> ANNO
 
     %% ──── 公共路径 ────
     ANNO --> AST["buildAst(annotation, type, dictType)<br/>CharNode[][] → LineNode[] → PoemAST<br/>type 由 preferredType 或模板推导"]
@@ -69,7 +70,7 @@ flowchart TD
     MATCH -->|"诗体"| METER["matchTemplate(ast, [meterTemplate])<br/>逐行逐字对比 fixed 位<br/>统计 toneDeviations, 计算 confidence 0~1"]
 
     %% ──── 词牌匹配 ────
-    MATCH -->|"词牌"| CIVAR["chooseCiVariant(ciTemplate, astLines, variantId?)<br/>遍历变体 → scoreCiVariant (字数匹配度)<br/>选最高分"]
+    MATCH -->|"词牌"| CIVAR["scoreCiVariant(astLines, variant)<br/>字数匹配度评分<br/>（变体由用户指定，不自动推断）"]
     CIVAR --> CIAST["applyCiVariantToAst(ast, ciTemplate, variantScore)<br/>写回 expectedPattern, isRhymeLine<br/>构建 sections (上阕/下阕)"]
 
     METER --> APPLY["applyTemplate(ast, template, bestMatch)<br/>诗体：applyMeterTemplateToAst<br/>设置 expectedPattern, rhymeLine 索引<br/>构建 couplets (颔联/颈联标记对仗)"]
@@ -86,7 +87,7 @@ flowchart TD
     OUTPUT --> REPORTER["Reporter (可选)<br/>toJSON / toAnnotatedText / toCLI"]
 ```
 
-> **图中菱形节点 = 诗体/词牌分叉点。** 诗体走 `lex→countHanzi`，词牌走 `splitSentences→buildLexResultFromRawLines`。后续 `annotate→buildAst` 汇合。匹配阶段再分叉：诗体比 pattern 置信度，词牌选变体。末段 `resolveAmbiguities→validate→result` 再次汇合。拗救仅诗体触发。
+> **三个分叉点。** 输入阶段：诗体 `lex→countHanzi`，词牌 `splitSentences→ci字数预检` → `annotate` 汇合。匹配阶段：诗体比 pattern 置信度，词牌评分配指定变体。`resolveAmbiguities→validate→result` 共用。拗救仅诗体。
 
 ## 管线 7 步速览
 
@@ -105,7 +106,7 @@ flowchart TD
 
 ### 格律模板（MeterTemplate）
 
-8 种近体诗格律硬编码于 `templates/meters.ts`，涵盖五言/七言 × 律诗/绝句 × 平起/仄起。
+16 种近体诗格律硬编码于 `templates/meters.ts`，涵盖五言/七言 × 律诗/绝句 × 平起/仄起 × 首句入韵/不入韵。
 
 ### 词牌格律（CiTemplate）
 
@@ -154,7 +155,7 @@ flowchart TD
 | `annotate` | `(lexResult, dict) → AnnotationResult` | 音韵标注：逐字查韵书，标注平仄和韵部 |
 | `matchTemplate` | `(ast, templates) → MatchResult[]` | 模板匹配：逐字对比 pattern，返回置信度排序 |
 | `analyzeRescue` | `(couplet, template, dict) → RescueDetail[]` | 拗救检测：本句自救/对句相救/三四互救/孤平救 |
-| `loadMeterTemplates` | `() → MeterTemplate[]` | 返回 8 种硬编码格律模板（纯函数） |
+| `loadMeterTemplates` | `() → MeterTemplate[]` | 返回 16 种硬编码格律模板（纯函数） |
 | `createCharNode` | `(params) → CharNode` | 工厂：创建字符节点 |
 | `createLineNode` | `(params) → LineNode` | 工厂：创建行节点 |
 
@@ -266,27 +267,35 @@ Node 环境专用，从磁盘 JSON 构造韵书。
 | `createRhymeDict` | `(type: RhymeDictType, dataDir: string) → Promise<RhymeDict>` | 异步加载韵书索引和音调查询表，返回 `JsonRhymeDict` 实例 |
 | `clearRhymeCache` | `() → void` | 清空内部缓存（测试隔离用） |
 
-## 词牌目录 `@poem/parser/catalog`
+## 模板目录 `@poem/parser/catalog`
 
-轻量索引（373KB / gzip ~110KB），供 Web/RN 构建词牌选择器。不含完整格律 pattern，仅展示所需信息。
+统一索引：4 种诗体格律 + 818 首词牌。供 Web/RN 构建体裁选择器。
+
+| 函数 | 说明 |
+|------|------|
+| `listAllTemplates()` | 全部模板：格律 4 种（七律/五律/七绝/五绝）+ 词牌 818 首，每项含变体列表 |
+| `findMeterTemplate(id)` | 按 ID 查格律（如 `"qijue-pingqi"`） |
+| `findCiTune(name)` | 按名查词牌（如 `"水调歌头"`） |
+| `listCiTuneNames()` | 所有词牌名 |
+| `filterCiByCharCount(min, max)` | 按字数筛选词牌变体 |
+| `filterCiByAuthor(author)` | 按作者筛选词牌变体 |
 
 ```ts
-import { ciCatalog, listTuneNames, findTune, filterByCharCount, filterByAuthor } from "@poem/parser/catalog";
+import { listAllTemplates, findMeterTemplate, findCiTune } from "@poem/parser/catalog";
 
-// 818 首词牌 → 下拉选择器
-listTuneNames();  // ["一七令", "一丛花", "一剪梅", ...]
+// 体裁选择器：格律在最前，词牌随后
+const all = listAllTemplates();
+all.map(t => ({ name: t.name, genre: t.genre, count: t.variantCount }));
+// [{ name: "七律", genre: "meter", count: 2 }, ... { name: "水调歌头", genre: "ci", count: 11 }, ...]
 
-// 查看某词牌的所有变体
-findTune("水调歌头")  // { variantCount: 11, variants: [{ id, author, sketch, charCount }] }
+// 格律详情
+findMeterTemplate("qijue-pingqi");  // { id, author: "平起", sketch: "首句不入韵 · 七言四句", charCount: 28 }
 
-// 按字数筛选
-filterByCharCount(50, 60);  // 小令
-
-// 按作者筛选
-filterByAuthor("苏轼");     // 52 个变体
+// 词牌详情
+findCiTune("水调歌头");  // { variantCount: 11, variants: [{ id: "水调歌头-苏轼体1", ... }] }
 ```
 
-完整格律（CiTemplate）从 `ci-tunes-bundle.json` 按需加载，不走 catalog。
+完整格律（CiTemplate、MeterTemplate）从 bundle / `loadMeterTemplates()` 按需获取，不走 catalog。
 
 ## 自定义韵书
 

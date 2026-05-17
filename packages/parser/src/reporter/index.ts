@@ -1,10 +1,16 @@
 import { CharValidationStatus } from "../core/types.js";
 import { AnalysisResult } from "../analyzer/index.js";
 
+/**
+ * 将分析结果格式化为 JSON 字符串
+ */
 export function toJSON(result: AnalysisResult): string {
   return JSON.stringify(result, null, 2);
 }
 
+/**
+ * 将分析结果格式化为逐字标注平仄的文本
+ */
 export function toAnnotatedText(result: AnalysisResult): string {
   return result.ast.lines
     .map((line) =>
@@ -19,6 +25,9 @@ export function toAnnotatedText(result: AnalysisResult): string {
     .join("\n");
 }
 
+/**
+ * 将分析结果格式化为终端友好的命令行输出
+ */
 export function toCLI(result: AnalysisResult): string {
   const headline = result.bestMatch
     ? `模板 ${result.bestMatch.templateId} ${(result.bestMatch.confidence * 100).toFixed(1)}%`

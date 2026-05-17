@@ -122,6 +122,13 @@ function detectGupingJiou(
   ];
 }
 
+/**
+ * 拗救检测：分析一联中的拗救现象
+ * 检测 4 种类型：本句自救 / 对句相救 / 三四互救 / 孤平救（均为启发式）
+ * @param couplet  对句节点
+ * @param template 格律模板
+ * @param _dict    韵书（保留参数，当前未使用）
+ */
 export function analyzeRescue(
   couplet: CoupletNode,
   template: MeterTemplate,

@@ -33,6 +33,11 @@ function normalizePunctuation(input: string): string {
  * 按中文标点分句 —— 不区分诗体/词牌，统一按标点拆分为句子数组。
  * 用于词牌分析、流式解析等场景。
  */
+/**
+ * 按中文标点分句（不区分诗体/词牌）
+ * @param input 输入文本
+ * @returns 分句后的字符串数组
+ */
 export function splitSentences(input: string): string[] {
   return input
     .replace(/\r\n?/g, "\n")
@@ -42,6 +47,10 @@ export function splitSentences(input: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * 词法分析：标点标准化 → 按换行拆句 → 提取汉字
+ * @param input 输入文本
+ */
 export function lex(input: string): LexResult {
   const normalized = normalizePunctuation(input).trim();
   if (!normalized) {

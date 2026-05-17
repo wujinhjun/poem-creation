@@ -50,6 +50,9 @@ export function scoreCiVariant(lines: LineNode[], variant: CiTemplateVariant): C
 /**
  * 将词牌变体应用到 AST
  */
+/**
+ * 将词牌变体应用到 AST：设置每行的 expectedPattern、section 结构
+ */
 export function applyCiVariantToAst(
   ast: PoemAST,
   template: CiTemplate,
