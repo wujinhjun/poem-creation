@@ -2,7 +2,7 @@ import { findCiTune, listAllTemplates } from "@poem/parser/catalog";
 import { loadMeterTemplates, Tone } from "@poem/parser/kernel";
 import type { CiTemplate, ToneConstraint } from "@poem/parser/kernel";
 
-import ciBundleData from "../../../../packages/parser/data/ci-tunes-bundle.json";
+import ciBundleData from "../../../../core/poem-parser/data/ci-tunes-bundle.json";
 import type { Genre } from "../constants/poem";
 
 export type CiPatternForEditor = {

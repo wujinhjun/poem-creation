@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { analyzeStreamSync } from "../dist/kernel.js";
-import { createRhymeDict } from "../dist/rhyme-dict/loader.js";
+import { createRhymeDict } from "../../rhyme-book/dist/index.js";
 
 const DATA_DIR = resolve("./data");
 
 async function main() {
-  const dict = await createRhymeDict("cilin", DATA_DIR);
+  const dict = await createRhymeDict("cilin");
   const template = JSON.parse(readFileSync(resolve(DATA_DIR, "ci-tunes-bundle.json"), "utf8"))["水调歌头"];
 
   const text = '明月几时有？把酒问青天。不知天上宫阙，今夕是何年。我欲乘风归去，又恐琼楼玉宇，高处不胜寒。起舞弄清影，何似在';

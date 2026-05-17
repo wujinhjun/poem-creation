@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { analyzeSync, loadMeterTemplates } from "../dist/kernel.js";
-import { createRhymeDict } from "../dist/rhyme-dict/loader.js";
+import { createRhymeDict } from "../../rhyme-book/dist/index.js";
 
 const DATA_DIR = resolve("./data");
 
@@ -16,7 +16,7 @@ const text = [
   "艰难苦恨繁霜鬓，", "潦倒新停浊酒杯。",
 ].join("\n");
 
-const dict = await createRhymeDict("pingshui", DATA_DIR);
+const dict = await createRhymeDict("pingshui");
 const template = loadMeterTemplates().find((t) => t.id === "qilü-shouju-ze");
 const result = analyzeSync(text, template, dict);
 

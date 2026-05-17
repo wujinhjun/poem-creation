@@ -12,7 +12,7 @@ import type { AnyTemplate, CiTemplate } from "../src/templates/index.js";
 import type { AnalysisResult, AnalyzeLineContext } from "../src/analyzer/kernel.js";
 import { analyzeSync, analyzeLineSync } from "../src/analyzer/kernel.js";
 import { analyzeStreamSync, getSentenceCharCounts, StreamAnalyzeResult } from "../src/analyzer/stream.js";
-import { createRhymeDict } from "../src/rhyme-dict/loader.js";
+import { createRhymeDict } from "@poem/rhyme-book";
 import { loadMeterTemplates } from "../src/templates/meters.js";
 
 const DATA_DIR = resolve("./data");
@@ -38,7 +38,7 @@ export async function analyze(
   input: string,
   options: { rhymeDictType: RhymeDictType; templateId: string; variantId?: string; preferredType?: string },
 ): Promise<AnalysisResult> {
-  const dict = await createRhymeDict(options.rhymeDictType, DATA_DIR);
+  const dict = await createRhymeDict(options.rhymeDictType);
   const template = getTemplateById(options.templateId);
   if (!template) throw new Error(`指定模板不存在: ${options.templateId}`);
   return analyzeSync(input, template, dict, {
@@ -52,7 +52,7 @@ export async function analyzeLine(
   context: { templateId: string; variantId?: string; globalLineIndex: number; precedingRhymes?: any; adjacentLines?: any },
   options: { rhymeDictType: RhymeDictType },
 ): Promise<LineValidationResult> {
-  const dict = await createRhymeDict(options.rhymeDictType, DATA_DIR);
+  const dict = await createRhymeDict(options.rhymeDictType);
   const template = getTemplateById(context.templateId);
   if (!template) throw new Error(`指定模板不存在: ${context.templateId}`);
   return analyzeLineSync(input, template, dict, {
@@ -68,7 +68,7 @@ export async function analyzeStream(
   templateId: string,
   options: { variantId?: string; rhymeDictType: RhymeDictType },
 ): Promise<StreamAnalyzeResult> {
-  const dict = await createRhymeDict(options.rhymeDictType, DATA_DIR);
+  const dict = await createRhymeDict(options.rhymeDictType);
   const template = getTemplateById(templateId);
   if (!template) throw new Error(`模板不存在: ${templateId}`);
   return analyzeStreamSync(input, template, dict, { variantId: options.variantId });

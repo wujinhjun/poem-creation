@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createRhymeDict } from "../src/rhyme-dict/loader.js";
+import { createRhymeDict } from "@poem/rhyme-book";
 import { fuzzyMatchCi } from "../src/analyzer/fuzzy-match.js";
 import type { CiTemplate } from "../src/templates/index.js";
 
@@ -40,20 +40,20 @@ function makeMinimalTemplate(
 
 describe("fuzzyMatchCi", () => {
   it("空输入应返回空数组", async () => {
-    const dict = await createRhymeDict("pingshui", "./data");
+    const dict = await createRhymeDict("pingshui");
     const templates = [makeMinimalTemplate("test", "测试牌", [5, 5, 5])];
     const results = fuzzyMatchCi("", templates, dict);
     expect(results).toEqual([]);
   });
 
   it("空模板应返回空数组", async () => {
-    const dict = await createRhymeDict("pingshui", "./data");
+    const dict = await createRhymeDict("pingshui");
     const results = fuzzyMatchCi("测试一二三四五", [], dict);
     expect(results).toEqual([]);
   });
 
   it("应返回匹配的模板（按置信度排序）", async () => {
-    const dict = await createRhymeDict("pingshui", "./data");
+    const dict = await createRhymeDict("pingshui");
     const templates = [
       makeMinimalTemplate("long", "长牌", [7, 7, 7, 7, 7]),
       makeMinimalTemplate("short", "短牌", [5, 5]),
@@ -68,7 +68,7 @@ describe("fuzzyMatchCi", () => {
   });
 
   it("部分匹配（不完整输入）应返回合理置信度", async () => {
-    const dict = await createRhymeDict("pingshui", "./data");
+    const dict = await createRhymeDict("pingshui");
     const templates = [
       makeMinimalTemplate("mid", "中牌", [5, 5, 5]),
       makeMinimalTemplate("long", "长牌", [7, 7, 7, 7]),
@@ -82,7 +82,7 @@ describe("fuzzyMatchCi", () => {
   });
 
   it("topN 参数应限制结果数量", async () => {
-    const dict = await createRhymeDict("pingshui", "./data");
+    const dict = await createRhymeDict("pingshui");
     const templates = Array.from({ length: 10 }, (_, i) =>
       makeMinimalTemplate(`t${i}`, `模板${i}`, [5, 5, 5]),
     );
@@ -91,7 +91,7 @@ describe("fuzzyMatchCi", () => {
   });
 
   it("templateLimit 参数应截断搜索", async () => {
-    const dict = await createRhymeDict("pingshui", "./data");
+    const dict = await createRhymeDict("pingshui");
     const templates = Array.from({ length: 10 }, (_, i) =>
       makeMinimalTemplate(`t${i}`, `模板${i}`, [5, 5, 5]),
     );
@@ -106,7 +106,7 @@ describe("fuzzyMatchCi", () => {
   });
 
   it("单句单字输入不应崩溃", async () => {
-    const dict = await createRhymeDict("pingshui", "./data");
+    const dict = await createRhymeDict("pingshui");
     const templates = [makeMinimalTemplate("mini", "小令", [3])];
     const results = fuzzyMatchCi("白", templates, dict);
     expect(results.length).toBeGreaterThan(0);
@@ -114,7 +114,7 @@ describe("fuzzyMatchCi", () => {
   });
 
   it("matchResult 应包含 lineDetails", async () => {
-    const dict = await createRhymeDict("pingshui", "./data");
+    const dict = await createRhymeDict("pingshui");
     const templates = [makeMinimalTemplate("short", "短牌", [5, 5])];
     const results = fuzzyMatchCi("白日依山尽，黄河入海流", templates, dict);
     expect(results[0].lineDetails.length).toBeGreaterThan(0);

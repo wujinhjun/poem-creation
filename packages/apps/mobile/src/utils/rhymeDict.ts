@@ -1,8 +1,8 @@
 import { RhymeDictType, Tone } from "@poem/parser/kernel";
 import type { RhymeDict, RhymeEntry } from "@poem/parser/kernel";
 
-import rhymeIndexData from "../../../../packages/parser/data/rhyme-char-index.json";
-import toneLookupData from "../../../../packages/parser/data/tone-lookup.json";
+import rhymeIndexData from "../../../../core/rhyme-book/data/rhyme-char-index.json";
+import toneLookupData from "../../../../core/rhyme-book/data/tone-lookup.json";
 
 type RhymeIndexEntry = {
   dictType: string;

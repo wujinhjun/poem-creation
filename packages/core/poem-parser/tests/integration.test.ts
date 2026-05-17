@@ -4,7 +4,7 @@ import { analyzeSync } from "../src/analyzer/kernel.js";
 import { runPipeline } from "../src/analyzer/pipeline.js";
 import { loadMeterTemplates } from "../src/templates/index.js";
 import { getTemplateById } from "./_helpers.js";
-import { createRhymeDict } from "../src/rhyme-dict/loader.js";
+import { createRhymeDict } from "@poem/rhyme-book";
 import { analyzeStreamSync, getSentenceCharCounts } from "../src/analyzer/stream.js";
 import type { CiTemplate } from "../src/templates/index.js";
 
@@ -23,7 +23,7 @@ describe("analyze 异步 API", () => {
 
 describe("analyzeSync 无匹配变体", () => {
   it("ci 模板不传 variantId 应抛出错误", async () => {
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const template: CiTemplate = {
       id: "empty-tune",
       name: "空调",
@@ -78,7 +78,7 @@ describe("stream - getSentenceCharCounts", () => {
 
 describe("stream - analyzeStreamSync", () => {
   it("应正确流式解析简单文本", async () => {
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const meter = loadMeterTemplates().find((m) => m.id === "wujue-pingqi")!;
     const result = analyzeStreamSync("白日依山尽，黄河入海流。欲穷千里目，更上一层楼。", meter, dict);
     expect(result.totalSentences).toBe(4);
@@ -87,7 +87,7 @@ describe("stream - analyzeStreamSync", () => {
   });
 
   it("不完整输入应正确标记未完成句", async () => {
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const meter = loadMeterTemplates().find((m) => m.id === "wujue-pingqi")!;
     const result = analyzeStreamSync("白日", meter, dict);
     // 第一句不完整（只有2字，期望5字）
@@ -95,7 +95,7 @@ describe("stream - analyzeStreamSync", () => {
   });
 
   it("空输入应返回空片段", async () => {
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const meter = loadMeterTemplates().find((m) => m.id === "wujue-pingqi")!;
     const result = analyzeStreamSync("", meter, dict);
     expect(result.segments).toEqual([]);
@@ -107,7 +107,7 @@ describe("stream - analyzeStreamSync", () => {
 describe("phonology - annotate", () => {
   it("应正确标注 未知音调字", async () => {
     const { annotate } = await import("../src/phonology/index.js");
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const result = annotate(
       {
         lines: [{ raw: "𠀀", chars: ["𠀀"], punctuation: "" }],
@@ -123,19 +123,19 @@ describe("phonology - annotate", () => {
 
 describe("rhyme-dict - 边角字符", () => {
   it("完全不存在的字符应返回空数组", async () => {
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const entries = dict.lookup("𠀀");
     expect(Array.isArray(entries)).toBe(true);
   });
 
   it("getRhymeGroup 对不存在字符应返回空数组", async () => {
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const groups = dict.getRhymeGroup("𠀀");
     expect(groups).toEqual([]);
   });
 
   it("isSameRhyme 对不存在字符应返回 false", async () => {
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const result = dict.isSameRhyme("𠀀", "xyz");
     expect(typeof result).toBe("boolean");
   });
@@ -145,7 +145,7 @@ describe("rhyme-dict - 边角字符", () => {
 
 describe("pipeline - 字数预检", () => {
   it("诗体字数不匹配应抛出错误", async () => {
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const tpl = loadMeterTemplates().find((m) => m.id === "wujue-pingqi")!;
     // wujue-pingqi = 5字×4行=20字，传入19字
     expect(() =>
@@ -158,7 +158,7 @@ describe("pipeline - 字数预检", () => {
   });
 
   it("诗体字数匹配应正常通过", async () => {
-    const dict = await createRhymeDict("cilin", "./data");
+    const dict = await createRhymeDict("cilin");
     const tpl = loadMeterTemplates().find((m) => m.id === "wujue-pingqi")!;
     // wujue-pingqi = 5字×4行=20字，传入正好20字
     const result = runPipeline({

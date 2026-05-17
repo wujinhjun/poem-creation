@@ -1,17 +1,18 @@
 /**
- * 韵书 JSON 加载器（内部实现，非公开 API）
+ * @poem/rhyme-book —— 韵书 JSON 加载器
  *
  * 通过 readFile 从磁盘加载韵书数据，构造 JsonRhymeDict。
  * 调用方也可自行实现 RhymeDict 接口（如浏览器端 fetch JSON 后构造）。
  *
- * @module rhyme-dict/loader
+ * RhymeDict / RhymeEntry 接口与 Tone / RhymeDictType 由 @poem/parser 定义，
+ * 本包仅提供其 Node 环境的 JSON 实现。
  */
 
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
-import { Tone } from "../core/types.js";
-import type { RhymeDictType } from "../core/types.js";
-import type { RhymeDict, RhymeEntry } from "./index.js";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { Tone } from "@poem/parser";
+import type { RhymeDict, RhymeDictType, RhymeEntry } from "@poem/parser";
 
 // ---- 内部类型 ----
 
@@ -28,6 +29,9 @@ const TONE_MAP: Record<string, Tone> = { 平: Tone.Ping, 仄: Tone.Ze };
 function toTone(raw: RawRhymeItem["tone"]): Tone {
   return TONE_MAP[raw] ?? Tone.Unknown;
 }
+
+/** 本包内置韵书数据目录（dist/index.js → ../data） */
+const DEFAULT_DATA_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../data");
 
 // ---- JsonRhymeDict ----
 
@@ -111,10 +115,13 @@ async function loadJson<T>(dataDir: string, filename: string): Promise<T> {
 /**
  * 从 JSON 文件构造 RhymeDict（异步，仅 Node 环境）
  *
- * @param type  韵书类型
- * @param dataDir  data/ 目录的绝对路径
+ * @param type     韵书类型
+ * @param dataDir  韵书 data/ 目录的绝对路径，默认使用本包内置数据
  */
-export async function createRhymeDict(type: RhymeDictType, dataDir: string): Promise<RhymeDict> {
+export async function createRhymeDict(
+  type: RhymeDictType,
+  dataDir: string = DEFAULT_DATA_DIR,
+): Promise<RhymeDict> {
   if (!_rhymeIndexCache) {
     _rhymeIndexCache = await loadJson<RhymeIndex>(dataDir, "rhyme-char-index.json");
   }

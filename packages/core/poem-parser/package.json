@@ -7,7 +7,6 @@
     ".": "./dist/index.js",
     "./kernel": "./dist/kernel.js",
     "./types": "./dist/core/types.js",
-    "./loader": "./dist/loader.js",
     "./catalog": "./dist/catalog.js"
   },
   "scripts": {

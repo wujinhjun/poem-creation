@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { analyzeSync } from "../dist/kernel.js";
-import { createRhymeDict } from "../dist/rhyme-dict/loader.js";
+import { createRhymeDict } from "../../rhyme-book/dist/index.js";
 
 const DATA_DIR = resolve("./data");
 function loadCiBundle() { return JSON.parse(readFileSync(resolve(DATA_DIR, "ci-tunes-bundle.json"), "utf8")); }
@@ -17,7 +17,7 @@ const text = [
   '但愿人长久，千里共婵娟。',
 ].join('\n');
 
-const dict = await createRhymeDict("cilin", DATA_DIR);
+const dict = await createRhymeDict("cilin");
 const template = loadCiBundle()["水调歌头"];
 const result = analyzeSync(text, template, dict, { variantId: "水调歌头-苏轼体1" });
 

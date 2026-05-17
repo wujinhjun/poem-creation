@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { analyzeSync } from "../dist/kernel.js";
-import { createRhymeDict } from "../dist/rhyme-dict/loader.js";
+import { createRhymeDict } from "../../rhyme-book/dist/index.js";
 import { loadMeterTemplates } from "../dist/templates/meters.js";
 
 const DATA_DIR = resolve("./data");
@@ -52,7 +52,7 @@ async function main() {
     console.log(label);
     console.log("-".repeat(58));
     try {
-      const dict = await createRhymeDict(rhyme, DATA_DIR);
+      const dict = await createRhymeDict(rhyme);
       const template = getTemplate(tpl);
       if (!template) throw new Error(`模板不存在: ${tpl}`);
       const r = analyzeSync(text, template, dict, { variantId: variant });
