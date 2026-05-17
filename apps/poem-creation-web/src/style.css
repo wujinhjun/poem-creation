@@ -320,10 +320,10 @@ select {
 }
 
 .analysis-bar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
   margin-top: 22px;
 }
 
@@ -340,10 +340,22 @@ select {
   background: #7d2e25;
 }
 
-.analysis-result,
 .loading-text,
 .empty-state {
   color: #6b5644;
+}
+
+.analysis-result {
+  min-height: 42px;
+  margin: 0;
+  padding: 8px 12px;
+  border-left: 2px solid rgba(139, 45, 36, 0.32);
+  color: #6b5644;
+  background: rgba(255, 250, 240, 0.58);
+  white-space: pre-wrap;
+  font-family: "Kaiti SC", "STKaiti", "Songti SC", "STSong", serif;
+  font-size: 14px;
+  line-height: 1.85;
 }
 
 .empty-state {

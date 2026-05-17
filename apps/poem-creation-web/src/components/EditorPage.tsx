@@ -131,7 +131,7 @@ export function EditorPage({
                   分析
                 </button>
                 {analyzeResult && (
-                  <pre className='analysis-result m-0 whitespace-pre-wrap font-serif text-[14px] leading-7'>
+                  <pre className='analysis-result'>
                     {analyzeResult}
                   </pre>
                 )}

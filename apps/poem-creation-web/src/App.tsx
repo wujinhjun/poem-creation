@@ -14,6 +14,7 @@ import { formatAnalysisReport } from './utils/analysisReport';
 import { createEmptyDraft, normalizeDraft } from './utils/draft';
 import { downloadDraftArchive, readDraftArchive } from './utils/draftArchive';
 import { copyText, formatPoemText } from './utils/exportText';
+import { validateGridStrictly } from './utils/strictGridValidation';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
 import {
   loadUserSettings,
@@ -393,13 +394,19 @@ export default function App() {
         const r = analyzeSync(text, analysisTemplate, dict, {
           variantId: selectedVariant,
         });
-        setAnalyzeResult(formatAnalysisReport(r));
+        const strictValidation = validateGridStrictly({
+          chars: sourceChars,
+          pattern,
+          dict,
+          expectedRhymeTone,
+        });
+        setAnalyzeResult(formatAnalysisReport(r, strictValidation));
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
         setAnalyzeResult(`错误: ${message}`);
       }
     },
-    [analysisTemplate, chars, dict, pattern, selectedVariant],
+    [analysisTemplate, chars, dict, expectedRhymeTone, pattern, selectedVariant],
   );
 
   const exportPreviewText = useMemo(
