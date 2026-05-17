@@ -8,8 +8,10 @@ logs/
 /backup
 /archive
 /trash
-/temp
-/cache
-/backup
-/archive
-/trash
+
+# OS / 编辑器垃圾文件
+.DS_Store
+Thumbs.db
+
+# 误提交的本地配置
+b.yaml
