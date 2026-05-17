@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#
+# Git pre-commit 钩子 —— 提交前扫描暂存区密钥/敏感配置。
+#
+# 本目录通过 `git config core.hooksPath scripts/git-hooks` 启用，
+# 故钩子随仓库版本化，团队成员一致生效。
+#
+set -uo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+exec "${repo_root}/scripts/check-secrets.sh" --staged

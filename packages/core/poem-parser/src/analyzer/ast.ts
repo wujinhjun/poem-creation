@@ -1,0 +1,165 @@
+/**
+ * AST 构建模块
+ *
+ * 负责将词法分析结果和音韵标注结果构建成诗歌 AST（抽象语法树）。
+ * AST 是整个分析流程的核心数据结构。
+ */
+
+import {
+  PoemType, CoupletRole, RhymeTone, CharNode, HANZI_RE,
+  CoupletNode,
+  LineNode,
+  PoemAST,
+  RhymeDictType,
+  ToneAmbiguity,
+} from "../core/types.js";
+import { lex } from "../lexer/index.js";
+import { annotate, AnnotationResult } from "../phonology/index.js";
+import { RhymeDict } from "../rhyme-dict/index.js";
+import { MeterTemplate } from "../templates/index.js";
+
+/**
+ * 对单行文本做词法分析+音韵标注，返回标注后的字符数组和歧义信息。
+ * 供 analyzeLine 和 buildAnnotatedLineNode 等场景复用。
+ *
+ * @param text 单行文本
+ * @param dict 韵书实例
+ */
+export function annotateLineText(
+  text: string,
+  dict: RhymeDict,
+): { chars: CharNode[]; ambiguities: ToneAmbiguity[] } {
+  const lexResult = lex(text);
+  const lexLine = lexResult.lines[0];
+  if (!lexLine) return { chars: [], ambiguities: [] };
+
+  const annotation = annotate(
+    { lines: [lexLine], metadata: { totalLines: 1, charsPerLine: [lexLine.chars.length] } },
+    dict,
+  );
+  return { chars: annotation.chars[0] ?? [], ambiguities: annotation.ambiguities };
+}
+
+/**
+ * 从标注结果构建 PoemAST
+ *
+ * @param type          诗歌类型（律诗/绝句/词牌）
+ * @param annotation    音韵标注结果
+ * @param rawLines      原始行文本
+ * @param rhymeDictType 韵书类型
+ * @returns 构建好的 PoemAST
+ */
+export function buildAstFromAnnotation(
+  type: PoemType,
+  annotation: AnnotationResult,
+  rawLines: string[],
+  rhymeDictType: RhymeDictType,
+): PoemAST {
+  const lines: LineNode[] = annotation.chars.map((chars, idx) => ({
+    raw: rawLines[idx] ?? chars.map((c) => c.char).join(""),
+    chars,
+    charCount: chars.length,
+    globalLineIndex: idx,
+    isRhymeLine: false,
+    diagnostics: [],
+  }));
+
+  return {
+    type,
+    lines,
+    rhymeDictType,
+    diagnostics: [],
+  };
+}
+
+/**
+ * 构建对句结构
+ *
+ * 将连续的两行配对为对句（couplet），用于后续的对仗和拗救分析。
+ * 律诗的对句有特殊的对仗要求（颔联、颈联必须对仗）。
+ *
+ * @param ast - 诗歌 AST
+ * @returns 对句数组
+ */
+export function buildCouplets(ast: PoemAST): CoupletNode[] {
+  const couplets: CoupletNode[] = [];
+
+  for (let i = 0; i + 1 < ast.lines.length; i += 2) {
+    const pairIndex = Math.floor(i / 2);
+    // 颔联（第二联）和颈联（第三联）要求对仗
+    const requiresDuizhang = ast.type === PoemType.Lüshi && (pairIndex === 1 || pairIndex === 2);
+
+    const upper = ast.lines[i];
+    const lower = ast.lines[i + 1];
+
+    upper.coupletRole = CoupletRole.Upper;
+    upper.coupletPairIndex = pairIndex;
+    upper.requiresDuizhang = requiresDuizhang;
+
+    lower.coupletRole = CoupletRole.Lower;
+    lower.coupletPairIndex = pairIndex;
+    lower.requiresDuizhang = requiresDuizhang;
+
+    couplets.push({
+      upper,
+      lower,
+      coupletIndex: pairIndex,
+      requiresDuizhang,
+      diagnostics: [],
+    });
+  }
+
+  return couplets;
+}
+
+/**
+ * 将律诗模板应用到 AST：设置每行 expectedPattern、韵脚、对句结构。
+ *
+ * @param ast      - 诗歌 AST
+ * @param template - 律诗模板
+ */
+export function applyMeterTemplateToAst(ast: PoemAST, template: MeterTemplate): void {
+  for (let i = 0; i < ast.lines.length; i += 1) {
+    const line = ast.lines[i];
+    const expectedPattern = template.pattern[i];
+    if (!line || !expectedPattern) continue;
+
+    line.expectedPattern = expectedPattern;
+    line.templateId = template.id;
+    line.isRhymeLine = template.rhymeLineIndices.includes(i);
+
+    if (line.isRhymeLine) {
+      line.rhymeChar = line.chars.at(-1);
+      line.expectedRhymeType = RhymeTone.Ping;
+    }
+  }
+
+  ast.couplets = buildCouplets(ast);
+}
+
+/**
+ * 从原始行文本构建 LexResult，用于词牌分析，将连续文本拆分为单行。
+ *
+ * @param rawLines 原始行数组
+ * @returns 词法分析结果
+ */
+export function buildLexResultFromRawLines(
+  rawLines: string[],
+): {
+  lines: Array<{ raw: string; chars: string[]; punctuation: string }>;
+  metadata: { totalLines: number; charsPerLine: number[] };
+} {
+  const lines = rawLines.map((raw) => ({
+    raw,
+    chars: [...raw].filter((ch) => HANZI_RE.test(ch)),
+    punctuation: "",
+  }));
+
+  return {
+    lines,
+    metadata: {
+      totalLines: lines.length,
+      charsPerLine: lines.map((line) => line.chars.length),
+    },
+  };
+}

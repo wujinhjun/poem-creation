@@ -1,0 +1,22 @@
+{
+  "name": "@poem/rhyme-book",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "韵书数据加载与查询 —— 平水韵/词林正韵/中华新韵",
+  "exports": {
+    ".": "./dist/index.js",
+    "./data/*": "./data/*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@poem/parser": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}
