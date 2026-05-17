@@ -72,10 +72,8 @@ export function validateChar(
 }
 
 /**
- * 验证一行字符是否符合期望模式
- */
-/**
- * 校验一行字符是否符合期望平仄模式
+ * 校验一行字符是否符合期望平仄模式。
+ *
  * @returns 校验后的字符数组 + 匹配得分
  */
 export function validateChars(
@@ -135,16 +133,14 @@ export interface LineValidationSummary {
 }
 
 /**
- * 验证行是否符合平仄模式（纯函数，不改动传入的 `line`）。
+ * 校验整行是否符合平仄模式（纯函数，不改动传入的 `line`），返回逐字校验详情。
  *
  * 每个字的校验状态记录在 `charChecks[].status`；如需写回 AST，
  * 调用 {@link applyValidationToLine}。
- */
-/**
- * 校验整行是否符合平仄模式，返回逐字校验详情
- * @param line      行节点
+ *
+ * @param line            行节点
  * @param expectedPattern 期望平仄模式
- * @param ambiguities 多音字列表（用于区分模糊失配）
+ * @param ambiguities     多音字列表（用于区分模糊失配）
  */
 export function validateLineAgainstPattern(
   line: LineNode,
@@ -251,10 +247,7 @@ export function applyValidationToLine(
 }
 
 /**
- * 应用拗救标记到行
- */
-/**
- * 将拗救标记应用到行：将已救的 fail 位置改为 rescued
+ * 将拗救标记应用到行：将已救的 fail 位置改为 rescued。
  */
 export function applyRescueMarks(
   currentLine: LineNode,
@@ -279,10 +272,8 @@ export function applyRescueMarks(
 }
 
 /**
- * 验证韵脚一致性
- */
-/**
- * 校验韵脚一致性
+ * 校验韵脚一致性。
+ *
  * @param chars             字符节点数组
  * @param resolvedTemplate  行模板信息
  * @param precedingRhymes   前置韵脚
