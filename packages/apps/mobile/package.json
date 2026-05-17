@@ -1,5 +1,5 @@
 {
-  "name": "poem-creation-app",
+  "name": "@poem/mobile",
   "version": "0.0.1",
   "private": true,
   "description": "诗词创作 React Native 应用",

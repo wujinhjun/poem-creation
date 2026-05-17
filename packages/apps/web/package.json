@@ -1,5 +1,5 @@
 {
-  "name": "poem-creation-web",
+  "name": "@poem/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",

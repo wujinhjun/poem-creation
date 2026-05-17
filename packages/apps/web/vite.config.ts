@@ -10,8 +10,8 @@ export default defineConfig({
   },
   server: {
     fs: {
-      // 允许访问 workspace 根目录
-      allow: ["../.."],
+      // 允许访问 workspace 根目录（packages/apps/web → 上溯三级）
+      allow: ["../../.."],
     },
   },
 });
