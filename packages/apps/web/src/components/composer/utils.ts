@@ -1,6 +1,6 @@
 import { Tone } from '@poem/parser/kernel';
 import type { ToneConstraint } from '@poem/parser/kernel';
-import { lineEndsWithRhyme } from '@poem/shared';
+import { lineEndsWithRhyme } from '@poem/editor-core';
 
 export function constraintLabel(c: ToneConstraint): string {
   if (c.type === 'flexible') return '中';

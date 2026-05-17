@@ -1,4 +1,4 @@
-import type { EditorConstraint } from "@poem/shared";
+import type { EditorConstraint } from "@poem/editor-core";
 
 const HAN_CHAR_PATTERN = /[\u3400-\u9fff\uf900-\ufaff]/u;
 

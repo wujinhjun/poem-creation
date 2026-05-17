@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@poem/editor-core": "workspace:*",
     "@poem/parser": "workspace:*",
     "@poem/shared": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",

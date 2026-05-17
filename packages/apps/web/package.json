@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@poem/editor-core": "workspace:*",
     "@poem/parser": "workspace:*",
     "@poem/shared": "workspace:*",
     "react": "^19.2.5",

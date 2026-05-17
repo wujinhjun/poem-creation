@@ -1,8 +1,9 @@
 /**
  * @poem/shared —— 跨包共享类型与工具
  *
- * 供 web、rn、agent 等上游包使用。
+ * 供 apps 与其他 core 包共同使用。
  * 常量以 @poem/parser 为唯一数据源，本包仅做透传。
+ * 编辑器逻辑已迁出至 @poem/editor-core。
  */
 
 export { PoemGenre } from "./constants/index.js";
@@ -19,18 +20,3 @@ export type {
   CustomTuneSection,
   CustomTuneLine,
 } from "./types/index.js";
-
-export type {
-  EditorConstraint,
-  EditorPosition,
-  EditorWriteResult,
-} from "./editor/index.js";
-
-export {
-  createEmptyEditorGrid,
-  createEditorPatternSignature,
-  lineEndsWithRhyme,
-  normalizeEditorInput,
-  writeEditorCharsAt,
-  pasteEditorTextAt,
-} from "./editor/index.js";

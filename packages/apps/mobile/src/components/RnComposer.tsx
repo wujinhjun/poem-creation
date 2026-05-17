@@ -14,7 +14,7 @@ import {
   writeEditorCharsAt,
   type EditorConstraint,
   type EditorPosition,
-} from "@poem/shared";
+} from "@poem/editor-core";
 import { Tone } from "@poem/parser/kernel";
 import type { RhymeDict } from "@poem/parser/kernel";
 

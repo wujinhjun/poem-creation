@@ -1,5 +1,5 @@
 import type { ToneConstraint } from '@poem/parser/kernel';
-import { lineEndsWithRhyme } from '@poem/shared';
+import { lineEndsWithRhyme } from '@poem/editor-core';
 
 function formatBodyLines(
   chars: string[][],
