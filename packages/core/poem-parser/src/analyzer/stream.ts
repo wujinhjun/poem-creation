@@ -12,9 +12,10 @@
 import { HANZI_RE } from "../core/types.js";
 import type { ToneConstraint } from "../core/types.js";
 import { splitSentences } from "../lexer/index.js";
+import { resolveTones } from "../phonology/index.js";
 import type { RhymeDict } from "../rhyme-dict/index.js";
-import { isCiTemplate, isMeterTemplate } from "../templates/index.js";
-import type { AnyTemplate, CiTemplate, MeterTemplate } from "../templates/index.js";
+import { isCiTemplate } from "../templates/index.js";
+import type { AnyTemplate } from "../templates/index.js";
 
 export interface StreamSegment {
   /** 片段序号（从0开始） */
@@ -88,21 +89,25 @@ export function getSentenceCharCounts(template: AnyTemplate, variantId?: string)
   return template.pattern.map((p) => p.length);
 }
 
-/** 按句子索引和列索引获取模板约束 */
-function getExpectedConstraint(
+/**
+ * 从模板中提取每句的期望平仄模式，一次性解析。
+ *
+ * 此前每个字都重新 `variants.find()` + `sections.flatMap()` 重建全诗行数组，
+ * 现在改为在分析开始时解析一次，逐字直接索引。
+ */
+function resolveSentencePatterns(
   template: AnyTemplate,
-  sentenceIndex: number,
-  col: number,
   variantId?: string,
-): ToneConstraint | undefined {
+): ToneConstraint[][] {
   if (isCiTemplate(template)) {
     if (!variantId) {
       throw new Error("词牌必须指定 variantId（变体 ID）");
     }
     const variant = template.variants.find((v) => v.id === variantId);
-    return variant?.sections.flatMap((s) => s.lines)[sentenceIndex]?.pattern[col];
+    if (!variant) throw new Error(`变体不存在: ${variantId}`);
+    return variant.sections.flatMap((s) => s.lines.map((l) => l.pattern));
   }
-  return template.pattern[sentenceIndex]?.[col];
+  return template.pattern;
 }
 
 // ============ 同步核心 ============
@@ -126,6 +131,7 @@ export function analyzeStreamSync(
 ): StreamAnalyzeResult {
   const sentences = splitSentences(input);
   const sentenceCharCounts = getSentenceCharCounts(template, options.variantId);
+  const sentencePatterns = resolveSentencePatterns(template, options.variantId);
 
   const segments: StreamSegment[] = [];
   const sentenceSummaries: StreamAnalyzeResult["sentenceSummaries"] = [];
@@ -144,12 +150,10 @@ export function analyzeStreamSync(
 
     for (let ci = 0; ci < sentenceChars.length; ci++) {
       const char = sentenceChars[ci];
-      const expected = getExpectedConstraint(template, si, ci, options.variantId);
+      const expected = sentencePatterns[si]?.[ci];
 
       // 查韵书获取音韵
-      const entries = dict.lookup(char);
-      const uniqueTones = [...new Set(entries.map((e) => e.tone))];
-      const primaryTone = uniqueTones.length === 1 ? uniqueTones[0] : entries[0]?.tone ?? null;
+      const { primaryTone, uniqueTones } = resolveTones(dict.lookup(char));
 
       // 校验
       let matched = false;

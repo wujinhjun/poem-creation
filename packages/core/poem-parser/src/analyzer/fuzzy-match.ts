@@ -9,6 +9,7 @@
 
 import { HANZI_RE } from "../core/types.js";
 import { splitSentences } from "../lexer/index.js";
+import { resolveTones } from "../phonology/index.js";
 import type { RhymeDict } from "../rhyme-dict/index.js";
 import type { CiTemplate, CiTemplateVariant } from "../templates/index.js";
 import { flattenCiVariantLines } from "./ci.js";
@@ -87,6 +88,12 @@ export function fuzzyMatchCi(
 
   if (inputChars === 0 || templates.length === 0) return [];
 
+  // 预解析每个输入字的声调：同一个字此前会在每个候选变体里被反复查韵书，
+  // 这里查一次缓存，模板循环内直接索引。
+  const sentenceTones = sentences.map((chars) =>
+    chars.map((ch) => resolveTones(dict.lookup(ch))),
+  );
+
   // 截断搜索范围
   const candidates =
     templateLimit > 0 ? templates.slice(0, templateLimit) : templates;
@@ -152,13 +159,11 @@ export function fuzzyMatchCi(
           matchedChars += 1;
           lineToneCheck += 1;
 
-          const entries = dict.lookup(char);
-          const tones = [...new Set(entries.map((e) => e.tone))];
-          const primaryTone = tones.length === 1 ? tones[0] : entries[0]?.tone ?? null;
-
+          const toneInfo = sentenceTones[i]?.[col];
           if (
-            primaryTone === constraint.tone ||
-            tones.includes(constraint.tone)
+            toneInfo &&
+            (toneInfo.primaryTone === constraint.tone ||
+              toneInfo.uniqueTones.includes(constraint.tone))
           ) {
             toneMatchCount += 1;
             lineToneMatch += 1;
