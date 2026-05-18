@@ -32,15 +32,16 @@ function normalizePunctuation(input: string): string {
 /**
  * 按中文标点分句（不区分诗体/词牌），用于词牌分析、流式解析等场景。
  *
+ * 先做标点标准化，使半角 `,.!?;` 与全角 `，。！？；` 一视同仁——
+ * 否则用户用半角标点输入词牌时不会分句，导致字数预检/流式/模糊匹配错乱。
+ *
  * @param input 输入文本
  * @returns 分句后的字符串数组
  */
 export function splitSentences(input: string): string[] {
-  return input
-    .replace(/\r\n?/g, "\n")
+  return normalizePunctuation(input)
     .replace(/\s+/g, "")
     .split(SENTENCE_SEP_RE)
-    .map((s) => s.trim())
     .filter(Boolean);
 }
 

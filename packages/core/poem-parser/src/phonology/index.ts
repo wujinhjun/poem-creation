@@ -1,11 +1,28 @@
 import { createCharNode } from "../core/factories.js";
 import { CharNode, Tone, ToneAmbiguity } from "../core/types.js";
 import { LexResult } from "../lexer/index.js";
-import { RhymeDict } from "../rhyme-dict/index.js";
+import { RhymeDict, RhymeEntry } from "../rhyme-dict/index.js";
 
 export interface AnnotationResult {
   chars: CharNode[][];
   ambiguities: ToneAmbiguity[];
+}
+
+/**
+ * 从韵书查询结果归并出主声调与去重后的声调列表。
+ *
+ * 单一读音 → `primaryTone` 即该声调；多读音（多音字）→ `primaryTone`
+ * 取第一条，`uniqueTones` 列出全部去重声调。
+ * 供音韵标注、流式解析、模糊匹配复用，避免三处各写一份。
+ */
+export function resolveTones(entries: RhymeEntry[]): {
+  primaryTone: Tone | null;
+  uniqueTones: Tone[];
+} {
+  const uniqueTones = [...new Set(entries.map((entry) => entry.tone))];
+  const primaryTone =
+    uniqueTones.length === 1 ? uniqueTones[0] : entries[0]?.tone ?? null;
+  return { primaryTone, uniqueTones };
 }
 
 export function annotate(lexResult: LexResult, dict: RhymeDict): AnnotationResult {
@@ -21,9 +38,7 @@ export function annotate(lexResult: LexResult, dict: RhymeDict): AnnotationResul
       const char = lexLine.chars[col];
       const entries = dict.lookup(char);
 
-      const uniqueTones = [...new Set(entries.map((entry) => entry.tone))];
-      const primaryTone =
-        uniqueTones.length === 1 ? uniqueTones[0] : entries[0]?.tone ?? null;
+      const { primaryTone, uniqueTones } = resolveTones(entries);
       const rhymeGroup = entries[0]?.rhymeGroup;
 
       row.push(
