@@ -26,20 +26,23 @@ export function DraftListPanel({
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <section className='grid h-[500px] grid-rows-[auto_auto_minmax(0,1fr)] gap-[18px] border border-[#5c3f22]/25 bg-[#fff9eb]/85 p-5 shadow-[0_14px_34px_rgba(60,40,21,0.08)] max-[820px]:h-[460px]'>
-      <div className='flex items-center justify-between gap-3'>
-        <h2 className='m-0 text-[24px] font-bold text-[#4b3729]'>作品</h2>
-        <div className='flex gap-2'>
+    <section className='panel draft-list-panel'>
+      <div className='panel-heading'>
+        <div>
+          <p className='section-kicker'>本地</p>
+          <h2>最近作品</h2>
+        </div>
+        <div className='panel-actions'>
           <button
             type='button'
-            className='border border-[#8b6a4c] px-2.5 py-1.5 text-[13px] text-[#5b402f] transition hover:bg-[#efe1c6]'
+            className='ghost-button'
             onClick={onExportDrafts}
           >
             导出
           </button>
           <button
             type='button'
-            className='border border-[#8b6a4c] px-2.5 py-1.5 text-[13px] text-[#5b402f] transition hover:bg-[#efe1c6]'
+            className='ghost-button'
             onClick={() => importInputRef.current?.click()}
           >
             导入
@@ -60,43 +63,43 @@ export function DraftListPanel({
       <input
         value={draftQuery}
         placeholder='搜索标题、署名或模板'
-        className='h-11 w-full border border-[#9b7a5d] bg-[#fff9ea] px-3 text-[16px] text-[#2d2118] outline-none placeholder:text-[#9a8066] focus:border-[#8b2d24] focus:ring-2 focus:ring-[#8b2d24]/15'
+        className='line-input'
         onChange={(event) => onDraftQueryChange(event.currentTarget.value)}
       />
-      <div className='grid min-h-0 content-start gap-2 overflow-auto border border-[#8b6a4c]/40 bg-[#fff9ea]/70 p-2'>
+      <div className='draft-list-scroll'>
         {drafts.length === 0 && (
-          <div className='px-2 py-3 text-[14px] text-[#806851]'>
+          <div className='empty-copy'>
             暂无旧作
           </div>
         )}
         {drafts.length > 0 && filteredDrafts.length === 0 && (
-          <div className='px-2 py-3 text-[14px] text-[#806851]'>
+          <div className='empty-copy'>
             无匹配作品
           </div>
         )}
         {filteredDrafts.map((draft) => (
           <div
             key={draft.id}
-            className='grid grid-cols-[minmax(0,1fr)_auto] gap-2 border border-[#c8ad8a] px-3 py-2 transition hover:bg-[#efe1c6]'
+            className='draft-row'
           >
             <button
               type='button'
-              className='grid min-w-0 gap-1 text-left'
+              className='draft-open-button'
               onClick={() => onOpenDraft(draft.id)}
             >
-              <span className='truncate text-[16px] font-bold text-[#2d2118]'>
+              <span className='draft-title'>
                 {draft.title || '未题'}
               </span>
-              <span className='truncate text-[13px] text-[#806851]'>
+              <span className='draft-meta'>
                 {draft.author || '佚名'} · {draft.selectedTune || '未选模板'}
               </span>
-              <span className='text-[12px] text-[#9a8066]'>
+              <span className='draft-time'>
                 {formatDraftTime(draft.updatedAt)}
               </span>
             </button>
             <button
               type='button'
-              className='self-start border border-[#a43c2f] px-2 py-1 text-[12px] text-[#8b2d24] transition hover:bg-[#f6e2dc]'
+              className='danger-button'
               onClick={() => onDeleteDraft(draft.id)}
             >
               删除

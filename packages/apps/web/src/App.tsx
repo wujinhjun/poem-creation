@@ -3,10 +3,14 @@ import { RhymeDictType } from '@poem/parser/kernel';
 import { IndexedDbDraftStore } from './persist';
 import type { PoemCreationDraft, PoemCreationDraftSummary } from './persist';
 import type { Genre } from './constants/poem';
+import { AppFrame } from './components/AppFrame';
 import { AppNotice } from './components/AppNotice';
 import { EntryPage } from './components/EntryPage';
 import { EditorPage } from './components/EditorPage';
+import { QuickFillPage } from './components/QuickFillPage';
 import { SettingsPage } from './components/SettingsPage';
+import { TemplateSelectionPage } from './components/TemplateSelectionPage';
+import { WorksPage } from './components/WorksPage';
 import { useBrowserDict } from './hooks/useBrowserDict';
 import { useEditorPattern } from './hooks/useEditorPattern';
 import { useEntrySelection } from './hooks/useEntrySelection';
@@ -16,6 +20,7 @@ import { downloadDraftArchive, readDraftArchive } from './utils/draftArchive';
 import { copyText, formatPoemText } from './utils/exportText';
 import { validateGridStrictly } from './utils/strictGridValidation';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
+import { defaultRhymeType, firstVariantForTune } from '@poem/shared';
 import {
   loadUserSettings,
   saveUserSettings,
@@ -27,9 +32,9 @@ import './style.css';
 const draftStore = new IndexedDbDraftStore();
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<'entry' | 'editor' | 'settings'>(
-    'entry',
-  );
+  const [viewMode, setViewMode] = useState<
+    'entry' | 'template' | 'quickfill' | 'works' | 'editor' | 'settings'
+  >('entry');
   const [entryGenre, setEntryGenre] = useState<Genre>('meter');
   const [entrySelectedTune, setEntrySelectedTune] = useState('');
   const [entrySelectedVariant, setEntrySelectedVariant] = useState('');
@@ -164,6 +169,36 @@ export default function App() {
     viewMode,
   ]);
 
+  const handleNewDraftFromTemplate = useCallback(
+    async (nextGenre: Genre, tuneName: string) => {
+      const current = buildCurrentDraft();
+      if (viewMode === 'editor' && persistReady && current) {
+        await draftStore.saveDraft(current);
+      }
+      const nextDraft = {
+        ...createEmptyDraft(),
+        author: userSettings.defaultAuthor,
+        genre: nextGenre,
+        selectedTune: tuneName,
+        selectedVariant: firstVariantForTune(nextGenre, tuneName),
+        rhymeType: defaultRhymeType(nextGenre),
+      };
+      await draftStore.saveDraft(nextDraft);
+      applyDraft(nextDraft);
+      await refreshDraftList();
+      setViewMode('editor');
+      pushRoute({ mode: 'editor', draftId: nextDraft.id });
+    },
+    [
+      applyDraft,
+      buildCurrentDraft,
+      persistReady,
+      refreshDraftList,
+      userSettings.defaultAuthor,
+      viewMode,
+    ],
+  );
+
   const handleOpenDraft = useCallback(
     async (id: string) => {
       const current = buildCurrentDraft();
@@ -236,6 +271,21 @@ export default function App() {
           setPersistReady(true);
           return;
         }
+        if (route.mode === 'template') {
+          setViewMode('template');
+          setPersistReady(true);
+          return;
+        }
+        if (route.mode === 'quickfill') {
+          setViewMode('quickfill');
+          setPersistReady(true);
+          return;
+        }
+        if (route.mode === 'works') {
+          setViewMode('works');
+          setPersistReady(true);
+          return;
+        }
 
         if (route.mode === 'editor') {
           const draft = await draftStore.loadDraft(route.draftId);
@@ -291,6 +341,18 @@ export default function App() {
       }
       if (route.mode === 'settings') {
         setViewMode('settings');
+        return;
+      }
+      if (route.mode === 'template') {
+        setViewMode('template');
+        return;
+      }
+      if (route.mode === 'quickfill') {
+        setViewMode('quickfill');
+        return;
+      }
+      if (route.mode === 'works') {
+        setViewMode('works');
         return;
       }
 
@@ -356,6 +418,10 @@ export default function App() {
     refreshDraftList,
   ]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [viewMode]);
+
   const handleReturnToEntry = useCallback(async () => {
     const current = buildCurrentDraft();
     if (viewMode === 'editor' && current) {
@@ -374,6 +440,36 @@ export default function App() {
     }
     setViewMode('settings');
     pushRoute({ mode: 'settings' });
+  }, [buildCurrentDraft, refreshDraftList, viewMode]);
+
+  const handleOpenWorks = useCallback(async () => {
+    const current = buildCurrentDraft();
+    if (viewMode === 'editor' && current) {
+      await draftStore.saveDraft(current);
+      await refreshDraftList();
+    }
+    setViewMode('works');
+    pushRoute({ mode: 'works' });
+  }, [buildCurrentDraft, refreshDraftList, viewMode]);
+
+  const handleOpenTemplateSelection = useCallback(async () => {
+    const current = buildCurrentDraft();
+    if (viewMode === 'editor' && current) {
+      await draftStore.saveDraft(current);
+      await refreshDraftList();
+    }
+    setViewMode('template');
+    pushRoute({ mode: 'template' });
+  }, [buildCurrentDraft, refreshDraftList, viewMode]);
+
+  const handleOpenQuickFill = useCallback(async () => {
+    const current = buildCurrentDraft();
+    if (viewMode === 'editor' && current) {
+      await draftStore.saveDraft(current);
+      await refreshDraftList();
+    }
+    setViewMode('quickfill');
+    pushRoute({ mode: 'quickfill' });
   }, [buildCurrentDraft, refreshDraftList, viewMode]);
 
   const handleSettingsChange = useCallback((settings: UserSettings) => {
@@ -465,48 +561,126 @@ export default function App() {
 
   const errorMessage = dictError || appError;
 
+  const handleOpenEntry = useCallback(() => {
+    if (viewMode === 'editor') {
+      void handleReturnToEntry();
+      return;
+    }
+    setViewMode('entry');
+    pushRoute({ mode: 'entry' });
+  }, [handleReturnToEntry, viewMode]);
+
   if (viewMode === 'settings') {
     return (
-      <>
+      <AppFrame
+        activeView='settings'
+        onOpenEntry={handleOpenEntry}
+        onOpenWorks={() => void handleOpenWorks()}
+        onOpenSettings={() => void handleOpenSettings()}
+      >
         <AppNotice message={errorMessage} />
         <SettingsPage
           settings={userSettings}
           onSettingsChange={handleSettingsChange}
           onReturn={() => void handleReturnToEntry()}
         />
-      </>
+      </AppFrame>
     );
   }
 
-  if (viewMode === 'entry') {
+  if (viewMode === 'works') {
     return (
-      <>
+      <AppFrame
+        activeView='works'
+        onOpenEntry={handleOpenEntry}
+        onOpenWorks={() => void handleOpenWorks()}
+        onOpenSettings={() => void handleOpenSettings()}
+      >
         <AppNotice message={errorMessage} />
-        <EntryPage
+        <WorksPage
+          drafts={drafts}
+          onCreateDraft={handleOpenEntry}
+          onOpenDraft={(id) => void handleOpenDraft(id)}
+          onDeleteDraft={(id) => void handleDeleteDraft(id)}
+          onExportDrafts={() => void handleExportDrafts()}
+          onImportDrafts={(file) => void handleImportDrafts(file)}
+        />
+      </AppFrame>
+    );
+  }
+
+  if (viewMode === 'template') {
+    return (
+      <AppFrame
+        activeView='entry'
+        onOpenEntry={handleOpenEntry}
+        onOpenWorks={() => void handleOpenWorks()}
+        onOpenSettings={() => void handleOpenSettings()}
+      >
+        <AppNotice message={errorMessage} />
+        <TemplateSelectionPage
           genre={entryGenre}
           selectedTune={entrySelectedTune}
           selectedVariant={entrySelectedVariant}
           rhymeType={entryRhymeType}
           templateOptions={templateOptions}
           variantOptions={variantOptions}
-          drafts={drafts}
           onGenreChange={handleEntryGenreChange}
           onTuneChange={handleEntryTuneChange}
           onVariantChange={setEntrySelectedVariant}
           onRhymeTypeChange={setEntryRhymeType}
           onStartDraft={() => void handleNewDraft()}
+          onReturn={handleOpenEntry}
+        />
+      </AppFrame>
+    );
+  }
+
+  if (viewMode === 'quickfill') {
+    return (
+      <AppFrame
+        activeView='entry'
+        onOpenEntry={handleOpenEntry}
+        onOpenWorks={() => void handleOpenWorks()}
+        onOpenSettings={() => void handleOpenSettings()}
+      >
+        <AppNotice message={errorMessage} />
+        <QuickFillPage onReturn={handleOpenEntry} />
+      </AppFrame>
+    );
+  }
+
+  if (viewMode === 'entry') {
+    return (
+      <AppFrame
+        activeView='entry'
+        onOpenEntry={handleOpenEntry}
+        onOpenWorks={() => void handleOpenWorks()}
+        onOpenSettings={() => void handleOpenSettings()}
+      >
+        <AppNotice message={errorMessage} />
+        <EntryPage
+          drafts={drafts}
+          onStartWithTemplate={(nextGenre, tuneName) =>
+            void handleNewDraftFromTemplate(nextGenre, tuneName)
+          }
+          onOpenTemplateSelection={() => void handleOpenTemplateSelection()}
+          onOpenQuickFill={() => void handleOpenQuickFill()}
+          onOpenWorks={() => void handleOpenWorks()}
           onOpenDraft={(id) => void handleOpenDraft(id)}
           onDeleteDraft={(id) => void handleDeleteDraft(id)}
-          onExportDrafts={() => void handleExportDrafts()}
-          onImportDrafts={(file) => void handleImportDrafts(file)}
-          onOpenSettings={() => void handleOpenSettings()}
         />
-      </>
+      </AppFrame>
     );
   }
 
   return (
-    <>
+    <AppFrame
+      activeView='editor'
+      onOpenEntry={handleOpenEntry}
+      onOpenWorks={() => void handleOpenWorks()}
+      onOpenSettings={() => void handleOpenSettings()}
+    >
       <AppNotice message={errorMessage} />
       <EditorPage
         activeDraftId={activeDraftId}
@@ -541,6 +715,6 @@ export default function App() {
         onCopyExportText={() => void handleExportText()}
         onReturn={() => void handleReturnToEntry()}
       />
-    </>
+    </AppFrame>
   );
 }

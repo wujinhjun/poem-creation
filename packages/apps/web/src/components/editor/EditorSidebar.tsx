@@ -27,42 +27,48 @@ export function EditorSidebar({
   onReturn,
 }: EditorSidebarProps) {
   return (
-    <aside className='grid gap-[18px] border border-[#5c3f22]/25 bg-[#fff9eb]/85 p-5 shadow-[0_14px_34px_rgba(60,40,21,0.08)]'>
-      <div className='grid gap-3'>
-        <div className='flex flex-wrap gap-2'>
+    <aside className='panel editor-aside'>
+      <div className='panel-heading'>
+        <div>
+          <p className='section-kicker'>旁注</p>
+          <h2>轻提示</h2>
+        </div>
+        <button
+          type='button'
+          className='ghost-button'
+          onClick={onReturn}
+        >
+          返回
+        </button>
+      </div>
+      <div className='aside-section'>
+        <div className='button-stack'>
           <button
             type='button'
-            className='border border-[#8b6a4c] px-4 py-2 text-[15px] text-[#5b402f] transition hover:bg-[#efe1c6]'
-            onClick={onReturn}
-          >
-            返回
-          </button>
-          <button
-            type='button'
-            className='border border-[#8b6a4c] px-4 py-2 text-[15px] text-[#5b402f] transition hover:bg-[#efe1c6]'
+            className='ghost-button'
             onClick={onOpenExportPreview}
           >
             导出预览
           </button>
           <button
             type='button'
-            className='border border-[#8b6a4c] px-4 py-2 text-[15px] text-[#5b402f] transition hover:bg-[#efe1c6]'
+            className='ghost-button'
             onClick={onCopyExportText}
           >
             复制文字
           </button>
           <button
             type='button'
-            className='border border-[#8b6a4c] px-4 py-2 text-[15px] text-[#5b402f] transition hover:bg-[#efe1c6]'
+            className='ghost-button'
             onClick={onOpenExportPreview}
           >
             导出图片
           </button>
         </div>
         {exportStatus && (
-          <div className='text-[13px] text-[#806851]'>{exportStatus}</div>
+          <div className='notice-inline'>{exportStatus}</div>
         )}
-        <div className='border border-[#8b6a4c]/40 bg-[#fff9ea]/70 p-3 text-[14px] leading-7 text-[#806851]'>
+        <div className='selection-summary'>
           <div>体裁：{genre === 'meter' ? '诗' : '词'}</div>
           <div>模板：{selectedTune || '未选模板'}</div>
           <div>
@@ -76,7 +82,7 @@ export function EditorSidebar({
         </div>
       </div>
 
-      <div className='flex flex-wrap gap-4 text-[13px] text-[#725c47]'>
+      <div className='legend-strip'>
         <span className='inline-flex items-center gap-1.5'>
           <i className='h-3 w-3 border border-[#4d7a35] bg-[#e8f1df]' />合
         </span>
