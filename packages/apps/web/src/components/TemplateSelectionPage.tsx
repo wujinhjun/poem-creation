@@ -22,7 +22,7 @@ type TemplateSelectionPageProps = {
   onReturn: () => void;
 };
 
-type TemplateStep = 1 | 2 | 3;
+type TemplateStep = 1 | 2;
 
 function toneMark(cell: ToneConstraint): string {
   if (cell.type === 'fixed') return cell.tone;
@@ -141,11 +141,7 @@ export function TemplateSelectionPage({
       setStep(2);
       return;
     }
-    if (step === 2 && selectedTune) {
-      setStep(3);
-      return;
-    }
-    if (step === 3 && selectedVariant) {
+    if (step === 2 && selectedVariant) {
       onStartDraft();
     }
   };
@@ -159,8 +155,7 @@ export function TemplateSelectionPage({
         <div className='template-steps' aria-label='模板选择步骤'>
           {[
             { id: 1, label: '选择体裁' },
-            { id: 2, label: genre === 'meter' ? '选择格律' : '选择词牌' },
-            { id: 3, label: '确认变体' },
+            { id: 2, label: genre === 'meter' ? '格律 / 变体 / 韵书' : '词牌 / 变体 / 韵书' },
           ].map((item) => (
             <button
               key={item.id}
@@ -208,9 +203,9 @@ export function TemplateSelectionPage({
           {step === 2 && (
             <section className='template-section'>
               <p className='section-kicker'>第二步</p>
-              <h1>{genre === 'meter' ? '选择格律' : '选择词牌'}</h1>
+              <h1>{genre === 'meter' ? '选择格律、变体与韵书' : '选择词牌、变体与韵书'}</h1>
               <p className='page-lede'>
-                用一个下拉完成选择，空出来的位置直接预览当前体式。
+                在这一页完成全部规则选择，右侧和下方会同步预览当前体式。
               </p>
               <div className='template-search-row'>
                 <CustomSelect
@@ -223,21 +218,6 @@ export function TemplateSelectionPage({
                     if (nextTune) pickTune(nextTune);
                   }}
                 />
-              </div>
-              <PatternPreview
-                title={patternTitle}
-                subtitle={patternSubtitle}
-                pattern={pattern}
-              />
-            </section>
-          )}
-
-          {step === 3 && (
-            <section className='template-section'>
-              <p className='section-kicker'>第三步</p>
-              <h1>确认变体与韵书</h1>
-              <p className='page-lede'>选好后进入编辑器，正文页里仍然可以调整作品标题、题记和署名。</p>
-              <div className='template-search-row'>
                 <CustomSelect
                   value={selectedVariant}
                   options={variantOptions}
@@ -262,6 +242,7 @@ export function TemplateSelectionPage({
               />
             </section>
           )}
+
         </div>
 
         <aside className='panel template-preview'>
@@ -288,10 +269,10 @@ export function TemplateSelectionPage({
           <button
             type='button'
             className='primary-button'
-            disabled={(step === 2 && !selectedTune) || (step === 3 && !selectedVariant)}
+            disabled={step === 2 && !selectedVariant}
             onClick={goNext}
           >
-            {step === 3 ? '开始新作' : step === 2 ? '下一步：选择变体' : '下一步'}
+            {step === 2 ? '开始新作' : '下一步'}
           </button>
         </aside>
       </section>
