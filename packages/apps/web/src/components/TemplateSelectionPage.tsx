@@ -136,16 +136,6 @@ export function TemplateSelectionPage({
     onTuneChange(nextTune);
   };
 
-  const goNext = () => {
-    if (step === 1) {
-      setStep(2);
-      return;
-    }
-    if (step === 2 && selectedVariant) {
-      onStartDraft();
-    }
-  };
-
   return (
     <main className='page template-page'>
       <div className='template-topline'>
@@ -240,41 +230,19 @@ export function TemplateSelectionPage({
                 subtitle={patternSubtitle}
                 pattern={pattern}
               />
+              <div className='template-action-row'>
+                <button
+                  type='button'
+                  className='primary-button'
+                  disabled={!selectedVariant}
+                  onClick={onStartDraft}
+                >
+                  开始新作
+                </button>
+              </div>
             </section>
           )}
-
         </div>
-
-        <aside className='panel template-preview'>
-          <p className='section-kicker'>本次新建</p>
-          <div className='preview-seal'>{genre === 'meter' ? '诗' : '词'}</div>
-          <dl>
-            <div>
-              <dt>体裁</dt>
-              <dd>{genre === 'meter' ? '诗 · 近体格律' : '词 · 词牌体式'}</dd>
-            </div>
-            <div>
-              <dt>{genre === 'meter' ? '格律' : '词牌'}</dt>
-              <dd>{selectedTemplate?.value || '待选择'}</dd>
-            </div>
-            <div>
-              <dt>变体</dt>
-              <dd>{selectedVariantOption?.label || '待选择'}</dd>
-            </div>
-            <div>
-              <dt>韵书</dt>
-              <dd>{RHYME_OPTIONS.find((option) => option.value === rhymeType)?.label}</dd>
-            </div>
-          </dl>
-          <button
-            type='button'
-            className='primary-button'
-            disabled={step === 2 && !selectedVariant}
-            onClick={goNext}
-          >
-            {step === 2 ? '开始新作' : '下一步'}
-          </button>
-        </aside>
       </section>
     </main>
   );

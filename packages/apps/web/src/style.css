@@ -269,20 +269,20 @@ h3 {
 }
 
 .home-compose {
-  min-height: calc(100vh - 160px);
+  min-height: calc(100vh - 190px);
   align-content: center;
 }
 
 .home-copy {
   display: grid;
   justify-items: center;
-  gap: 18px;
-  padding: 48px 24px 18px;
+  gap: 16px;
+  padding: 34px 24px 12px;
   text-align: center;
 }
 
 .home-copy h1 {
-  font-size: clamp(42px, 5.6vw, 68px);
+  font-size: clamp(42px, 5.1vw, 64px);
 }
 
 .home-copy p {
@@ -322,18 +322,34 @@ h3 {
 
 .start-method {
   display: grid;
-  min-height: 260px;
-  align-content: center;
+  min-height: 236px;
+  grid-template-rows: 1fr auto;
+  align-content: stretch;
   justify-items: center;
-  gap: 14px;
+  gap: 18px;
   border: 1px solid var(--line);
   background: var(--paper-strong);
-  padding: 30px;
+  padding: 32px 30px 28px;
   text-align: center;
 }
 
-.start-method.is-active {
+.start-method-copy {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+}
+
+.start-method-action {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-method:hover {
   border-color: var(--cinnabar);
+  background: #fbf6ee;
 }
 
 .method-mark {
@@ -349,7 +365,7 @@ h3 {
   font-weight: 700;
 }
 
-.start-method.is-active .method-mark {
+.start-method-template .method-mark {
   border-color: #d7b8b3;
   background: #f3ddd9;
   color: var(--cinnabar);
@@ -447,12 +463,13 @@ h3 {
 
 .template-page {
   display: grid;
-  gap: 28px;
+  gap: 18px;
+  padding-top: 24px;
 }
 
 .template-topline {
   display: flex;
-  min-height: 74px;
+  min-height: 56px;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
@@ -504,26 +521,27 @@ h3 {
 
 .template-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 28px;
+  grid-template-columns: 1fr;
+  gap: 0;
   align-items: start;
 }
 
 .template-main {
-  min-height: 620px;
+  min-height: 500px;
+  width: min(1080px, 100%);
   border: 1px solid var(--line);
   background: var(--paper-strong);
-  padding: 48px;
+  padding: 32px;
 }
 
 .template-section {
   display: grid;
-  gap: 24px;
+  gap: 20px;
 }
 
 .template-section h1 {
-  max-width: 760px;
-  font-size: clamp(38px, 4.7vw, 62px);
+  max-width: 680px;
+  font-size: clamp(32px, 3.6vw, 46px);
 }
 
 .template-section .page-lede {
@@ -539,12 +557,12 @@ h3 {
 
 .genre-choice-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 18px;
+  margin-top: 10px;
 }
 
 .genre-choice {
   display: grid;
-  min-height: 260px;
+  min-height: 200px;
   align-content: center;
   justify-items: center;
   gap: 14px;
@@ -599,7 +617,7 @@ h3 {
 
 .template-search-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(260px, 1.35fr) minmax(260px, 1.35fr) minmax(150px, 0.8fr);
   gap: 16px;
 }
 
@@ -650,7 +668,12 @@ h3 {
 .template-action-row {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 12px;
+}
+
+.template-action-row .primary-button {
+  min-width: 180px;
 }
 
 .template-preview {
@@ -691,23 +714,23 @@ h3 {
 
 .pattern-preview-block {
   display: grid;
-  min-height: 360px;
-  gap: 22px;
+  min-height: 250px;
+  gap: 18px;
   border: 1px solid var(--line);
   background: #fffbf5;
-  padding: 28px;
+  padding: 20px 24px;
 }
 
 .pattern-preview-heading {
   display: grid;
   gap: 8px;
   border-bottom: 1px solid var(--line);
-  padding-bottom: 18px;
+  padding-bottom: 14px;
   text-align: center;
 }
 
 .pattern-preview-heading h2 {
-  font-size: 30px;
+  font-size: 27px;
 }
 
 .pattern-preview-heading p {
@@ -736,16 +759,16 @@ h3 {
 .pattern-preview-line div {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .pattern-preview-line i {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  min-height: 30px;
   place-items: center;
-  border: 1px solid var(--line);
-  background: var(--paper-strong);
+  border: 0;
+  background: transparent;
   color: var(--ink);
   font-style: normal;
   font-size: 18px;
@@ -769,11 +792,11 @@ h3 {
 
 .quickfill-sheet {
   display: grid;
-  min-height: 680px;
-  gap: 32px;
+  min-height: 590px;
+  gap: 22px;
   border: 1px solid var(--line);
   background: var(--paper-strong);
-  padding: 42px;
+  padding: 34px 42px;
 }
 
 .quickfill-meta {
@@ -800,7 +823,7 @@ h3 {
 }
 
 .quickfill-meta input:first-of-type {
-  font-size: 48px;
+  font-size: 42px;
   font-weight: 700;
 }
 
@@ -814,7 +837,7 @@ h3 {
   max-width: 760px;
   width: 100%;
   justify-self: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .quickfill-line-row {
@@ -830,15 +853,15 @@ h3 {
 }
 
 .quickfill-line-row input {
-  min-height: 54px;
+  min-height: 44px;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
   color: var(--ink);
   outline: none;
   padding: 0 8px;
-  font-size: 28px;
-  letter-spacing: 0.28em;
+  font-size: 23px;
+  letter-spacing: 0.12em;
 }
 
 .quickfill-line-row input:focus {
@@ -850,7 +873,7 @@ h3 {
   justify-content: center;
   gap: 14px;
   border-top: 1px solid var(--line);
-  padding-top: 22px;
+  padding-top: 18px;
 }
 
 .quickfill-aside {
@@ -1006,6 +1029,12 @@ h3 {
 
 .primary-button:hover {
   background: var(--cinnabar-dark);
+}
+
+.primary-button:disabled {
+  border-color: #cdbfb1;
+  background: #d5c4bb;
+  color: #fffaf5;
 }
 
 .ghost-button {

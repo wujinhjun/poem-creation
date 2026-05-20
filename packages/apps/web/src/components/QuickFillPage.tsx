@@ -97,9 +97,6 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
             >
               加一行
             </button>
-            <button type='button' className='primary-button' disabled={filledCount === 0}>
-              识别模板
-            </button>
           </div>
         </section>
 
