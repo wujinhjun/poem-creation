@@ -38,7 +38,6 @@ export function formatPoemText({
   title,
   author,
   description,
-  selectedTune,
   chars,
   pattern,
   visualLineGroups,
@@ -47,7 +46,6 @@ export function formatPoemText({
   title: string;
   author: string;
   description: string;
-  selectedTune: string;
   chars: string[][];
   pattern: ToneConstraint[][];
   visualLineGroups?: number[][];
@@ -60,7 +58,7 @@ export function formatPoemText({
     sectionBreakBeforeGroups,
   );
   const header = [
-    title.trim() || selectedTune.trim() || '未题',
+    title.trim() || '无题',
     author.trim(),
     description.trim(),
   ].filter(Boolean);

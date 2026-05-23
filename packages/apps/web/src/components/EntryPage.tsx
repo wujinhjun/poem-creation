@@ -1,5 +1,10 @@
 import type { Genre } from '../constants/poem';
 import type { PoemCreationDraftSummary } from '../persist';
+import {
+  draftAuthorLabel,
+  draftDisplayTitle,
+  draftGenreLabel,
+} from '../utils/draftDisplay';
 import { EntryEditorPanel } from './entry/EntryEditorPanel';
 
 type EntryPageProps = {
@@ -50,8 +55,9 @@ export function EntryPage({
             {recentDrafts.map((draft) => (
               <div key={draft.id} className='recent-row'>
                 <button type='button' onClick={() => onOpenDraft(draft.id)}>
-                  <strong>{draft.title || '未题'}</strong>
-                  <span>{draft.selectedTune || '未选模板'} · {draft.author || '佚名'}</span>
+                  <strong>{draftDisplayTitle(draft)}</strong>
+                  <span>{draftAuthorLabel(draft)}</span>
+                  <span>体裁：{draftGenreLabel(draft)}</span>
                 </button>
                 <button type='button' className='ghost-button' onClick={() => onOpenDraft(draft.id)}>
                   继续编辑

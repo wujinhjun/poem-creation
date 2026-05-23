@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { RhymeDictType } from '@poem/parser/kernel';
-import { IndexedDbDraftStore } from './persist';
+import { createDraftStore } from './persist';
 import type { PoemCreationDraft, PoemCreationDraftSummary } from './persist';
 import type { Genre } from './constants/poem';
 import { AppFrame } from './components/AppFrame';
@@ -17,6 +17,7 @@ import { useEntrySelection } from './hooks/useEntrySelection';
 import { formatAnalysisReport } from './utils/analysisReport';
 import { createEmptyDraft, normalizeDraft } from './utils/draft';
 import { downloadDraftArchive, readDraftArchive } from './utils/draftArchive';
+import { draftDisplayTitle } from './utils/draftDisplay';
 import { copyText, formatPoemText } from './utils/exportText';
 import { validateGridStrictly } from './utils/strictGridValidation';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
@@ -28,8 +29,6 @@ import {
 import type { UserSettings } from './utils/settings';
 import { allTemplates } from './utils/templateSelection';
 import './style.css';
-
-const draftStore = new IndexedDbDraftStore();
 
 export default function App() {
   const [viewMode, setViewMode] = useState<
@@ -62,6 +61,10 @@ export default function App() {
   const [exportStatus, setExportStatus] = useState('');
   const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [persistReady, setPersistReady] = useState(false);
+  const draftStore = useMemo(
+    () => createDraftStore(userSettings.persistence),
+    [userSettings.persistence],
+  );
   const { dict, dictError } = useBrowserDict(rhymeType);
   const {
     pattern,
@@ -109,7 +112,7 @@ export default function App() {
 
   const refreshDraftList = useCallback(async () => {
     setDrafts(await draftStore.listDrafts());
-  }, []);
+  }, [draftStore]);
 
   const buildCurrentDraft = useCallback((): PoemCreationDraft | null => {
     if (!activeDraftId) return null;
@@ -159,6 +162,7 @@ export default function App() {
   }, [
     applyDraft,
     buildCurrentDraft,
+    draftStore,
     entryGenre,
     entryRhymeType,
     entrySelectedTune,
@@ -192,6 +196,7 @@ export default function App() {
     [
       applyDraft,
       buildCurrentDraft,
+      draftStore,
       persistReady,
       refreshDraftList,
       userSettings.defaultAuthor,
@@ -213,13 +218,20 @@ export default function App() {
       setViewMode('editor');
       pushRoute({ mode: 'editor', draftId: id });
     },
-    [applyDraft, buildCurrentDraft, persistReady, refreshDraftList, viewMode],
+    [
+      applyDraft,
+      buildCurrentDraft,
+      draftStore,
+      persistReady,
+      refreshDraftList,
+      viewMode,
+    ],
   );
 
   const handleDeleteDraft = useCallback(
     async (id: string) => {
       const target = drafts.find((draft) => draft.id === id);
-      const label = target?.title || target?.selectedTune || '这首作品';
+      const label = target ? draftDisplayTitle(target) : '这首作品';
       if (!window.confirm(`确定删除「${label}」吗？此操作不可恢复。`)) {
         return;
       }
@@ -249,7 +261,14 @@ export default function App() {
       pushRoute({ mode: 'entry' });
       await refreshDraftList();
     },
-    [activeDraftId, applyDraft, drafts, refreshDraftList, viewMode],
+    [
+      activeDraftId,
+      applyDraft,
+      draftStore,
+      drafts,
+      refreshDraftList,
+      viewMode,
+    ],
   );
 
   useEffect(() => {
@@ -330,7 +349,7 @@ export default function App() {
     return () => {
       alive = false;
     };
-  }, [applyDraft]);
+  }, [applyDraft, draftStore]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -374,11 +393,11 @@ export default function App() {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('hashchange', handlePopState);
     };
-  }, [applyDraft]);
+  }, [applyDraft, draftStore]);
 
   useEffect(() => {
     if (!persistReady || !activeDraftId || viewMode !== 'editor') return;
-    // Debounce IndexedDB writes so IME composition and rapid typing stay smooth.
+    // Debounce store writes so IME composition and rapid typing stay smooth.
     const timer = window.setTimeout(() => {
       const draft: PoemCreationDraft = {
         schemaVersion: 1,
@@ -408,6 +427,7 @@ export default function App() {
     author,
     chars,
     description,
+    draftStore,
     genre,
     persistReady,
     rhymeType,
@@ -430,7 +450,7 @@ export default function App() {
     }
     setViewMode('entry');
     pushRoute({ mode: 'entry' });
-  }, [buildCurrentDraft, refreshDraftList, viewMode]);
+  }, [buildCurrentDraft, draftStore, refreshDraftList, viewMode]);
 
   const handleOpenSettings = useCallback(async () => {
     const current = buildCurrentDraft();
@@ -440,7 +460,7 @@ export default function App() {
     }
     setViewMode('settings');
     pushRoute({ mode: 'settings' });
-  }, [buildCurrentDraft, refreshDraftList, viewMode]);
+  }, [buildCurrentDraft, draftStore, refreshDraftList, viewMode]);
 
   const handleOpenWorks = useCallback(async () => {
     const current = buildCurrentDraft();
@@ -450,7 +470,7 @@ export default function App() {
     }
     setViewMode('works');
     pushRoute({ mode: 'works' });
-  }, [buildCurrentDraft, refreshDraftList, viewMode]);
+  }, [buildCurrentDraft, draftStore, refreshDraftList, viewMode]);
 
   const handleOpenTemplateSelection = useCallback(async () => {
     const current = buildCurrentDraft();
@@ -460,7 +480,7 @@ export default function App() {
     }
     setViewMode('template');
     pushRoute({ mode: 'template' });
-  }, [buildCurrentDraft, refreshDraftList, viewMode]);
+  }, [buildCurrentDraft, draftStore, refreshDraftList, viewMode]);
 
   const handleOpenQuickFill = useCallback(async () => {
     const current = buildCurrentDraft();
@@ -470,7 +490,7 @@ export default function App() {
     }
     setViewMode('quickfill');
     pushRoute({ mode: 'quickfill' });
-  }, [buildCurrentDraft, refreshDraftList, viewMode]);
+  }, [buildCurrentDraft, draftStore, refreshDraftList, viewMode]);
 
   const handleSettingsChange = useCallback((settings: UserSettings) => {
     setUserSettings(settings);
@@ -511,7 +531,6 @@ export default function App() {
         title,
         author,
         description,
-        selectedTune,
         chars,
         pattern,
         visualLineGroups,
@@ -523,7 +542,6 @@ export default function App() {
       description,
       pattern,
       sectionBreakBeforeGroups,
-      selectedTune,
       title,
       visualLineGroups,
     ],
@@ -542,7 +560,7 @@ export default function App() {
     downloadDraftArchive(
       fullDrafts.filter((draft): draft is PoemCreationDraft => Boolean(draft)),
     );
-  }, [drafts]);
+  }, [draftStore, drafts]);
 
   const handleImportDrafts = useCallback(
     async (file: File) => {
@@ -556,7 +574,7 @@ export default function App() {
         setAppError(`导入失败：${message}`);
       }
     },
-    [refreshDraftList],
+    [draftStore, refreshDraftList],
   );
 
   const errorMessage = dictError || appError;

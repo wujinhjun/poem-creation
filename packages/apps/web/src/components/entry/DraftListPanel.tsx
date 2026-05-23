@@ -1,6 +1,11 @@
 import { useRef } from 'react';
 import type { PoemCreationDraftSummary } from '../../persist';
 import { formatDraftTime } from '../../utils/draft';
+import {
+  draftAuthorLabel,
+  draftDisplayTitle,
+  draftGenreLabel,
+} from '../../utils/draftDisplay';
 
 type DraftListPanelProps = {
   drafts: PoemCreationDraftSummary[];
@@ -62,7 +67,7 @@ export function DraftListPanel({
       </div>
       <input
         value={draftQuery}
-        placeholder='搜索标题、署名或模板'
+        placeholder='搜索标题、署名或体裁'
         className='line-input'
         onChange={(event) => onDraftQueryChange(event.currentTarget.value)}
       />
@@ -88,10 +93,13 @@ export function DraftListPanel({
               onClick={() => onOpenDraft(draft.id)}
             >
               <span className='draft-title'>
-                {draft.title || '未题'}
+                {draftDisplayTitle(draft)}
               </span>
               <span className='draft-meta'>
-                {draft.author || '佚名'} · {draft.selectedTune || '未选模板'}
+                {draftAuthorLabel(draft)}
+              </span>
+              <span className='draft-template'>
+                体裁：{draftGenreLabel(draft)}
               </span>
               <span className='draft-time'>
                 {formatDraftTime(draft.updatedAt)}

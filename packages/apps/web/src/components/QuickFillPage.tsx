@@ -57,7 +57,7 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
             <span>题目（可空）</span>
             <input
               value={title}
-              placeholder='未题'
+              placeholder='无题'
               onChange={(event) => setTitle(event.currentTarget.value)}
             />
             <input

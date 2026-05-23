@@ -103,7 +103,7 @@ export function TemplateSelectionPage({
 
   useEffect(() => {
     if (genre !== 'ci' || !selectedTune || !selectedVariant) {
-      setCiPattern([]);
+      queueMicrotask(() => setCiPattern([]));
       return;
     }
     let alive = true;

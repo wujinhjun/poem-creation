@@ -20,7 +20,7 @@ export function WorkMetadataFields({
       <span className='meta-rule'>题目</span>
       <input
         value={title}
-        placeholder='未题'
+        placeholder='无题'
         className='title-input'
         onChange={(event) => onTitleChange(event.currentTarget.value)}
       />

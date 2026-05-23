@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { PoemCreationDraftSummary } from '../persist';
+import { draftSearchText } from '../utils/draftDisplay';
 import { DraftListPanel } from './entry/DraftListPanel';
 
 type WorksPageProps = {
@@ -24,10 +25,7 @@ export function WorksPage({
     const keyword = draftQuery.trim().toLowerCase();
     if (!keyword) return drafts;
     return drafts.filter((draft) =>
-      [draft.title, draft.author, draft.selectedTune, draft.selectedVariant]
-        .join(' ')
-        .toLowerCase()
-        .includes(keyword),
+      draftSearchText(draft).toLowerCase().includes(keyword),
     );
   }, [draftQuery, drafts]);
 
