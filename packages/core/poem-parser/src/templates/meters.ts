@@ -3,7 +3,7 @@
  *
  * 无 fs / path / process 依赖，可被 kernel 直接导入。
  */
-import { Tone, ToneConstraint, PoemType } from '../core/types.js';
+import { Tone, ToneConstraint, PoemType, RhymeTone } from '../core/types.js';
 
 export interface MeterTemplate {
   id: string;
@@ -11,7 +11,10 @@ export interface MeterTemplate {
   name: string;
   charPerLine: 5 | 7;
   lineCount: 4 | 8;
+  /** 起式：RhymeTone.Ping = 平起, RhymeTone.Ze = 仄起 */
+  startsWith: RhymeTone;
   pattern: ToneConstraint[][];
+  /** 韵脚行索引；首句入韵当且仅当 rhymeLineIndices 包含 0 */
   rhymeLineIndices: number[];
   variants?: string[];
 }
@@ -39,6 +42,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '七律·首句入韵·平起',
       charPerLine: 7,
       lineCount: 8,
+      startsWith: RhymeTone.Ping,
       pattern: [
         pz('中平中仄仄平韵'),
         pz('中仄平平中仄韵'),
@@ -57,6 +61,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '七律·首句入韵·仄起',
       charPerLine: 7,
       lineCount: 8,
+      startsWith: RhymeTone.Ze,
       pattern: [
         pz('中仄中平平仄韵'),
         pz('中平中仄仄平韵'),
@@ -75,6 +80,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '七律·首句不入韵·平起',
       charPerLine: 7,
       lineCount: 8,
+      startsWith: RhymeTone.Ping,
       pattern: [
         pz('中平中仄平平仄'),
         pz('中仄平平中仄韵'),
@@ -93,6 +99,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '七律·首句不入韵·仄起',
       charPerLine: 7,
       lineCount: 8,
+      startsWith: RhymeTone.Ze,
       pattern: [
         pz('中仄中平平仄仄'),
         pz('中平中仄仄平韵'),
@@ -111,6 +118,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '五律·首句入韵·平起',
       charPerLine: 5,
       lineCount: 8,
+      startsWith: RhymeTone.Ping,
       pattern: [
         pz('中平中仄韵'),
         pz('中仄仄平韵'),
@@ -129,6 +137,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '五律·首句入韵·仄起',
       charPerLine: 5,
       lineCount: 8,
+      startsWith: RhymeTone.Ze,
       pattern: [
         pz('中仄中平韵'),
         pz('中平仄仄韵'),
@@ -147,6 +156,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '五律·首句不入韵·平起',
       charPerLine: 5,
       lineCount: 8,
+      startsWith: RhymeTone.Ping,
       pattern: [
         pz('中平中仄仄'),
         pz('中仄仄平韵'),
@@ -165,6 +175,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '五律·首句不入韵·仄起',
       charPerLine: 5,
       lineCount: 8,
+      startsWith: RhymeTone.Ze,
       pattern: [
         pz('中仄平平仄'),
         pz('中平仄仄韵'),
@@ -183,6 +194,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '七绝·首句入韵·平起',
       charPerLine: 7,
       lineCount: 4,
+      startsWith: RhymeTone.Ping,
       pattern: [
         pz('中平中仄仄平韵'),
         pz('中仄平平中仄韵'),
@@ -197,6 +209,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '七绝·首句入韵·仄起',
       charPerLine: 7,
       lineCount: 4,
+      startsWith: RhymeTone.Ze,
       pattern: [
         pz('中仄平平中仄韵'),
         pz('中平中仄仄平韵'),
@@ -211,6 +224,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '七绝·平起·首句不入韵',
       charPerLine: 7,
       lineCount: 4,
+      startsWith: RhymeTone.Ping,
       pattern: [
         pz('中平中仄平平仄'),
         pz('中仄平平中仄韵'),
@@ -225,6 +239,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '七绝·仄起·首句不入韵',
       charPerLine: 7,
       lineCount: 4,
+      startsWith: RhymeTone.Ze,
       pattern: [
         pz('中仄中平平仄仄'),
         pz('中平中仄仄平韵'),
@@ -240,6 +255,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '五绝·首句入韵·平起',
       charPerLine: 5,
       lineCount: 4,
+      startsWith: RhymeTone.Ping,
       pattern: [
         pz('中平仄仄韵'),
         pz('中仄仄平韵'),
@@ -254,6 +270,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '五绝·首句入韵·仄起',
       charPerLine: 5,
       lineCount: 4,
+      startsWith: RhymeTone.Ze,
       pattern: [
         pz('中仄仄平韵'),
         pz('中平仄仄韵'),
@@ -268,6 +285,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '五绝·平起·首句不入韵',
       charPerLine: 5,
       lineCount: 4,
+      startsWith: RhymeTone.Ping,
       pattern: [
         pz('中平中仄仄'),
         pz('中仄仄平韵'),
@@ -282,6 +300,7 @@ export function loadMeterTemplates(): MeterTemplate[] {
       name: '五绝·仄起·首句不入韵',
       charPerLine: 5,
       lineCount: 4,
+      startsWith: RhymeTone.Ze,
       pattern: [
         pz('中仄平平仄'),
         pz('中平仄仄韵'),

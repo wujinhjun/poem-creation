@@ -53,16 +53,21 @@ describe("lexer - lex 边角情况", () => {
 // ============ templates 模块 ============
 
 describe("templates - getTemplateType", () => {
-  it("应识别律诗 ID", () => {
-    expect(getTemplateType("qilü-shouju-ping")).toBe("lüshi");
+  const meters = loadMeterTemplates();
+
+  it("应识别律诗模板", () => {
+    const tpl = meters.find((t) => t.id === "qilü-shouju-ping")!;
+    expect(getTemplateType(tpl)).toBe("lüshi");
   });
 
-  it("应识别绝句 ID", () => {
-    expect(getTemplateType("qijue-pingqi")).toBe("jueju");
+  it("应识别绝句模板", () => {
+    const tpl = meters.find((t) => t.id === "qijue-pingqi")!;
+    expect(getTemplateType(tpl)).toBe("jueju");
   });
 
-  it("默认应返回 ci", () => {
-    expect(getTemplateType("水调歌头")).toBe("ci");
+  it("词牌模板应返回 ci", () => {
+    const tpl: CiTemplate = { id: "水调歌头", name: "水调歌头", variants: [] };
+    expect(getTemplateType(tpl)).toBe("ci");
   });
 });
 

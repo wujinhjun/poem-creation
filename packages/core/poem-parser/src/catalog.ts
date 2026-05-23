@@ -6,6 +6,7 @@
  */
 
 import catalogData from '../data/ci-catalog.json' with { type: 'json' };
+import { RhymeTone } from './core/types.js';
 import { loadMeterTemplates } from './templates/meters.js';
 
 // ---- 类型 ----
@@ -27,7 +28,11 @@ export interface TemplateEntry {
 
 // ---- 诗体格律（从 loadMeterTemplates 派生，不重复定义） ----
 
+let _meterCatalogCache: TemplateEntry[] | null = null;
+
 function buildMeterCatalog(): TemplateEntry[] {
+  if (_meterCatalogCache) return _meterCatalogCache;
+
   const templates = loadMeterTemplates();
   const groups = new Map<string, TemplateEntry>();
 
@@ -36,11 +41,7 @@ function buildMeterCatalog(): TemplateEntry[] {
     const lineType = t.lineCount === 8 ? '律' : '绝';
     const name = `${charLabel}${lineType}`;
     const isRuYun = t.rhymeLineIndices.includes(0);
-
-    // 从 ID 提取起韵信息
-    const idLower = t.id.toLowerCase();
-    const qiYun =
-      idLower.includes('ping') || idLower.includes('pingqi') ? '平起' : '仄起';
+    const qiYun = t.startsWith === RhymeTone.Ping ? '平起' : '仄起';
     const rhymeNote = isRuYun ? '首句入韵' : '首句不入韵';
     const duizhangNote = t.lineCount === 8 ? ' · 颔联颈联对仗' : '';
 
@@ -58,7 +59,8 @@ function buildMeterCatalog(): TemplateEntry[] {
     entry.variantCount = entry.variants.length;
   }
 
-  return [...groups.values()];
+  _meterCatalogCache = [...groups.values()];
+  return _meterCatalogCache;
 }
 
 // ---- 词牌（从 JSON 加载） ----
@@ -82,8 +84,12 @@ export const ciCatalog: CiCatalog = catalogData;
 
 // ---- 统一查询 ----
 
+let _allTemplatesCache: TemplateEntry[] | null = null;
+
 /** 列出所有可用模板：诗体格律 + 词牌 818 首 */
 export function listAllTemplates(): TemplateEntry[] {
+  if (_allTemplatesCache) return _allTemplatesCache;
+
   const ciEntries: TemplateEntry[] = Object.entries(ciCatalog).map(
     ([name, entry]) => ({
       name,
@@ -97,7 +103,8 @@ export function listAllTemplates(): TemplateEntry[] {
       })),
     }),
   );
-  return [...buildMeterCatalog(), ...ciEntries];
+  _allTemplatesCache = [...buildMeterCatalog(), ...ciEntries];
+  return _allTemplatesCache;
 }
 
 /** 查找格律模板 */
