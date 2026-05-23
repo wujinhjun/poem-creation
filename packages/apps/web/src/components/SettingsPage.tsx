@@ -11,6 +11,8 @@ export function SettingsPage({
   onSettingsChange,
   onReturn,
 }: SettingsPageProps) {
+  const isSupabaseMode = settings.persistence.mode === 'supabase';
+
   const setPersistenceMode = (
     mode: UserSettings['persistence']['mode'],
   ) => {
@@ -100,65 +102,76 @@ export function SettingsPage({
               </div>
             </div>
 
-            <p className='settings-help'>
-              本地模式使用浏览器 IndexedDB。Supabase 模式只需要填项目 URL
-              和 anon public key，浏览器端不要填写 service_role key。
-            </p>
-
-            <div className='settings-grid'>
-              <div className='form-field'>
-                <span className='field-title'>Supabase Project URL</span>
-                <input
-                  value={settings.persistence.supabase.url}
-                  placeholder='https://xxxx.supabase.co'
-                  className='line-input'
-                  inputMode='url'
-                  onChange={(event) =>
-                    setSupabaseField('url', event.currentTarget.value)
-                  }
-                />
+            {!isSupabaseMode && (
+              <div className='settings-local-note'>
+                <p>当前作品只保存在这个浏览器的 IndexedDB。</p>
+                <p>
+                  适合单机写作。换浏览器、清理站点数据或换设备前，请先到作品页导出备份。
+                </p>
               </div>
+            )}
 
-              <div className='form-field'>
-                <span className='field-title'>anon public key</span>
-                <input
-                  value={settings.persistence.supabase.anonKey}
-                  placeholder='eyJhbGciOi...'
-                  className='line-input'
-                  type='password'
-                  autoComplete='off'
-                  onChange={(event) =>
-                    setSupabaseField('anonKey', event.currentTarget.value)
-                  }
-                />
-              </div>
+            {isSupabaseMode && (
+              <>
+                <p className='settings-help'>
+                  填入你自己的 Supabase Project URL 和 anon public key 后，
+                  新草稿会写入 Supabase。浏览器端不要填写 service_role key。
+                </p>
 
-              <div className='form-field'>
-                <span className='field-title'>草稿表</span>
-                <input
-                  value={settings.persistence.supabase.draftsTable}
-                  className='line-input'
-                  onChange={(event) =>
-                    setSupabaseField('draftsTable', event.currentTarget.value)
-                  }
-                />
-              </div>
+                <div className='settings-grid'>
+                  <div className='form-field'>
+                    <span className='field-title'>Supabase Project URL</span>
+                    <input
+                      value={settings.persistence.supabase.url}
+                      placeholder='https://xxxx.supabase.co'
+                      className='line-input'
+                      inputMode='url'
+                      onChange={(event) =>
+                        setSupabaseField('url', event.currentTarget.value)
+                      }
+                    />
+                  </div>
 
-              <div className='form-field'>
-                <span className='field-title'>元信息表</span>
-                <input
-                  value={settings.persistence.supabase.metaTable}
-                  className='line-input'
-                  onChange={(event) =>
-                    setSupabaseField('metaTable', event.currentTarget.value)
-                  }
-                />
-              </div>
-            </div>
+                  <div className='form-field'>
+                    <span className='field-title'>anon public key</span>
+                    <input
+                      value={settings.persistence.supabase.anonKey}
+                      placeholder='eyJhbGciOi...'
+                      className='line-input'
+                      type='password'
+                      autoComplete='off'
+                      onChange={(event) =>
+                        setSupabaseField('anonKey', event.currentTarget.value)
+                      }
+                    />
+                  </div>
 
-            <div className='settings-schema-note'>
-              <span className='field-title'>建表参考</span>
-              <pre>{`create table if not exists poem_creation_drafts (
+                  <div className='form-field'>
+                    <span className='field-title'>草稿表</span>
+                    <input
+                      value={settings.persistence.supabase.draftsTable}
+                      className='line-input'
+                      onChange={(event) =>
+                        setSupabaseField('draftsTable', event.currentTarget.value)
+                      }
+                    />
+                  </div>
+
+                  <div className='form-field'>
+                    <span className='field-title'>元信息表</span>
+                    <input
+                      value={settings.persistence.supabase.metaTable}
+                      className='line-input'
+                      onChange={(event) =>
+                        setSupabaseField('metaTable', event.currentTarget.value)
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className='settings-schema-note'>
+                  <span className='field-title'>建表参考</span>
+                  <pre>{`create table if not exists poem_creation_drafts (
   id text primary key,
   payload jsonb not null,
   updated_at timestamptz not null
@@ -168,7 +181,9 @@ create table if not exists poem_creation_meta (
   key text primary key,
   value text not null
 );`}</pre>
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>
