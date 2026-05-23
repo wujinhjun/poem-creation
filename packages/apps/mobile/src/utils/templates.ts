@@ -1,64 +1,21 @@
-import { findCiTune, listAllTemplates } from "@poem/parser/catalog";
-import { loadMeterTemplates, Tone } from "@poem/parser/kernel";
+import { findCiTune } from "@poem/parser/catalog";
+import { Tone } from "@poem/parser/kernel";
 import type { CiTemplate, ToneConstraint } from "@poem/parser/kernel";
+import {
+  allTemplates,
+  ciPatternForEditor,
+  firstVariantForTune,
+  inferCiRhymeTone,
+  meterMap,
+  pairLineGroups,
+  variantSummary,
+} from "@poem/shared";
+import type { CiPatternForEditor } from "@poem/shared";
 
 import ciBundleData from "../../../../core/poem-parser/data/ci-tunes-bundle.json";
 import type { Genre } from "../constants/poem";
 
-export type CiPatternForEditor = {
-  lines: ToneConstraint[][];
-  rhymeGroups: number[][];
-  sectionBreaks: number[];
-};
-
-export const allTemplates = listAllTemplates();
-export const meterMap = new Map(loadMeterTemplates().map((item) => [item.id, item]));
 const ciBundle = ciBundleData as Record<string, CiTemplate>;
-
-export function pairLineGroups(pattern: ToneConstraint[][]): number[][] {
-  const groups: number[][] = [];
-  for (let index = 0; index < pattern.length; index += 2) {
-    groups.push(index + 1 < pattern.length ? [index, index + 1] : [index]);
-  }
-  return groups;
-}
-
-export function ciPatternForEditor(
-  tune: CiTemplate | undefined,
-  variantId: string,
-): CiPatternForEditor {
-  const variant = tune?.variants.find((item) => item.id === variantId);
-  if (!variant) return { lines: [], rhymeGroups: [], sectionBreaks: [] };
-
-  const lines: ToneConstraint[][] = [];
-  const rhymeGroups: number[][] = [];
-  const sectionBreaks: number[] = [];
-  let lineOffset = 0;
-  let groupBuffer: number[] = [];
-
-  const flushGroup = () => {
-    if (groupBuffer.length === 0) return;
-    rhymeGroups.push(groupBuffer);
-    groupBuffer = [];
-  };
-
-  variant.sections.forEach((section, sectionIndex) => {
-    flushGroup();
-    if (sectionIndex > 0 && section.lines.length > 0) {
-      sectionBreaks.push(rhymeGroups.length);
-    }
-
-    section.lines.forEach((line) => {
-      lines.push(line.pattern);
-      groupBuffer.push(lineOffset);
-      lineOffset += 1;
-      if (line.isRhymeLine) flushGroup();
-    });
-  });
-  flushGroup();
-
-  return { lines, rhymeGroups, sectionBreaks };
-}
 
 export function patternForSelection(
   genre: Genre,
@@ -105,38 +62,6 @@ export function variantOptions(genre: Genre, selectedTune: string) {
   }));
 }
 
-export function firstVariantForTune(genre: Genre, tuneName: string): string {
-  return (
-    allTemplates.find((item) => item.genre === genre && item.name === tuneName)
-      ?.variants[0]?.id ?? ""
-  );
-}
-
-export function variantSummary(
-  genre: Genre,
-  tuneName: string,
-  variantId: string,
-): string {
-  if (!variantId) return "";
-  const template = allTemplates.find(
-    (item) => item.genre === genre && item.name === tuneName,
-  );
-  const variant = template?.variants.find((item) => item.id === variantId);
-  if (!variant) return variantId;
-  if (genre === "meter") {
-    return `${variant.rhymeFirst ? "首句押韵" : "首句不押韵"} · ${variant.author}`;
-  }
-  return `${variant.author} · ${variant.sketch}`;
-}
-
-export function inferCiRhymeTone(text: string): Tone | null {
-  const hasPing = text.includes("平韵");
-  const hasZe = text.includes("仄韵");
-  if (hasPing && !hasZe) return Tone.Ping;
-  if (hasZe && !hasPing) return Tone.Ze;
-  return null;
-}
-
 export function expectedRhymeToneForSelection(
   genre: Genre,
   selectedTune: string,
@@ -157,3 +82,14 @@ export function templateForAnalyze(
 ) {
   return genre === "meter" ? meterMap.get(selectedVariant) : ciBundle[selectedTune];
 }
+
+export {
+  allTemplates,
+  ciPatternForEditor,
+  firstVariantForTune,
+  inferCiRhymeTone,
+  meterMap,
+  pairLineGroups,
+  variantSummary,
+};
+export type { CiPatternForEditor };

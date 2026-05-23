@@ -20,3 +20,28 @@ export type {
   CustomTuneSection,
   CustomTuneLine,
 } from "./types/index.js";
+
+export {
+  RHYME_OPTIONS,
+  allTemplates,
+  meterMap,
+  defaultRhymeType,
+  createDraftId,
+  createEmptyDraft,
+  formatDraftTime,
+  normalizeDraft,
+  pairLineGroups,
+  ciPatternForEditor,
+  inferCiRhymeTone,
+  variantSummary,
+  firstVariantForTune,
+} from "./creation.js";
+
+export type {
+  Genre,
+  AppView,
+  PoemCreationDraft,
+  PoemCreationDraftSummary,
+  PoemCreationDraftStore,
+  CiPatternForEditor,
+} from "./creation.js";

@@ -75,21 +75,14 @@ export function EditorPage({
   onReturn,
 }: EditorPageProps) {
   return (
-    <main className='mx-auto w-[min(1180px,calc(100%-32px))] py-7 max-[820px]:w-[min(calc(100%_-_20px),720px)] max-[820px]:pt-2.5'>
-      <section className='mt-[18px] grid grid-cols-[300px_minmax(0,1fr)] items-start gap-[18px] max-[820px]:grid-cols-1'>
-        <EditorSidebar
-          genre={genre}
-          selectedTune={selectedTune}
-          selectedVariant={selectedVariant}
-          selectedVariantLabel={selectedVariantLabel}
-          rhymeType={rhymeType}
-          exportStatus={exportStatus}
-          onOpenExportPreview={onOpenExportPreview}
-          onCopyExportText={onCopyExportText}
-          onReturn={onReturn}
-        />
-
-        <section className='min-h-[430px] border border-[#5c3f22]/25 bg-[#fff9eb]/85 p-6 shadow-[0_14px_34px_rgba(60,40,21,0.08)] max-[820px]:overflow-x-auto max-[820px]:px-3.5 max-[820px]:py-[18px]'>
+    <main className='page page-editor'>
+      <section className='editor-layout'>
+        <section className='editor-sheet'>
+          <div className='editor-mode-tabs' aria-label='编辑模式'>
+            <button type='button'>入门</button>
+            <button type='button' className='is-active'>创作</button>
+            <button type='button'>考据</button>
+          </div>
           <WorkMetadataFields
             title={title}
             description={description}
@@ -100,7 +93,7 @@ export function EditorPage({
           />
 
           {errorMessage && (
-            <p className='border border-[#a43c2f] bg-[#f6e2dc] px-3 py-2 text-[14px] text-[#7d2e25]'>
+            <p className='notice-inline is-error'>
               {errorMessage}
             </p>
           )}
@@ -128,7 +121,7 @@ export function EditorPage({
               />
               <div className='analysis-bar'>
                 <button className='primary-button' onClick={() => onAnalyze()}>
-                  分析
+                  校验格律
                 </button>
                 {analyzeResult && (
                   <pre className='analysis-result'>
@@ -146,6 +139,17 @@ export function EditorPage({
             />
           )}
         </section>
+        <EditorSidebar
+          genre={genre}
+          selectedTune={selectedTune}
+          selectedVariant={selectedVariant}
+          selectedVariantLabel={selectedVariantLabel}
+          rhymeType={rhymeType}
+          exportStatus={exportStatus}
+          onOpenExportPreview={onOpenExportPreview}
+          onCopyExportText={onCopyExportText}
+          onReturn={onReturn}
+        />
       </section>
     </main>
   );

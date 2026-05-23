@@ -1,9 +1,13 @@
 import { useCallback, useMemo } from 'react';
 import { findCiTune } from '@poem/parser/catalog';
 import { RhymeDictType } from '@poem/parser/kernel';
+import {
+  allTemplates,
+  defaultRhymeType,
+  firstVariantForTune,
+} from '@poem/shared';
 import type { Genre } from '../constants/poem';
 import type { SelectOption } from '../components/CustomSelect';
-import { allTemplates } from '../utils/templateSelection';
 
 export function useEntrySelection({
   entryGenre,
@@ -67,9 +71,7 @@ export function useEntrySelection({
     setEntryGenre(nextGenre);
     setEntrySelectedTune('');
     setEntrySelectedVariant('');
-    setEntryRhymeType(
-      nextGenre === 'meter' ? RhymeDictType.Pingshui : RhymeDictType.Cilin,
-    );
+    setEntryRhymeType(defaultRhymeType(nextGenre));
   }, [
     setEntryGenre,
     setEntryRhymeType,
@@ -80,16 +82,10 @@ export function useEntrySelection({
   const handleEntryTuneChange = useCallback(
     (nextTune: string) => {
       setEntrySelectedTune(nextTune);
-      const templates = entryGenre === 'meter' ? meterOptions : ciOptions;
-      const nextVariant =
-        templates.find((template) => template.name === nextTune)?.variants[0]
-          ?.id ?? '';
-      setEntrySelectedVariant(nextVariant);
+      setEntrySelectedVariant(firstVariantForTune(entryGenre, nextTune));
     },
     [
-      ciOptions,
       entryGenre,
-      meterOptions,
       setEntrySelectedTune,
       setEntrySelectedVariant,
     ],

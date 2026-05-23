@@ -11,36 +11,182 @@ export function SettingsPage({
   onSettingsChange,
   onReturn,
 }: SettingsPageProps) {
+  const isSupabaseMode = settings.persistence.mode === 'supabase';
+
+  const setPersistenceMode = (
+    mode: UserSettings['persistence']['mode'],
+  ) => {
+    onSettingsChange({
+      ...settings,
+      persistence: {
+        ...settings.persistence,
+        mode,
+      },
+    });
+  };
+
+  const setSupabaseField = (
+    field: keyof UserSettings['persistence']['supabase'],
+    value: string,
+  ) => {
+    onSettingsChange({
+      ...settings,
+      persistence: {
+        ...settings.persistence,
+        supabase: {
+          ...settings.persistence.supabase,
+          [field]: value,
+        },
+      },
+    });
+  };
+
   return (
-    <main className='mx-auto w-[min(760px,calc(100%-32px))] py-7 max-[820px]:w-[min(calc(100%_-_20px),720px)] max-[820px]:pt-2.5'>
-      <section className='grid gap-[18px] border border-[#5c3f22]/25 bg-[#fff9eb]/85 p-5 shadow-[0_14px_34px_rgba(60,40,21,0.08)]'>
-        <div className='flex items-center justify-between gap-3'>
-          <h2 className='m-0 text-[24px] font-bold text-[#4b3729]'>设置</h2>
+    <main className='page page-settings'>
+      <section className='panel settings-panel'>
+        <div className='panel-heading'>
+          <div>
+            <p className='section-kicker'>偏好</p>
+            <h2>设置</h2>
+          </div>
           <button
             type='button'
-            className='border border-[#8b6a4c] px-4 py-2 text-[15px] text-[#5b402f] transition hover:bg-[#efe1c6]'
+            className='ghost-button'
             onClick={onReturn}
           >
             返回
           </button>
         </div>
 
-        <div className='grid gap-2 text-sm font-bold text-[#5e4735]'>
-          默认署名
-          <input
-            value={settings.defaultAuthor}
-            placeholder='用于新作品的署名'
-            className='h-12 w-full border border-[#9b7a5d] bg-[#fff9ea] px-4 text-[18px] text-[#2d2118] outline-none placeholder:text-[#9a8066] focus:border-[#8b2d24] focus:ring-2 focus:ring-[#8b2d24]/15'
-            onChange={(event) =>
-              onSettingsChange({
-                ...settings,
-                defaultAuthor: event.currentTarget.value,
-              })
-            }
-          />
+        <div className='settings-stack'>
+          <div className='form-field'>
+            <span className='field-title'>默认署名</span>
+            <input
+              value={settings.defaultAuthor}
+              placeholder='用于新作品的署名'
+              className='line-input'
+              onChange={(event) =>
+                onSettingsChange({
+                  ...settings,
+                  defaultAuthor: event.currentTarget.value,
+                })
+              }
+            />
+          </div>
+
+          <div className='settings-storage-card'>
+            <div className='settings-storage-head'>
+              <div>
+                <p className='section-kicker'>持久化</p>
+                <h3>数据保存位置</h3>
+              </div>
+              <div className='storage-mode-toggle' aria-label='选择数据保存位置'>
+                <button
+                  type='button'
+                  className={
+                    settings.persistence.mode === 'local' ? 'is-active' : ''
+                  }
+                  onClick={() => setPersistenceMode('local')}
+                >
+                  本地
+                </button>
+                <button
+                  type='button'
+                  className={
+                    settings.persistence.mode === 'supabase' ? 'is-active' : ''
+                  }
+                  onClick={() => setPersistenceMode('supabase')}
+                >
+                  Supabase BYOK
+                </button>
+              </div>
+            </div>
+
+            {!isSupabaseMode && (
+              <div className='settings-local-note'>
+                <p>当前作品只保存在这个浏览器的 IndexedDB。</p>
+                <p>
+                  适合单机写作。换浏览器、清理站点数据或换设备前，请先到作品页导出备份。
+                </p>
+              </div>
+            )}
+
+            {isSupabaseMode && (
+              <>
+                <p className='settings-help'>
+                  填入你自己的 Supabase Project URL 和 anon public key 后，
+                  新草稿会写入 Supabase。浏览器端不要填写 service_role key。
+                </p>
+
+                <div className='settings-grid'>
+                  <div className='form-field'>
+                    <span className='field-title'>Supabase Project URL</span>
+                    <input
+                      value={settings.persistence.supabase.url}
+                      placeholder='https://xxxx.supabase.co'
+                      className='line-input'
+                      inputMode='url'
+                      onChange={(event) =>
+                        setSupabaseField('url', event.currentTarget.value)
+                      }
+                    />
+                  </div>
+
+                  <div className='form-field'>
+                    <span className='field-title'>anon public key</span>
+                    <input
+                      value={settings.persistence.supabase.anonKey}
+                      placeholder='eyJhbGciOi...'
+                      className='line-input'
+                      type='password'
+                      autoComplete='off'
+                      onChange={(event) =>
+                        setSupabaseField('anonKey', event.currentTarget.value)
+                      }
+                    />
+                  </div>
+
+                  <div className='form-field'>
+                    <span className='field-title'>草稿表</span>
+                    <input
+                      value={settings.persistence.supabase.draftsTable}
+                      className='line-input'
+                      onChange={(event) =>
+                        setSupabaseField('draftsTable', event.currentTarget.value)
+                      }
+                    />
+                  </div>
+
+                  <div className='form-field'>
+                    <span className='field-title'>元信息表</span>
+                    <input
+                      value={settings.persistence.supabase.metaTable}
+                      className='line-input'
+                      onChange={(event) =>
+                        setSupabaseField('metaTable', event.currentTarget.value)
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className='settings-schema-note'>
+                  <span className='field-title'>建表参考</span>
+                  <pre>{`create table if not exists poem_creation_drafts (
+  id text primary key,
+  payload jsonb not null,
+  updated_at timestamptz not null
+);
+
+create table if not exists poem_creation_meta (
+  key text primary key,
+  value text not null
+);`}</pre>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </section>
     </main>
   );
 }
-

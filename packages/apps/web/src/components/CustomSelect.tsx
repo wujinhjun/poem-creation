@@ -59,10 +59,10 @@ export function CustomSelect<T extends string>({
     <div ref={rootRef} className='relative'>
       <button
         type='button'
-        className='flex min-h-12 w-full items-center justify-between border border-[#9b7a5d] bg-[#fff9ea] px-4 text-left text-[18px] text-[#2d2118] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)] transition hover:border-[#704f36] focus:border-[#8b2d24] focus:outline-none focus:ring-2 focus:ring-[#8b2d24]/15'
+        className='select-trigger'
         onClick={() => setOpen((next) => !next)}
       >
-        <span className={selected ? '' : 'text-[#8f7b66]'}>
+        <span className={selected ? '' : 'select-placeholder'}>
           {selected?.label ?? placeholder}
         </span>
         <span
@@ -72,14 +72,14 @@ export function CustomSelect<T extends string>({
         </span>
       </button>
       {open && (
-        <div className='absolute left-0 right-0 top-[calc(100%+6px)] z-20 border border-[#8b6a4c] bg-[#fffaf0] py-1 shadow-[0_18px_38px_rgba(54,35,18,0.2)]'>
+        <div className='select-popover'>
           {searchable && (
-            <div className='sticky top-0 z-10 border-b border-[#8b6a4c]/30 bg-[#fffaf0] p-2'>
+            <div className='select-search-wrap'>
               <input
                 ref={searchRef}
                 value={query}
                 placeholder={searchPlaceholder}
-                className='h-10 w-full border border-[#b29273] bg-[#fff9ea] px-3 text-[16px] text-[#2d2118] outline-none placeholder:text-[#9a8066] focus:border-[#8b2d24] focus:ring-2 focus:ring-[#8b2d24]/15'
+                className='line-input'
                 onChange={(event) => setQuery(event.currentTarget.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Escape') {
@@ -90,10 +90,10 @@ export function CustomSelect<T extends string>({
               />
             </div>
           )}
-          <div className='max-h-72 overflow-auto'>
+          <div className='select-options'>
             <button
               type='button'
-              className='block min-h-11 w-full px-4 text-left text-[17px] text-[#806851] transition hover:bg-[#efe1c6]'
+              className='select-option is-placeholder'
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
                 onChange('');
@@ -105,9 +105,9 @@ export function CustomSelect<T extends string>({
             </button>
             {filteredOptions.map((option) => (
               <button
-                key={option.value}
-                type='button'
-                className={`block min-h-11 w-full px-4 text-left text-[17px] transition ${option.value === value ? 'bg-[#5f3928] text-[#fffaf0]' : 'text-[#2d2118] hover:bg-[#efe1c6]'}`}
+              key={option.value}
+              type='button'
+                className={`select-option${option.value === value ? ' is-selected' : ''}`}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   onChange(option.value);
@@ -120,7 +120,7 @@ export function CustomSelect<T extends string>({
               </button>
             ))}
             {filteredOptions.length === 0 && (
-              <div className='px-4 py-3 text-[16px] text-[#806851]'>
+              <div className='select-empty'>
                 无匹配结果
               </div>
             )}
@@ -130,4 +130,3 @@ export function CustomSelect<T extends string>({
     </div>
   );
 }
-
