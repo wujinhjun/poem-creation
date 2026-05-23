@@ -1,11 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { findCiTune } from '@poem/parser/catalog';
 import { RhymeDictType } from '@poem/parser/kernel';
-import {
-  allTemplates,
-  defaultRhymeType,
-  firstVariantForTune,
-} from '@poem/shared';
+import { getAllTemplates, firstVariantForTune } from '@poem/poem-kit';
+import { defaultRhymeType } from '@poem/shared';
 import type { Genre } from '../constants/poem';
 import type { SelectOption } from '../components/CustomSelect';
 
@@ -25,11 +22,11 @@ export function useEntrySelection({
   setEntryRhymeType: (rhymeType: RhymeDictType) => void;
 }) {
   const meterOptions = useMemo(
-    () => allTemplates.filter((t) => t.genre === 'meter'),
+    () => getAllTemplates().filter((t) => t.genre === 'meter'),
     [],
   );
   const ciOptions = useMemo(
-    () => allTemplates.filter((t) => t.genre === 'ci'),
+    () => getAllTemplates().filter((t) => t.genre === 'ci'),
     [],
   );
   const entryCurrentTemplates =

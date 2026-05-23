@@ -21,13 +21,13 @@ import { draftDisplayTitle } from './utils/draftDisplay';
 import { copyText, formatPoemText } from './utils/exportText';
 import { validateGridStrictly } from './utils/strictGridValidation';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
-import { defaultRhymeType, firstVariantForTune } from '@poem/shared';
+import { defaultRhymeType } from '@poem/shared';
+import { firstVariantForTune, getAllTemplates } from '@poem/poem-kit';
 import {
   loadUserSettings,
   saveUserSettings,
 } from './utils/settings';
 import type { UserSettings } from './utils/settings';
-import { allTemplates } from './utils/templateSelection';
 import './style.css';
 
 export default function App() {
@@ -96,7 +96,7 @@ export default function App() {
   // Applying a draft is the only place that hydrates editor state from storage.
   // Keeping it centralized prevents route/list actions from drifting apart.
   const applyDraft = useCallback((sourceDraft: PoemCreationDraft) => {
-    const draft = normalizeDraft(sourceDraft, allTemplates);
+    const draft = normalizeDraft(sourceDraft, getAllTemplates());
     setActiveDraftId(draft.id);
     setDraftRevision((revision) => revision + 1);
     setTitle(draft.title);

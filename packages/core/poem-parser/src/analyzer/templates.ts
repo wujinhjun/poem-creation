@@ -17,12 +17,13 @@ import type {
 import type { ResolvedLineTemplate } from "./types.js";
 
 /**
- * 判断模板类型（纯函数，仅基于 ID 字符串判断）
+ * 判断模板类型 —— 直接读取模板上的 type 字段。
+ *
+ * 旧版本曾基于 ID 子串判断（如 ID 含 "lü" 则视为律诗），
+ * 任何 ID 重命名都会静默错分；现已改为读结构化字段。
  */
-export function getTemplateType(templateId: string): PoemType {
-  if (templateId.includes("lü")) return PoemType.Lüshi;
-  if (templateId.includes("jue")) return PoemType.Jueju;
-  return PoemType.Ci;
+export function getTemplateType(template: AnyTemplate): PoemType {
+  return isMeterTemplate(template) ? template.type : PoemType.Ci;
 }
 
 /**

@@ -4,15 +4,15 @@
  * 通过 readFile 从磁盘加载韵书数据，构造 JsonRhymeDict。
  * 调用方也可自行实现 RhymeDict 接口（如浏览器端 fetch JSON 后构造）。
  *
- * RhymeDict / RhymeEntry 接口与 Tone / RhymeDictType 由 @poem/parser 定义，
+ * RhymeDict / RhymeEntry 接口与 Tone / RhymeDictType 由 @poem/shared 拥有，
  * 本包仅提供其 Node 环境的 JSON 实现。
  */
 
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Tone } from "@poem/parser";
-import type { RhymeDict, RhymeDictType, RhymeEntry } from "@poem/parser";
+import { Tone } from "@poem/shared";
+import type { RhymeDict, RhymeDictType, RhymeEntry } from "@poem/shared";
 
 // ---- 内部类型 ----
 

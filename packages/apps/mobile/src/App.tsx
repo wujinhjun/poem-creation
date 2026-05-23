@@ -16,8 +16,8 @@ import { appColors } from "./theme/colors";
 import { analyzeGrid } from "./utils/analysis";
 import { createEmptyDraft, normalizeDraft } from "./utils/draft";
 import { createAppDict } from "./utils/rhymeDict";
+import { getAllTemplates } from "@poem/poem-kit";
 import {
-  allTemplates,
   expectedRhymeToneForSelection,
   firstVariantForTune,
   patternForSelection,
@@ -87,7 +87,7 @@ export default function App() {
   }, []);
 
   const applyDraft = useCallback((source: PoemCreationDraft) => {
-    const next = normalizeDraft(source, allTemplates);
+    const next = normalizeDraft(source, getAllTemplates());
     setDraft(next);
     setActiveDraftId(next.id);
     setAnalyzeResult("");

@@ -118,7 +118,7 @@ export function applyTemplate(
   variantId?: string,
 ): void {
   ast.templateId = bestMatch?.templateId ?? template.id;
-  ast.type = getTemplateType(ast.templateId);
+  ast.type = getTemplateType(template);
 
   if (isMeterTemplate(template)) {
     applyMeterTemplateToAst(ast, template);

@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@poem/poem-kit": "workspace:*",
     "@poem/editor-core": "workspace:*",
     "@poem/parser": "workspace:*",
     "@poem/shared": "workspace:*",

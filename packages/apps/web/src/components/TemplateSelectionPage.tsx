@@ -3,7 +3,7 @@ import type { RhymeDictType, ToneConstraint } from '@poem/parser/kernel';
 import type { Genre } from '../constants/poem';
 import { RHYME_OPTIONS } from '../constants/poem';
 import { loadCiBundle } from '../utils/ciTemplate';
-import { meterMap } from '../utils/templateSelection';
+import { getMeterMap } from '@poem/poem-kit';
 import type { SelectOption } from './CustomSelect';
 import { CustomSelect } from './CustomSelect';
 
@@ -94,7 +94,7 @@ export function TemplateSelectionPage({
   const selectedTemplate = templateOptions.find((option) => option.value === selectedTune);
   const selectedVariantOption = variantOptions.find((option) => option.value === selectedVariant);
   const meterPattern = genre === 'meter' && selectedVariant
-    ? meterMap.get(selectedVariant)?.pattern ?? []
+    ? getMeterMap().get(selectedVariant)?.pattern ?? []
     : [];
   const pattern = genre === 'meter' ? meterPattern : ciPattern;
   const patternTitle = selectedTemplate?.value ?? '';
