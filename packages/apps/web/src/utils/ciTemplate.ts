@@ -2,8 +2,8 @@ import type { CiTemplate, ToneConstraint } from '@poem/parser/kernel';
 import {
   ciPatternForEditor,
   inferCiRhymeTone,
-} from '@poem/shared';
-import type { CiPatternForEditor } from '@poem/shared';
+} from '@poem/poem-kit';
+import type { CiPatternForEditor } from '@poem/poem-kit';
 
 export type { CiPatternForEditor };
 

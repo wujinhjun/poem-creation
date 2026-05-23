@@ -2,15 +2,15 @@ import { findCiTune } from "@poem/parser/catalog";
 import { Tone } from "@poem/parser/kernel";
 import type { CiTemplate, ToneConstraint } from "@poem/parser/kernel";
 import {
-  allTemplates,
   ciPatternForEditor,
   firstVariantForTune,
+  getAllTemplates,
+  getMeterMap,
   inferCiRhymeTone,
-  meterMap,
   pairLineGroups,
   variantSummary,
-} from "@poem/shared";
-import type { CiPatternForEditor } from "@poem/shared";
+} from "@poem/poem-kit";
+import type { CiPatternForEditor } from "@poem/poem-kit";
 
 import ciBundleData from "../../../../core/poem-parser/data/ci-tunes-bundle.json";
 import type { Genre } from "../constants/poem";
@@ -24,7 +24,7 @@ export function patternForSelection(
 ): CiPatternForEditor {
   if (!selectedVariant) return { lines: [], rhymeGroups: [], sectionBreaks: [] };
   if (genre === "meter") {
-    const lines = meterMap.get(selectedVariant)?.pattern ?? [];
+    const lines = getMeterMap().get(selectedVariant)?.pattern ?? [];
     return { lines, rhymeGroups: pairLineGroups(lines), sectionBreaks: [] };
   }
 
@@ -33,7 +33,7 @@ export function patternForSelection(
 }
 
 export function templateOptions(genre: Genre) {
-  return allTemplates
+  return getAllTemplates()
     .filter((item) => item.genre === genre)
     .map((item) => ({
       value: item.name,
@@ -42,7 +42,7 @@ export function templateOptions(genre: Genre) {
 }
 
 export function variantOptions(genre: Genre, selectedTune: string) {
-  const catalog = allTemplates.find(
+  const catalog = getAllTemplates().find(
     (item) => item.genre === genre && item.name === selectedTune,
   );
   if (!catalog) return [];
@@ -80,15 +80,15 @@ export function templateForAnalyze(
   selectedTune: string,
   selectedVariant: string,
 ) {
-  return genre === "meter" ? meterMap.get(selectedVariant) : ciBundle[selectedTune];
+  return genre === "meter"
+    ? getMeterMap().get(selectedVariant)
+    : ciBundle[selectedTune];
 }
 
 export {
-  allTemplates,
   ciPatternForEditor,
   firstVariantForTune,
   inferCiRhymeTone,
-  meterMap,
   pairLineGroups,
   variantSummary,
 };

@@ -1,26 +1,24 @@
 /**
  * 核心类型定义
  *
- * 本模块定义了诗词解析器的核心数据类型，是整个项目的基础。
- * 包括音调、韵脚、字符节点、行节点、诗歌 AST 等核心数据结构。
+ * 解析器特有的数据结构（诗歌 AST、对句、段落、诊断等）。
+ * 与端无关的基础类型（Tone / RhymeDictType / ToneConstraint 等）
+ * 由 @poem/shared 拥有，本模块 re-export 以保持调用方接口稳定。
  */
 
-/**
- * 音调枚举
- * - Ping: 平声
- * - Ze: 仄声（上去入）
- * - Unknown: 未知
- */
-/** 汉字匹配：基本多文种平面（U+4E00–9FFF）+ CJK 扩展 A（U+3400–4DBF） */
-export const HANZI_RE = /[\u3400-\u4dbf\u4e00-\u9fff]/u;
+import {
+  Tone,
+  RhymeTone,
+  RhymeDictType,
+  CharValidationStatus,
+  HANZI_RE,
+} from "@poem/shared";
+import type { ToneConstraint } from "@poem/shared";
 
-export enum Tone {
-  Ping = "平",
-  Ze = "仄",
-  Unknown = "未知",
-}
+export { Tone, RhymeTone, RhymeDictType, CharValidationStatus, HANZI_RE };
+export type { ToneConstraint };
 
-// ========== 常量 ==========
+// ========== 解析器特有常量 ==========
 
 /**
  * 诗歌体裁
@@ -34,17 +32,6 @@ export const PoemType = {
   Ci: "ci",
 } as const;
 export type PoemType = (typeof PoemType)[keyof typeof PoemType];
-
-/**
- * 韵脚声调
- * - Ping: 平声韵（阴平、阳平）
- * - Ze: 仄声韵（上声、去声、入声）
- */
-export const RhymeTone = {
-  Ping: "ping",
-  Ze: "ze",
-} as const;
-export type RhymeTone = (typeof RhymeTone)[keyof typeof RhymeTone];
 
 /**
  * 对句角色（一联中的相对位置）
@@ -66,48 +53,6 @@ export const SectionName = {
   ShangQue: "上阕",
   XiaQue: "下阕",
 } as const;
-
-/**
- * 韵书类型
- * - Pingshui: 平水韵（南宋·刘渊，格律诗标准韵书）
- * - Cilin: 词林正韵（清·戈载，词牌标准韵书）
- * - Zhonghua: 中华新韵（现代普通话韵部）
- */
-export const RhymeDictType = {
-  Pingshui: "pingshui",
-  Cilin: "cilin",
-  Zhonghua: "zhonghua_new",
-} as const;
-export type RhymeDictType = (typeof RhymeDictType)[keyof typeof RhymeDictType];
-
-/**
- * 音调约束类型
- * 定义模板中对单个字符的平仄要求
- */
-export type ToneConstraint =
-  /** 固定平仄要求 */
-  | { type: "fixed"; tone: Tone }
-  /** 可平可仄（中性） */
-  | { type: "flexible" }
-  /** 韵脚位置，可指定韵部组 */
-  | { type: "rhyme"; group?: string };
-
-/**
- * 字符校验状态
- * - Pass: 符合约束
- * - Fail: 违反约束
- * - Flexible: 处于可平可仄位，不参与判律
- * - Rescued: 本身违反但被拗救覆盖
- * - Unknown: 无法确定（多音字、生僻字等）
- */
-export const CharValidationStatus = {
-  Pass: "pass",
-  Fail: "fail",
-  Flexible: "flexible",
-  Rescued: "rescued",
-  Unknown: "unknown",
-} as const;
-export type CharValidationStatus = (typeof CharValidationStatus)[keyof typeof CharValidationStatus];
 
 /**
  * 拗救类型

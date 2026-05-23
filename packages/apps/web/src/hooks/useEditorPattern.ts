@@ -3,16 +3,14 @@ import { findCiTune } from '@poem/parser/catalog';
 import { Tone } from '@poem/parser/kernel';
 import type { AnyTemplate, CiTemplate, ToneConstraint } from '@poem/parser/kernel';
 import type { Genre } from '../constants/poem';
+import { loadCiBundle } from '../utils/ciTemplate';
 import {
   ciPatternForEditor,
   inferCiRhymeTone,
-  loadCiBundle,
-} from '../utils/ciTemplate';
-import {
-  meterMap,
+  getMeterMap,
   pairLineGroups,
   variantSummary,
-} from '../utils/templateSelection';
+} from '@poem/poem-kit';
 
 type CiPatternState = {
   key: string;
@@ -82,7 +80,7 @@ export function useEditorPattern({
   const pattern: ToneConstraint[][] = useMemo(() => {
     if (!selectedVariant) return [];
     if (genre === 'meter') {
-      const t = meterMap.get(selectedVariant);
+      const t = getMeterMap().get(selectedVariant);
       return t?.pattern ?? [];
     }
     const key = `${selectedTune}::${selectedVariant}`;
@@ -121,7 +119,7 @@ export function useEditorPattern({
 
   const analysisTemplate: AnyTemplate | undefined =
     genre === 'meter'
-      ? meterMap.get(selectedVariant)
+      ? getMeterMap().get(selectedVariant)
       : ciTemplateState?.key === `${selectedTune}::${selectedVariant}`
         ? ciTemplateState.template
         : undefined;

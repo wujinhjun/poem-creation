@@ -2,5 +2,5 @@ export {
   createDraftId,
   createEmptyDraft,
   formatDraftTime,
-  normalizeDraft,
 } from '@poem/shared';
+export { normalizeDraft } from '@poem/poem-kit';

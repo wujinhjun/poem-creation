@@ -13,9 +13,8 @@ export const PoemGenre = {
 } as const;
 export type PoemGenre = (typeof PoemGenre)[keyof typeof PoemGenre];
 
-// 以 @poem/parser 为唯一数据源，只做值导出（类型随值自动导出）
 export {
   RhymeDictType,
   RhymeTone,
   CharValidationStatus,
-} from "@poem/parser/kernel";
+} from "../types/parser-base.js";
