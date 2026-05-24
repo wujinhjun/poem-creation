@@ -92,6 +92,7 @@ export function TemplateSelectionPage({
 }: TemplateSelectionPageProps) {
   const [genreNotice, setGenreNotice] = useState('');
   const [ciPattern, setCiPattern] = useState<ToneConstraint[][]>([]);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
@@ -112,7 +113,8 @@ export function TemplateSelectionPage({
   const patternTitle = selectedTemplate?.value ?? '';
   const patternSubtitle =
     selectedVariantOption?.label ?? selectedTemplate?.label ?? '';
-  const visiblePattern = pattern.slice(0, 10);
+  const previewLimit = 10;
+  const visiblePattern = previewExpanded ? pattern : pattern.slice(0, previewLimit);
 
   useEffect(() => {
     if (genre !== 'ci' || !selectedTune || !selectedVariant) {
@@ -142,6 +144,7 @@ export function TemplateSelectionPage({
 
   const pickGenre = (nextGenre: Genre) => {
     if (nextGenre === genre) return;
+    setPreviewExpanded(false);
     onGenreChange(nextGenre);
     setGenreNotice(
       `已切换为${nextGenre === 'meter' ? '平水韵' : '词林正韵'}`,
@@ -149,6 +152,7 @@ export function TemplateSelectionPage({
   };
 
   const pickTune = (nextTune: string) => {
+    setPreviewExpanded(false);
     onTuneChange(nextTune);
   };
 
@@ -225,7 +229,10 @@ export function TemplateSelectionPage({
                   disabled={!selectedTune}
                   searchable
                   searchPlaceholder='搜索作者、押韵或字数'
-                  onChange={onVariantChange}
+                  onChange={(nextVariant) => {
+                    setPreviewExpanded(false);
+                    onVariantChange(nextVariant);
+                  }}
                 />
               </div>
             </div>
@@ -248,9 +255,32 @@ export function TemplateSelectionPage({
             pattern={visiblePattern}
           />
           {pattern.length > visiblePattern.length && (
-            <p className='pattern-preview-note'>
-              已展示前 {visiblePattern.length} 行，全 {pattern.length} 行
-            </p>
+            <div className='pattern-preview-footer'>
+              <p className='pattern-preview-note'>
+                已展示前 {visiblePattern.length} 行，全 {pattern.length} 行
+              </p>
+              <button
+                type='button'
+                className='text-link'
+                onClick={() => setPreviewExpanded(true)}
+              >
+                展开全部
+              </button>
+            </div>
+          )}
+          {previewExpanded && pattern.length > previewLimit && (
+            <div className='pattern-preview-footer'>
+              <p className='pattern-preview-note'>
+                已展示全部 {pattern.length} 行
+              </p>
+              <button
+                type='button'
+                className='text-link'
+                onClick={() => setPreviewExpanded(false)}
+              >
+                收起
+              </button>
+            </div>
           )}
         </aside>
       </section>

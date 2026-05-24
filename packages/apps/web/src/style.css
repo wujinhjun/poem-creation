@@ -563,20 +563,20 @@ h3 {
 }
 
 .template-main {
-  min-height: 500px;
+  min-height: 0;
   border: 1px solid var(--line);
   background: var(--paper-strong);
-  padding: 32px;
+  padding: 28px 32px;
 }
 
 .template-section {
   display: grid;
-  gap: 20px;
+  gap: 18px;
 }
 
 .template-section h1 {
   max-width: 680px;
-  font-size: clamp(32px, 3.6vw, 46px);
+  font-size: clamp(32px, 3.2vw, 42px);
 }
 
 .template-section .page-lede {
@@ -667,12 +667,12 @@ h3 {
 .template-search-row {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(180px, 240px);
-  gap: 16px;
+  gap: 14px 16px;
 }
 
 .template-field {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .template-field-genre {
@@ -693,14 +693,14 @@ h3 {
 .template-field .genre-segment {
   width: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  min-height: 50px;
+  min-height: 46px;
 }
 
 .template-field-variant .select-trigger {
-  min-height: 64px;
+  min-height: 56px;
   align-items: flex-start;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 9px;
+  padding-bottom: 9px;
 }
 
 .template-card-grid {
@@ -869,6 +869,18 @@ h3 {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
+}
+
+.pattern-preview-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pattern-preview-footer .text-link {
+  font-size: 13px;
 }
 
 .page-quickfill {
