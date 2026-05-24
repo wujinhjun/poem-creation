@@ -166,22 +166,6 @@ export function TemplateSelectionPage({
             <p className='section-kicker'>模板</p>
             <div className='template-heading-row'>
               <h1>{genre === 'meter' ? '选择格律、变体与韵书' : '选择词牌、变体与韵书'}</h1>
-              <div className='genre-segment' aria-label='选择体裁'>
-                <button
-                  type='button'
-                  className={genre === 'meter' ? 'is-active' : ''}
-                  onClick={() => pickGenre('meter')}
-                >
-                  诗
-                </button>
-                <button
-                  type='button'
-                  className={genre === 'ci' ? 'is-active' : ''}
-                  onClick={() => pickGenre('ci')}
-                >
-                  词
-                </button>
-              </div>
             </div>
             {genreNotice && (
               <p className='inline-hint' role='status'>
@@ -189,33 +173,61 @@ export function TemplateSelectionPage({
               </p>
             )}
             <div className='template-search-row'>
-              <CustomSelect
-                value={selectedTune}
-                options={templateOptions}
-                placeholder={genre === 'meter' ? '搜索或选择格律' : '搜索或选择词牌'}
-                searchable
-                searchPlaceholder={genre === 'meter' ? '搜索五绝、七律' : '搜索词牌名'}
-                onChange={(nextTune) => {
-                  if (nextTune) pickTune(nextTune);
-                }}
-              />
-              <CustomSelect
-                value={selectedVariant}
-                options={variantOptions}
-                placeholder={selectedTune ? '请选择变体' : '请先选模板'}
-                disabled={!selectedTune}
-                searchable
-                searchPlaceholder='搜索作者、押韵或字数'
-                onChange={onVariantChange}
-              />
-              <CustomSelect
-                value={rhymeType}
-                options={RHYME_OPTIONS}
-                placeholder='请选择韵书'
-                onChange={(next) => {
-                  if (next) onRhymeTypeChange(next);
-                }}
-              />
+              <div className='template-field template-field-genre'>
+                <span className='field-title'>体裁</span>
+                <div className='genre-segment' aria-label='选择体裁'>
+                  <button
+                    type='button'
+                    className={genre === 'meter' ? 'is-active' : ''}
+                    onClick={() => pickGenre('meter')}
+                  >
+                    诗
+                  </button>
+                  <button
+                    type='button'
+                    className={genre === 'ci' ? 'is-active' : ''}
+                    onClick={() => pickGenre('ci')}
+                  >
+                    词
+                  </button>
+                </div>
+              </div>
+              <div className='template-field template-field-rhyme'>
+                <span className='field-title'>韵书</span>
+                <CustomSelect
+                  value={rhymeType}
+                  options={RHYME_OPTIONS}
+                  placeholder='请选择韵书'
+                  onChange={(next) => {
+                    if (next) onRhymeTypeChange(next);
+                  }}
+                />
+              </div>
+              <div className='template-field template-field-tune'>
+                <span className='field-title'>{genre === 'meter' ? '格律' : '词牌'}</span>
+                <CustomSelect
+                  value={selectedTune}
+                  options={templateOptions}
+                  placeholder={genre === 'meter' ? '搜索或选择格律' : '搜索或选择词牌'}
+                  searchable
+                  searchPlaceholder={genre === 'meter' ? '搜索五绝、七律' : '搜索词牌名'}
+                  onChange={(nextTune) => {
+                    if (nextTune) pickTune(nextTune);
+                  }}
+                />
+              </div>
+              <div className='template-field template-field-variant'>
+                <span className='field-title'>变体</span>
+                <CustomSelect
+                  value={selectedVariant}
+                  options={variantOptions}
+                  placeholder={selectedTune ? '请选择变体' : '请先选模板'}
+                  disabled={!selectedTune}
+                  searchable
+                  searchPlaceholder='搜索作者、押韵或字数'
+                  onChange={onVariantChange}
+                />
+              </div>
             </div>
             <div className='template-action-row'>
               <button

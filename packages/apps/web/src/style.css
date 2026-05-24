@@ -557,7 +557,7 @@ h3 {
 
 .template-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 480px);
   gap: 20px;
   align-items: start;
 }
@@ -584,15 +584,8 @@ h3 {
 }
 
 .template-heading-row {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.template-heading-row .genre-segment {
-  flex: 0 0 auto;
-  margin-top: 4px;
+  display: grid;
+  gap: 8px;
 }
 
 .inline-hint {
@@ -673,23 +666,41 @@ h3 {
 
 .template-search-row {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(180px, 240px);
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 240px);
   gap: 16px;
 }
 
-.template-search-row > .relative:nth-child(2) {
-  grid-column: 1 / -1;
-  grid-row: 2;
+.template-field {
+  display: grid;
+  gap: 8px;
 }
 
-.template-search-row > .relative:nth-child(3) {
+.template-field-genre {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.template-field-rhyme {
   grid-column: 2;
   grid-row: 1;
 }
 
-.template-search-row > .relative:only-child {
+.template-field-tune,
+.template-field-variant {
   grid-column: 1 / -1;
-  max-width: 520px;
+}
+
+.template-field .genre-segment {
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 50px;
+}
+
+.template-field-variant .select-trigger {
+  min-height: 64px;
+  align-items: flex-start;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .template-card-grid {
@@ -1207,6 +1218,16 @@ h3 {
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
+.select-trigger > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.select-trigger > span:last-child {
+  flex: 0 0 auto;
+}
+
 .select-trigger:hover,
 .select-trigger:focus-visible {
   border-color: var(--cinnabar);
@@ -1262,8 +1283,10 @@ h3 {
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
-  padding: 0 14px;
+  padding: 10px 14px;
   color: var(--ink);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
   text-align: left;
 }
 
@@ -2088,6 +2111,18 @@ h3 {
   .variant-card-grid,
   .template-search-row {
     grid-template-columns: 1fr;
+  }
+
+  .template-field-genre,
+  .template-field-rhyme,
+  .template-field-tune,
+  .template-field-variant {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .template-field .genre-segment {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .template-main {
