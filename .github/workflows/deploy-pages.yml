@@ -37,7 +37,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build web app
-        run: pnpm --filter @poem/web build
+        run: pnpm --filter @poem/web... build
         env:
           VITE_BASE_PATH: /poem-creation/
 
