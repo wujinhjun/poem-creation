@@ -4,6 +4,7 @@ import {
   inferCiRhymeTone,
 } from '@poem/poem-kit';
 import type { CiPatternForEditor } from '@poem/poem-kit';
+import { publicAssetPath } from './publicAsset';
 
 export type { CiPatternForEditor };
 
@@ -13,7 +14,7 @@ let ciBundlePromise: Promise<Record<string, CiTemplate>> | null = null;
 // only when the editor actually needs a selected ci variant.
 export function loadCiBundle(): Promise<Record<string, CiTemplate>> {
   if (!ciBundlePromise) {
-    ciBundlePromise = fetch('/data/ci-tunes-bundle.json').then((r) => r.json());
+    ciBundlePromise = fetch(publicAssetPath('data/ci-tunes-bundle.json')).then((r) => r.json());
   }
   return ciBundlePromise;
 }

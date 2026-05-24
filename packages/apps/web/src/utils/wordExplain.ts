@@ -1,3 +1,5 @@
+import { publicAssetPath } from './publicAsset';
+
 type WordExplainEntry = {
   pronunciation?: string;
   explains: string[];
@@ -9,7 +11,7 @@ let wordExplainCache: WordExplainIndex | null = null;
 
 async function loadWordExplainIndex(): Promise<WordExplainIndex> {
   if (wordExplainCache) return wordExplainCache;
-  const response = await fetch('/data/word-explain-cleaned.json');
+  const response = await fetch(publicAssetPath('data/word-explain-cleaned.json'));
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }

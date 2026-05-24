@@ -6,6 +6,7 @@
 
 import type { RhymeDict, RhymeDictType, RhymeEntry } from "@poem/parser/kernel";
 import { Tone, RhymeDictType as DictType } from "@poem/parser/kernel";
+import { publicAssetPath } from './publicAsset';
 
 type RhymeIndexEntry = {
   dictType: string;
@@ -23,14 +24,14 @@ let _toneCache: ToneLookup | null = null;
 /** 从 JSON 加载完整韵字索引（dev server /data 已可访问） */
 async function loadRhymeIndex(): Promise<RhymeCharIndex> {
   if (_cache) return _cache;
-  const res = await fetch("/data/rhyme-char-index.json");
+  const res = await fetch(publicAssetPath("data/rhyme-char-index.json"));
   _cache = (await res.json()) as RhymeCharIndex;
   return _cache!;
 }
 
 async function loadToneLookup(): Promise<ToneLookup> {
   if (_toneCache) return _toneCache;
-  const res = await fetch("/data/tone-lookup.json");
+  const res = await fetch(publicAssetPath("data/tone-lookup.json"));
   _toneCache = (await res.json()) as ToneLookup;
   return _toneCache!;
 }
