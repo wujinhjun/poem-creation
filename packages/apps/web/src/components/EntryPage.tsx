@@ -9,6 +9,7 @@ import { EntryEditorPanel } from './entry/EntryEditorPanel';
 type EntryPageProps = {
   drafts: PoemCreationDraftSummary[];
   persistenceMode: 'local' | 'supabase';
+  onOpenQuickFill: () => void;
   onOpenTemplateSelection: () => void;
   onOpenWorks: () => void;
   onOpenDraft: (id: string) => void;
@@ -18,6 +19,7 @@ type EntryPageProps = {
 export function EntryPage({
   drafts,
   persistenceMode,
+  onOpenQuickFill,
   onOpenTemplateSelection,
   onOpenWorks,
   onOpenDraft,
@@ -29,6 +31,7 @@ export function EntryPage({
       <section className='home-primary'>
         <EntryEditorPanel
           persistenceMode={persistenceMode}
+          onOpenQuickFill={onOpenQuickFill}
           onOpenTemplateSelection={onOpenTemplateSelection}
         />
       </section>
