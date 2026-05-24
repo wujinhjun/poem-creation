@@ -55,7 +55,7 @@ export function AppFrame({
         <button type='button' className='brand-lockup' onClick={onOpenEntry}>
           <span className='brand-seal'>诗</span>
           <span className='brand-copy'>
-            <span className='brand-title'>兰台诗笺</span>
+            <span className='brand-title'>诗笺</span>
             <span className='brand-subtitle'>Poem Creation</span>
           </span>
         </button>
