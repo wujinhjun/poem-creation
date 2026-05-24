@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { testSupabaseConnection } from '../persist/supabaseDraftStore';
+import { SUPABASE_BYOK_ENABLED } from '../utils/settings';
 import type { UserSettings } from '../utils/settings';
 
 type SettingsPageProps = {
@@ -13,12 +14,12 @@ export function SettingsPage({
   onSettingsChange,
   onReturn,
 }: SettingsPageProps) {
-  const isSupabaseMode = settings.persistence.mode === 'supabase';
+  const isSupabaseMode =
+    SUPABASE_BYOK_ENABLED && settings.persistence.mode === 'supabase';
   const [connectionStatus, setConnectionStatus] = useState('');
 
-  const setPersistenceMode = (
-    mode: UserSettings['persistence']['mode'],
-  ) => {
+  const setPersistenceMode = (mode: UserSettings['persistence']['mode']) => {
+    if (mode === 'supabase' && !SUPABASE_BYOK_ENABLED) return;
     onSettingsChange({
       ...settings,
       persistence: {
@@ -104,15 +105,17 @@ export function SettingsPage({
                 >
                   本地
                 </button>
-                <button
-                  type='button'
-                  className={
-                    settings.persistence.mode === 'supabase' ? 'is-active' : ''
-                  }
-                  onClick={() => setPersistenceMode('supabase')}
-                >
-                  Supabase BYOK
-                </button>
+                {SUPABASE_BYOK_ENABLED && (
+                  <button
+                    type='button'
+                    className={
+                      settings.persistence.mode === 'supabase' ? 'is-active' : ''
+                    }
+                    onClick={() => setPersistenceMode('supabase')}
+                  >
+                    Supabase BYOK
+                  </button>
+                )}
               </div>
             </div>
 

@@ -1,5 +1,7 @@
 const SETTINGS_KEY = 'poem-creation-web:settings';
 
+export const SUPABASE_BYOK_ENABLED = false;
+
 export type UserSettings = {
   defaultAuthor: string;
   persistence: PersistenceSettings;
@@ -42,16 +44,20 @@ export function loadUserSettings(): UserSettings {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_USER_SETTINGS;
     const parsed = JSON.parse(raw) as Partial<UserSettings>;
+    const parsedPersistence = {
+      ...DEFAULT_USER_SETTINGS.persistence,
+      ...parsed.persistence,
+      supabase: {
+        ...DEFAULT_SUPABASE_SETTINGS,
+        ...parsed.persistence?.supabase,
+      },
+    };
     return {
       ...DEFAULT_USER_SETTINGS,
       ...parsed,
       persistence: {
-        ...DEFAULT_USER_SETTINGS.persistence,
-        ...parsed.persistence,
-        supabase: {
-          ...DEFAULT_SUPABASE_SETTINGS,
-          ...parsed.persistence?.supabase,
-        },
+        ...parsedPersistence,
+        mode: SUPABASE_BYOK_ENABLED ? parsedPersistence.mode : 'local',
       },
     };
   } catch {
