@@ -588,15 +588,6 @@ h3 {
   gap: 8px;
 }
 
-.inline-hint {
-  width: fit-content;
-  border-left: 3px solid var(--cinnabar);
-  background: #fffbf5;
-  padding: 8px 12px;
-  color: var(--ink-soft);
-  font-size: 14px;
-}
-
 .genre-choice-grid,
 .template-card-grid,
 .variant-card-grid {

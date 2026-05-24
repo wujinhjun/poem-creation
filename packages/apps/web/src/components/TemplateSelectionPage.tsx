@@ -90,19 +90,12 @@ export function TemplateSelectionPage({
   onStartDraft,
   onReturn,
 }: TemplateSelectionPageProps) {
-  const [genreNotice, setGenreNotice] = useState('');
   const [ciPattern, setCiPattern] = useState<ToneConstraint[][]>([]);
   const [previewExpanded, setPreviewExpanded] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
   }, []);
-
-  useEffect(() => {
-    if (!genreNotice) return;
-    const timer = window.setTimeout(() => setGenreNotice(''), 1800);
-    return () => window.clearTimeout(timer);
-  }, [genreNotice]);
 
   const selectedTemplate = templateOptions.find((option) => option.value === selectedTune);
   const selectedVariantOption = variantOptions.find((option) => option.value === selectedVariant);
@@ -146,9 +139,6 @@ export function TemplateSelectionPage({
     if (nextGenre === genre) return;
     setPreviewExpanded(false);
     onGenreChange(nextGenre);
-    setGenreNotice(
-      `已切换为${nextGenre === 'meter' ? '平水韵' : '词林正韵'}`,
-    );
   };
 
   const pickTune = (nextTune: string) => {
@@ -171,11 +161,6 @@ export function TemplateSelectionPage({
             <div className='template-heading-row'>
               <h1>{genre === 'meter' ? '选择格律、变体与韵书' : '选择词牌、变体与韵书'}</h1>
             </div>
-            {genreNotice && (
-              <p className='inline-hint' role='status'>
-                {genreNotice}
-              </p>
-            )}
             <div className='template-search-row'>
               <div className='template-field template-field-genre'>
                 <span className='field-title'>体裁</span>
