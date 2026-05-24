@@ -1562,6 +1562,10 @@ h3 {
   top: 96px;
 }
 
+.editor-mobile-actions {
+  display: none;
+}
+
 .aside-section,
 .lookup-panel {
   display: grid;
@@ -1868,6 +1872,42 @@ h3 {
 }
 
 @media (max-width: 560px) {
+  .topbar {
+    height: 56px;
+    padding: 0 14px;
+  }
+
+  .brand-lockup {
+    gap: 10px;
+  }
+
+  .brand-seal {
+    width: 34px;
+    height: 34px;
+    font-size: 17px;
+  }
+
+  .brand-title {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .side-rail {
+    top: 56px;
+  }
+
+  .rail-item {
+    min-height: 50px;
+    gap: 5px;
+    font-size: 16px;
+  }
+
+  .rail-mark {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+  }
+
   .save-status {
     display: none;
   }
@@ -1893,12 +1933,178 @@ h3 {
     border-bottom: 1px solid var(--line);
   }
 
+  .template-page {
+    gap: 14px;
+  }
+
+  .template-main {
+    padding: 22px 14px;
+  }
+
+  .template-section {
+    gap: 16px;
+  }
+
+  .template-section h1 {
+    font-size: 30px;
+  }
+
+  .template-section .page-lede {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .genre-choice {
+    min-height: 158px;
+    padding: 20px;
+  }
+
+  .genre-choice span,
+  .preview-seal {
+    width: 48px;
+    height: 48px;
+    font-size: 21px;
+  }
+
+  .genre-choice strong {
+    font-size: 24px;
+  }
+
+  .pattern-preview-block {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .pattern-preview-heading h2 {
+    font-size: 24px;
+  }
+
+  .quickfill-meta {
+    gap: 8px;
+  }
+
+  .quickfill-meta input:first-of-type {
+    font-size: 30px;
+  }
+
+  .quickfill-line-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .quickfill-line-row input {
+    min-height: 40px;
+    font-size: 20px;
+    letter-spacing: 0.06em;
+  }
+
+  .quickfill-toolbar {
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .quickfill-toolbar .primary-button,
+  .quickfill-toolbar .ghost-button {
+    flex: 1 1 140px;
+    justify-self: stretch;
+  }
+
   .panel-heading {
     align-items: stretch;
     flex-direction: column;
   }
 
+  .editor-sheet {
+    overflow-x: visible;
+    padding: 18px 10px;
+  }
+
+  .editor-mode-tabs {
+    margin-bottom: 18px;
+  }
+
+  .editor-mobile-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 15;
+    display: grid;
+    grid-template-columns: 1.2fr repeat(3, 1fr);
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-top-color: var(--line-strong);
+    background: var(--paper-strong);
+    padding: 10px;
+  }
+
+  .editor-mobile-actions .primary-button,
+  .editor-mobile-actions .ghost-button {
+    min-width: 0;
+    min-height: 46px;
+    justify-self: stretch;
+    padding: 0 10px;
+  }
+
+  .work-meta {
+    gap: 6px;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+  }
+
+  .meta-rule {
+    font-size: 12px;
+  }
+
   .title-input {
-    font-size: 34px;
+    font-size: 30px;
+  }
+
+  .description-input,
+  .author-input {
+    font-size: 14px;
+  }
+
+  .composer-grid {
+    gap: 10px;
+  }
+
+  .composer-line {
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px 10px;
+    padding-bottom: 14px;
+  }
+
+  .composer-logical-line {
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .char-input {
+    width: 34px;
+    height: 38px;
+    font-size: 21px;
+  }
+
+  .active-cell-editor {
+    width: 32px;
+    height: 38px;
+    font-size: 21px;
+  }
+
+  .slot-label {
+    min-height: 15px;
+    font-size: 10px;
+  }
+
+  .line-punctuation {
+    min-width: 14px;
+    font-size: 22px;
+  }
+
+  .analysis-bar > .primary-button {
+    display: none;
   }
 }
