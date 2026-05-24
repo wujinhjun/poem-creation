@@ -158,29 +158,31 @@ export function TemplateSelectionPage({
         <button type='button' className='text-link' onClick={onReturn}>
           返回起笔
         </button>
-        <div className='genre-segment' aria-label='选择体裁'>
-          <button
-            type='button'
-            className={genre === 'meter' ? 'is-active' : ''}
-            onClick={() => pickGenre('meter')}
-          >
-            诗
-          </button>
-          <button
-            type='button'
-            className={genre === 'ci' ? 'is-active' : ''}
-            onClick={() => pickGenre('ci')}
-          >
-            词
-          </button>
-        </div>
       </div>
 
       <section className='template-layout'>
         <div className='template-main'>
           <section className='template-section'>
             <p className='section-kicker'>模板</p>
-            <h1>{genre === 'meter' ? '选择格律、变体与韵书' : '选择词牌、变体与韵书'}</h1>
+            <div className='template-heading-row'>
+              <h1>{genre === 'meter' ? '选择格律、变体与韵书' : '选择词牌、变体与韵书'}</h1>
+              <div className='genre-segment' aria-label='选择体裁'>
+                <button
+                  type='button'
+                  className={genre === 'meter' ? 'is-active' : ''}
+                  onClick={() => pickGenre('meter')}
+                >
+                  诗
+                </button>
+                <button
+                  type='button'
+                  className={genre === 'ci' ? 'is-active' : ''}
+                  onClick={() => pickGenre('ci')}
+                >
+                  词
+                </button>
+              </div>
+            </div>
             {genreNotice && (
               <p className='inline-hint' role='status'>
                 {genreNotice}

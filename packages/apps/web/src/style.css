@@ -521,7 +521,7 @@ h3 {
   display: flex;
   min-height: 56px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 24px;
   border-bottom: 1px solid var(--line);
 }
@@ -581,6 +581,18 @@ h3 {
 
 .template-section .page-lede {
   max-width: 620px;
+}
+
+.template-heading-row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.template-heading-row .genre-segment {
+  flex: 0 0 auto;
+  margin-top: 4px;
 }
 
 .inline-hint {
@@ -2231,6 +2243,17 @@ h3 {
 
   .template-section {
     gap: 16px;
+  }
+
+  .template-heading-row {
+    display: grid;
+    gap: 16px;
+  }
+
+  .template-heading-row .genre-segment {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 0;
   }
 
   .template-section h1 {
