@@ -31,6 +31,14 @@ export {
 } from "./analyzer/pipeline.js";
 export type { PipelineInput, PipelineOutput } from "./analyzer/pipeline.js";
 
+// 模糊匹配
+export { fuzzyMatch, fuzzyMatchCi } from "./analyzer/fuzzy-match.js";
+export type {
+  FuzzyMatchResult,
+  FuzzyLineDetail,
+  FuzzyMatchOptions,
+} from "./analyzer/fuzzy-match.js";
+
 // 模板工具
 export { getTemplateType, resolveLineTemplate } from "./analyzer/templates.js";
 

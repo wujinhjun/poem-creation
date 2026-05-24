@@ -1,10 +1,12 @@
 type EntryEditorPanelProps = {
   persistenceMode: 'local' | 'supabase';
+  onOpenQuickFill: () => void;
   onOpenTemplateSelection: () => void;
 };
 
 export function EntryEditorPanel({
   persistenceMode,
+  onOpenQuickFill,
   onOpenTemplateSelection,
 }: EntryEditorPanelProps) {
   return (
@@ -50,10 +52,9 @@ export function EntryEditorPanel({
             <button
               type='button'
               className='ghost-button'
-              disabled
-              aria-disabled='true'
+              onClick={onOpenQuickFill}
             >
-              功能开发中
+              进入快填
             </button>
           </div>
         </article>

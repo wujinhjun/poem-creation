@@ -448,6 +448,11 @@ export default function App() {
     navigateTo({ mode: 'template' });
   }, [navigateTo, persistIfEditing]);
 
+  const handleOpenQuickFill = useCallback(async () => {
+    await persistIfEditing();
+    navigateTo({ mode: 'quickfill' });
+  }, [navigateTo, persistIfEditing]);
+
   const handleSettingsChange = useCallback((settings: UserSettings) => {
     setUserSettings(settings);
     setSaveStatus('saved');
@@ -596,6 +601,7 @@ export default function App() {
       <EntryPage
         drafts={drafts}
         persistenceMode={framePersistenceMode}
+        onOpenQuickFill={() => void handleOpenQuickFill()}
         onOpenTemplateSelection={() => void handleOpenTemplateSelection()}
         onOpenWorks={() => void handleOpenWorks()}
         onOpenDraft={(id) => void handleOpenDraft(id)}
