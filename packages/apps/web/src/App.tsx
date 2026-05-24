@@ -4,6 +4,7 @@ import { createDraftStore } from './persist';
 import type { PoemCreationDraft, PoemCreationDraftSummary } from './persist';
 import type { Genre } from './constants/poem';
 import { AppFrame } from './components/AppFrame';
+import type { SaveStatus } from './components/AppFrame';
 import { AppNotice } from './components/AppNotice';
 import { EntryPage } from './components/EntryPage';
 import { EditorPage } from './components/EditorPage';
@@ -21,8 +22,7 @@ import { draftDisplayTitle } from './utils/draftDisplay';
 import { copyText, formatPoemText } from './utils/exportText';
 import { validateGridStrictly } from './utils/strictGridValidation';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
-import { defaultRhymeType } from '@poem/shared';
-import { firstVariantForTune, getAllTemplates } from '@poem/poem-kit';
+import { getAllTemplates } from '@poem/poem-kit';
 import {
   loadUserSettings,
   saveUserSettings,
@@ -58,6 +58,7 @@ export default function App() {
   const [chars, setChars] = useState<string[][]>([]);
   const [analyzeResult, setAnalyzeResult] = useState('');
   const [appError, setAppError] = useState('');
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [exportStatus, setExportStatus] = useState('');
   const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [persistReady, setPersistReady] = useState(false);
@@ -172,37 +173,6 @@ export default function App() {
     userSettings.defaultAuthor,
     viewMode,
   ]);
-
-  const handleNewDraftFromTemplate = useCallback(
-    async (nextGenre: Genre, tuneName: string) => {
-      const current = buildCurrentDraft();
-      if (viewMode === 'editor' && persistReady && current) {
-        await draftStore.saveDraft(current);
-      }
-      const nextDraft = {
-        ...createEmptyDraft(),
-        author: userSettings.defaultAuthor,
-        genre: nextGenre,
-        selectedTune: tuneName,
-        selectedVariant: firstVariantForTune(nextGenre, tuneName),
-        rhymeType: defaultRhymeType(nextGenre),
-      };
-      await draftStore.saveDraft(nextDraft);
-      applyDraft(nextDraft);
-      await refreshDraftList();
-      setViewMode('editor');
-      pushRoute({ mode: 'editor', draftId: nextDraft.id });
-    },
-    [
-      applyDraft,
-      buildCurrentDraft,
-      draftStore,
-      persistReady,
-      refreshDraftList,
-      userSettings.defaultAuthor,
-      viewMode,
-    ],
-  );
 
   const handleOpenDraft = useCallback(
     async (id: string) => {
@@ -412,11 +382,16 @@ export default function App() {
         chars,
         updatedAt: new Date().toISOString(),
       };
+      setSaveStatus('saving');
       void draftStore
         .saveDraft(draft)
-        .then(refreshDraftList)
+        .then(async () => {
+          await refreshDraftList();
+          setSaveStatus('saved');
+        })
         .catch((error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
+          setSaveStatus('error');
           setAppError(`草稿保存失败：${message}`);
         });
     }, 350);
@@ -484,6 +459,7 @@ export default function App() {
 
   const handleSettingsChange = useCallback((settings: UserSettings) => {
     setUserSettings(settings);
+    setSaveStatus('saved');
     saveUserSettings(settings);
   }, []);
 
@@ -568,6 +544,7 @@ export default function App() {
   );
 
   const errorMessage = dictError || appError;
+  const framePersistenceMode = userSettings.persistence.mode;
 
   const handleOpenEntry = useCallback(() => {
     if (viewMode === 'editor') {
@@ -582,6 +559,8 @@ export default function App() {
     return (
       <AppFrame
         activeView='settings'
+        persistenceMode={framePersistenceMode}
+        saveStatus={saveStatus}
         onOpenEntry={handleOpenEntry}
         onOpenWorks={() => void handleOpenWorks()}
         onOpenSettings={() => void handleOpenSettings()}
@@ -600,6 +579,8 @@ export default function App() {
     return (
       <AppFrame
         activeView='works'
+        persistenceMode={framePersistenceMode}
+        saveStatus={saveStatus}
         onOpenEntry={handleOpenEntry}
         onOpenWorks={() => void handleOpenWorks()}
         onOpenSettings={() => void handleOpenSettings()}
@@ -621,6 +602,8 @@ export default function App() {
     return (
       <AppFrame
         activeView='entry'
+        persistenceMode={framePersistenceMode}
+        saveStatus={saveStatus}
         onOpenEntry={handleOpenEntry}
         onOpenWorks={() => void handleOpenWorks()}
         onOpenSettings={() => void handleOpenSettings()}
@@ -648,6 +631,8 @@ export default function App() {
     return (
       <AppFrame
         activeView='entry'
+        persistenceMode={framePersistenceMode}
+        saveStatus={saveStatus}
         onOpenEntry={handleOpenEntry}
         onOpenWorks={() => void handleOpenWorks()}
         onOpenSettings={() => void handleOpenSettings()}
@@ -662,6 +647,8 @@ export default function App() {
     return (
       <AppFrame
         activeView='entry'
+        persistenceMode={framePersistenceMode}
+        saveStatus={saveStatus}
         onOpenEntry={handleOpenEntry}
         onOpenWorks={() => void handleOpenWorks()}
         onOpenSettings={() => void handleOpenSettings()}
@@ -669,9 +656,6 @@ export default function App() {
         <AppNotice message={errorMessage} />
         <EntryPage
           drafts={drafts}
-          onStartWithTemplate={(nextGenre, tuneName) =>
-            void handleNewDraftFromTemplate(nextGenre, tuneName)
-          }
           onOpenTemplateSelection={() => void handleOpenTemplateSelection()}
           onOpenWorks={() => void handleOpenWorks()}
           onOpenDraft={(id) => void handleOpenDraft(id)}
@@ -684,6 +668,8 @@ export default function App() {
   return (
     <AppFrame
       activeView='editor'
+      persistenceMode={framePersistenceMode}
+      saveStatus={saveStatus}
       onOpenEntry={handleOpenEntry}
       onOpenWorks={() => void handleOpenWorks()}
       onOpenSettings={() => void handleOpenSettings()}

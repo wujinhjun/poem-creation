@@ -9,6 +9,7 @@ export function CustomSelect<T extends string>({
   value,
   options,
   placeholder,
+  disabled = false,
   searchable = false,
   searchPlaceholder = '搜索',
   onChange,
@@ -16,6 +17,7 @@ export function CustomSelect<T extends string>({
   value: T | '';
   options: readonly SelectOption<T>[];
   placeholder: string;
+  disabled?: boolean;
   searchable?: boolean;
   searchPlaceholder?: string;
   onChange: (value: T | '') => void;
@@ -60,6 +62,7 @@ export function CustomSelect<T extends string>({
       <button
         type='button'
         className='select-trigger'
+        disabled={disabled}
         onClick={() => setOpen((next) => !next)}
       >
         <span className={selected ? '' : 'select-placeholder'}>
@@ -71,7 +74,7 @@ export function CustomSelect<T extends string>({
           ⌄
         </span>
       </button>
-      {open && (
+      {open && !disabled && (
         <div className='select-popover'>
           {searchable && (
             <div className='select-search-wrap'>

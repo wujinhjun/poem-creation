@@ -30,8 +30,8 @@ export function EditorSidebar({
     <aside className='panel editor-aside'>
       <div className='panel-heading'>
         <div>
-          <p className='section-kicker'>旁注</p>
-          <h2>轻提示</h2>
+          <p className='section-kicker'>工具</p>
+          <h2>作品信息</h2>
         </div>
         <button
           type='button'
@@ -42,6 +42,7 @@ export function EditorSidebar({
         </button>
       </div>
       <div className='aside-section'>
+        <h3>导出</h3>
         <div className='button-stack'>
           <button
             type='button'
@@ -62,6 +63,7 @@ export function EditorSidebar({
           <div className='notice-inline'>{exportStatus}</div>
         )}
         <div className='selection-summary'>
+          <h3>模板</h3>
           <div>体裁：{genre === 'meter' ? '诗' : '词'}</div>
           <div>模板：{selectedTune || '未选模板'}</div>
           <div>
