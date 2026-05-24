@@ -139,6 +139,20 @@ export function EditorPage({
             />
           )}
         </section>
+        <div className='editor-mobile-actions' aria-label='移动端编辑操作'>
+          <button type='button' className='primary-button' onClick={() => onAnalyze()}>
+            校验
+          </button>
+          <button type='button' className='ghost-button' onClick={onOpenExportPreview}>
+            导出
+          </button>
+          <button type='button' className='ghost-button' onClick={onCopyExportText}>
+            复制
+          </button>
+          <button type='button' className='ghost-button' onClick={onReturn}>
+            返回
+          </button>
+        </div>
         <EditorSidebar
           genre={genre}
           selectedTune={selectedTune}
