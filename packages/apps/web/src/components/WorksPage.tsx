@@ -5,6 +5,7 @@ import { DraftListPanel } from './entry/DraftListPanel';
 
 type WorksPageProps = {
   drafts: PoemCreationDraftSummary[];
+  persistenceMode: 'local' | 'supabase';
   onCreateDraft: () => void;
   onOpenDraft: (id: string) => void;
   onDeleteDraft: (id: string) => void;
@@ -14,6 +15,7 @@ type WorksPageProps = {
 
 export function WorksPage({
   drafts,
+  persistenceMode,
   onCreateDraft,
   onOpenDraft,
   onDeleteDraft,
@@ -28,15 +30,18 @@ export function WorksPage({
       draftSearchText(draft).toLowerCase().includes(keyword),
     );
   }, [draftQuery, drafts]);
+  const hasSearch = draftQuery.trim().length > 0;
 
   return (
     <main className='page page-works'>
       <section className='works-header'>
         <div>
           <p className='section-kicker'>作品</p>
-          <h1>本地作品</h1>
+          <h1>{persistenceMode === 'supabase' ? '云端作品' : '本地作品'}</h1>
           <p className='page-lede'>
-            草稿会自动保存，只保存在当前浏览器。这里用于继续编辑、导入导出和清理旧作。
+            {persistenceMode === 'supabase'
+              ? '草稿会自动同步到你的 Supabase 项目。这里用于继续编辑、导入导出和清理旧作。'
+              : '草稿会自动保存，只保存在当前浏览器。这里用于继续编辑、导入导出和清理旧作。'}
           </p>
         </div>
         <button type='button' className='primary-button' onClick={onCreateDraft}>
@@ -47,12 +52,12 @@ export function WorksPage({
       <section className='works-grid'>
         <div className='works-stat-line'>
           <div className='works-stat'>
-            <span>{drafts.length}</span>
-            <small>本地草稿</small>
-          </div>
-          <div className='works-stat'>
-            <span>{filteredDrafts.length}</span>
-            <small>当前结果</small>
+            <span>{hasSearch ? filteredDrafts.length : drafts.length}</span>
+            <small>
+              {hasSearch
+                ? `${drafts.length} 首中匹配 ${filteredDrafts.length} 首`
+                : `共 ${drafts.length} 首`}
+            </small>
           </div>
         </div>
         <DraftListPanel

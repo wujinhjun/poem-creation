@@ -1,8 +1,10 @@
 type EntryEditorPanelProps = {
+  persistenceMode: 'local' | 'supabase';
   onOpenTemplateSelection: () => void;
 };
 
 export function EntryEditorPanel({
+  persistenceMode,
   onOpenTemplateSelection,
 }: EntryEditorPanelProps) {
   return (
@@ -14,7 +16,11 @@ export function EntryEditorPanel({
           <i>诗</i>
           <span />
         </div>
-        <p>无需登录，内容只保存在本地浏览器。</p>
+        <p>
+          {persistenceMode === 'supabase'
+            ? '已连接 Supabase，作品会同步到你的项目。'
+            : '无需登录，内容只保存在本地浏览器。'}
+        </p>
       </div>
 
       <div className='start-method-grid'>

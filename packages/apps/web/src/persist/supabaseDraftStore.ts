@@ -43,6 +43,30 @@ export function supabaseStoreReady(settings: SupabasePersistenceSettings): boole
   return Boolean(settings.url.trim() && settings.anonKey.trim());
 }
 
+export async function testSupabaseConnection(
+  settings: SupabasePersistenceSettings,
+): Promise<void> {
+  if (!supabaseStoreReady(settings)) {
+    throw new Error('请先填写 Project URL 和 anon public key');
+  }
+
+  const baseUrl = `${trimTrailingSlash(settings.url)}/rest/v1`;
+  const response = await fetch(
+    `${baseUrl}/${settings.draftsTable}?select=id&limit=1`,
+    {
+      headers: {
+        apikey: settings.anonKey,
+        Authorization: `Bearer ${settings.anonKey}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '');
+    throw new Error(`Supabase ${response.status}: ${detail || response.statusText}`);
+  }
+}
+
 export class SupabaseDraftStore implements PoemCreationDraftStore {
   private readonly baseUrl: string;
   private readonly settings: SupabasePersistenceSettings;

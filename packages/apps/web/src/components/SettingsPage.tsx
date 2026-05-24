@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { testSupabaseConnection } from '../persist/supabaseDraftStore';
 import type { UserSettings } from '../utils/settings';
 
 type SettingsPageProps = {
@@ -12,6 +14,7 @@ export function SettingsPage({
   onReturn,
 }: SettingsPageProps) {
   const isSupabaseMode = settings.persistence.mode === 'supabase';
+  const [connectionStatus, setConnectionStatus] = useState('');
 
   const setPersistenceMode = (
     mode: UserSettings['persistence']['mode'],
@@ -23,6 +26,17 @@ export function SettingsPage({
         mode,
       },
     });
+  };
+
+  const handleTestConnection = async () => {
+    setConnectionStatus('测试连接中...');
+    try {
+      await testSupabaseConnection(settings.persistence.supabase);
+      setConnectionStatus('连接成功');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setConnectionStatus(`连接失败：${message}`);
+    }
   };
 
   const setSupabaseField = (
@@ -169,8 +183,23 @@ export function SettingsPage({
                   </div>
                 </div>
 
-                <div className='settings-schema-note'>
-                  <span className='field-title'>建表参考</span>
+                <div className='settings-connection-row'>
+                  <button
+                    type='button'
+                    className='ghost-button'
+                    onClick={() => void handleTestConnection()}
+                  >
+                    测试连接
+                  </button>
+                  {connectionStatus && (
+                    <span className='settings-connection-status'>
+                      {connectionStatus}
+                    </span>
+                  )}
+                </div>
+
+                <details className='settings-schema-note'>
+                  <summary className='field-title'>建表 SQL 参考</summary>
                   <pre>{`create table if not exists poem_creation_drafts (
   id text primary key,
   payload jsonb not null,
@@ -181,7 +210,7 @@ create table if not exists poem_creation_meta (
   key text primary key,
   value text not null
 );`}</pre>
-                </div>
+                </details>
               </>
             )}
           </div>

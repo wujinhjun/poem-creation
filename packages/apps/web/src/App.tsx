@@ -592,6 +592,7 @@ export default function App() {
         <AppNotice message={errorMessage} />
         <WorksPage
           drafts={drafts}
+          persistenceMode={framePersistenceMode}
           onCreateDraft={handleOpenEntry}
           onOpenDraft={(id) => void handleOpenDraft(id)}
           onDeleteDraft={(id) => void handleDeleteDraft(id)}
@@ -660,6 +661,7 @@ export default function App() {
         <AppNotice message={errorMessage} />
         <EntryPage
           drafts={drafts}
+          persistenceMode={framePersistenceMode}
           onOpenTemplateSelection={() => void handleOpenTemplateSelection()}
           onOpenWorks={() => void handleOpenWorks()}
           onOpenDraft={(id) => void handleOpenDraft(id)}

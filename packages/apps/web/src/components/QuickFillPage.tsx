@@ -5,11 +5,7 @@ type QuickFillPageProps = {
 };
 
 function normalizeLineCount(lines: string[], minLength = 4): string[] {
-  const lastFilledIndex = lines.reduce(
-    (last, line, index) => (line.trim() ? index : last),
-    -1,
-  );
-  const targetLength = Math.max(4, minLength, lastFilledIndex + 2);
+  const targetLength = Math.max(1, minLength);
   return Array.from({ length: targetLength }, (_, index) => lines[index] ?? '');
 }
 
@@ -24,9 +20,6 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
     setLines((current) => {
       const next = [...current];
       next[index] = value;
-      if (index === current.length - 1 && value.trim()) {
-        next.push('');
-      }
       return normalizeLineCount(next, current.length);
     });
   };
@@ -36,6 +29,13 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
       const next = [...current];
       next.splice(index + 1, 0, '');
       return normalizeLineCount(next, next.length);
+    });
+  };
+
+  const removeLine = (index: number) => {
+    setLines((current) => {
+      const next = current.filter((_, lineIndex) => lineIndex !== index);
+      return normalizeLineCount(next, Math.max(1, next.length));
     });
   };
 
@@ -78,6 +78,15 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
                     }
                   }}
                 />
+                <button
+                  type='button'
+                  className='quickfill-remove-line'
+                  aria-label={`删除第 ${index + 1} 行`}
+                  disabled={lines.length <= 1}
+                  onClick={() => removeLine(index)}
+                >
+                  ×
+                </button>
               </div>
             ))}
           </div>
