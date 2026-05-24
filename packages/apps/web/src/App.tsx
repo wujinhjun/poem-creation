@@ -21,6 +21,7 @@ import { downloadDraftArchive, readDraftArchive } from './utils/draftArchive';
 import { draftDisplayTitle } from './utils/draftDisplay';
 import { copyText, formatPoemText } from './utils/exportText';
 import { validateGridStrictly } from './utils/strictGridValidation';
+import type { StrictCharIssue } from './utils/strictGridValidation';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
 import { getAllTemplates } from '@poem/poem-kit';
 import {
@@ -57,6 +58,7 @@ export default function App() {
   const [drafts, setDrafts] = useState<PoemCreationDraftSummary[]>([]);
   const [chars, setChars] = useState<string[][]>([]);
   const [analyzeResult, setAnalyzeResult] = useState('');
+  const [analysisIssues, setAnalysisIssues] = useState<StrictCharIssue[]>([]);
   const [appError, setAppError] = useState('');
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [exportStatus, setExportStatus] = useState('');
@@ -482,9 +484,11 @@ export default function App() {
           dict,
           expectedRhymeTone,
         });
+        setAnalysisIssues(strictValidation.issues);
         setAnalyzeResult(formatAnalysisReport(r, strictValidation));
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
+        setAnalysisIssues([]);
         setAnalyzeResult(`错误: ${message}`);
       }
     },
@@ -693,6 +697,7 @@ export default function App() {
         visualLineGroups={visualLineGroups}
         sectionBreakBeforeGroups={sectionBreakBeforeGroups}
         analyzeResult={analyzeResult}
+        analysisIssues={analysisIssues}
         errorMessage={errorMessage}
         exportStatus={exportStatus}
         exportPreviewText={exportPreviewText}

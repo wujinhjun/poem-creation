@@ -42,6 +42,8 @@ export default function Composer({
   initialChars,
   onChange,
   onComplete,
+  onFailCountChange,
+  focusTarget,
 }: {
   pattern: ToneConstraint[][];
   dict: RhymeDict | null;
@@ -51,6 +53,8 @@ export default function Composer({
   initialChars?: string[][];
   onChange: (chars: string[][]) => void;
   onComplete: (chars: string[][]) => void;
+  onFailCountChange?: (count: number) => void;
+  focusTarget?: { lineIndex: number; col: number } | null;
 }) {
   const patternSignature = useMemo(
     () => createEditorPatternSignature(pattern),
@@ -70,7 +74,14 @@ export default function Composer({
   const [activeCell, setActiveCell] = useState<{
     line: number;
     col: number;
-  } | null>(null);
+  } | null>(
+    focusTarget
+      ? {
+          line: focusTarget.lineIndex,
+          col: focusTarget.col,
+        }
+      : null,
+  );
   const [draft, setDraft] = useState('');
   const groups = useMemo(
     () =>
@@ -311,10 +322,24 @@ export default function Composer({
     });
   }, [dict, expectedRhymeTone, grid, pattern]);
 
+  const failCount = useMemo(
+    () =>
+      evaluations.reduce(
+        (count, row) =>
+          count + row.filter((evaluation) => evaluation.status === 'fail').length,
+        0,
+      ),
+    [evaluations],
+  );
+
   // 通知父组件
   useEffect(() => {
     onChange(grid);
   }, [grid, onChange]);
+
+  useEffect(() => {
+    onFailCountChange?.(failCount);
+  }, [failCount, onFailCountChange]);
 
   useEffect(() => {
     const pending = pendingCompleteRef.current;

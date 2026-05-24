@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import type { Tone, ToneConstraint, RhymeDictType } from '@poem/parser/kernel';
 import type { RhymeDict } from '@poem/parser/kernel';
 import type { Genre } from '../constants/poem';
+import type { StrictCharIssue } from '../utils/strictGridValidation';
 import Composer from '../Composer';
 import { ExportPreviewModal } from './ExportPreviewModal';
 import { ComposerEmptyState } from './editor/ComposerEmptyState';
@@ -25,6 +27,7 @@ type EditorPageProps = {
   visualLineGroups: number[][];
   sectionBreakBeforeGroups: number[];
   analyzeResult: string;
+  analysisIssues: StrictCharIssue[];
   errorMessage: string;
   exportStatus: string;
   exportPreviewText: string;
@@ -59,6 +62,7 @@ export function EditorPage({
   visualLineGroups,
   sectionBreakBeforeGroups,
   analyzeResult,
+  analysisIssues,
   errorMessage,
   exportStatus,
   exportPreviewText,
@@ -74,6 +78,15 @@ export function EditorPage({
   onCopyExportText,
   onReturn,
 }: EditorPageProps) {
+  const [liveFailCount, setLiveFailCount] = useState(0);
+  const [focusTarget, setFocusTarget] = useState<{
+    lineIndex: number;
+    col: number;
+    requestId: number;
+  } | null>(null);
+  const issueCount = analysisIssues.length;
+  const needsAttentionCount = issueCount > 0 ? issueCount : liveFailCount;
+
   return (
     <main className='page page-editor'>
       <section className='editor-layout'>
@@ -104,7 +117,7 @@ export function EditorPage({
           {pattern.length > 0 && dict && persistReady && (
             <>
               <Composer
-                key={`${activeDraftId}:${selectedVariant}:${draftRevision}`}
+                key={`${activeDraftId}:${selectedVariant}:${draftRevision}:${focusTarget?.requestId ?? 0}`}
                 pattern={pattern}
                 dict={dict}
                 expectedRhymeTone={expectedRhymeTone}
@@ -113,15 +126,43 @@ export function EditorPage({
                 initialChars={chars}
                 onChange={onCharsChange}
                 onComplete={onAnalyze}
+                onFailCountChange={setLiveFailCount}
+                focusTarget={focusTarget}
               />
               <div className='analysis-bar'>
                 <button className='primary-button' onClick={() => onAnalyze()}>
                   校验格律
+                  {needsAttentionCount > 0 && (
+                    <span className='button-count'>
+                      {needsAttentionCount} 处需斟酌
+                    </span>
+                  )}
                 </button>
                 {analyzeResult && (
-                  <pre className='analysis-result'>
-                    {analyzeResult}
-                  </pre>
+                  <div className='analysis-result'>
+                    <pre className='analysis-result-text'>{analyzeResult}</pre>
+                    {analysisIssues.length > 0 && (
+                      <div className='analysis-issue-list'>
+                        {analysisIssues.map((issue) => (
+                          <button
+                            key={`${issue.lineIndex}-${issue.col}-${issue.char}-${issue.reason}`}
+                            type='button'
+                            className='analysis-issue'
+                            onClick={() =>
+                              setFocusTarget((current) => ({
+                                lineIndex: issue.lineIndex,
+                                col: issue.col,
+                                requestId: (current?.requestId ?? 0) + 1,
+                              }))
+                            }
+                          >
+                            第 {issue.lineIndex + 1} 句第 {issue.col + 1} 字：
+                            {issue.char}，应{issue.expected}，实{issue.actual}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </>

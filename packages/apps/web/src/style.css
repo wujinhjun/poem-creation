@@ -1352,7 +1352,7 @@ h3 {
 
 .editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   gap: 20px;
   align-items: start;
 }
@@ -1384,9 +1384,11 @@ h3 {
 .description-input,
 .author-input {
   border: 0;
+  border-bottom: 1px dashed transparent;
   background: transparent;
   color: var(--ink);
   outline: none;
+  transition: border-color 140ms ease, background 140ms ease;
 }
 
 .title-input {
@@ -1407,11 +1409,17 @@ h3 {
 }
 
 .author-input {
-  width: min(240px, 100%);
-  margin-left: auto;
+  width: 100%;
+  margin: 0 auto;
   padding: 0 8px;
-  text-align: right;
+  text-align: center;
   color: var(--ink-soft);
+}
+
+.title-input:hover,
+.description-input:hover,
+.author-input:hover {
+  border-bottom-color: var(--cinnabar);
 }
 
 .title-input:focus,
@@ -1431,6 +1439,7 @@ h3 {
   align-items: flex-end;
   justify-content: center;
   gap: 5px;
+  overflow-x: auto;
   padding: 4px 0 12px;
   border-bottom: 1px solid var(--line);
 }
@@ -1442,6 +1451,7 @@ h3 {
 .composer-logical-line {
   display: inline-flex;
   align-items: flex-end;
+  flex-wrap: nowrap;
   gap: 5px;
 }
 
@@ -1493,8 +1503,8 @@ h3 {
 
 .slot-label {
   min-height: 16px;
-  color: var(--ink-soft);
-  font-size: 11px;
+  color: var(--ink);
+  font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -1504,7 +1514,7 @@ h3 {
 }
 
 .slot-label-flexible {
-  color: var(--muted);
+  color: var(--ink);
 }
 
 .char-input {
@@ -1538,6 +1548,7 @@ h3 {
 .status-fail {
   border-color: var(--cinnabar);
   background: #f8e8e5;
+  box-shadow: inset 0 -3px 0 rgba(168, 50, 40, 0.45);
 }
 
 .status-pending,
@@ -1579,16 +1590,46 @@ h3 {
 }
 
 .analysis-result {
-  min-height: 42px;
-  margin: 0;
   border-left: 3px solid var(--cinnabar);
   background: #fffbf5;
   padding: 10px 14px;
   color: var(--ink-soft);
-  white-space: pre-wrap;
-  font-family: "Kaiti SC", "STKaiti", "Songti SC", "STSong", serif;
   font-size: 14px;
   line-height: 1.85;
+}
+
+.analysis-result-text {
+  margin: 0;
+  color: inherit;
+  white-space: pre-wrap;
+  font-family: "Kaiti SC", "STKaiti", "Songti SC", "STSong", serif;
+}
+
+.analysis-issue-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.analysis-issue {
+  border: 1px solid var(--line);
+  background: var(--paper-strong);
+  padding: 8px 10px;
+  color: var(--ink-soft);
+  text-align: left;
+  font-size: 13px;
+}
+
+.analysis-issue:hover {
+  border-color: var(--cinnabar);
+  color: var(--cinnabar);
+}
+
+.button-count {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .loading-text,
@@ -1996,6 +2037,27 @@ h3 {
     position: static;
   }
 
+  .editor-mobile-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 15;
+    display: grid;
+    grid-template-columns: 1.2fr repeat(3, 1fr);
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-top-color: var(--line-strong);
+    background: var(--paper-strong);
+    padding: 10px;
+  }
+
+  .editor-mobile-actions .primary-button,
+  .editor-mobile-actions .ghost-button {
+    min-width: 0;
+    min-height: 46px;
+    justify-self: stretch;
+    padding: 0 10px;
+  }
+
   .editor-sheet {
     padding: 18px 14px;
   }
@@ -2084,6 +2146,15 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .home-copy {
+    gap: 10px;
+    padding: 18px 16px 8px;
+  }
+
+  .home-copy h1 {
+    font-size: clamp(30px, 10vw, 36px);
+  }
+
   .template-page {
     gap: 14px;
   }
@@ -2170,27 +2241,6 @@ h3 {
     padding: 18px 10px;
   }
 
-  .editor-mobile-actions {
-    position: sticky;
-    bottom: 0;
-    z-index: 15;
-    display: grid;
-    grid-template-columns: 1.2fr repeat(3, 1fr);
-    gap: 8px;
-    border: 1px solid var(--line);
-    border-top-color: var(--line-strong);
-    background: var(--paper-strong);
-    padding: 10px;
-  }
-
-  .editor-mobile-actions .primary-button,
-  .editor-mobile-actions .ghost-button {
-    min-width: 0;
-    min-height: 46px;
-    justify-self: stretch;
-    padding: 0 10px;
-  }
-
   .work-meta {
     gap: 6px;
     margin-bottom: 24px;
@@ -2216,16 +2266,15 @@ h3 {
 
   .composer-line {
     min-width: 0;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px 10px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 10px;
     padding-bottom: 14px;
   }
 
   .composer-logical-line {
-    max-width: 100%;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
     gap: 4px;
   }
 
@@ -2243,7 +2292,7 @@ h3 {
 
   .slot-label {
     min-height: 15px;
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .line-punctuation {
