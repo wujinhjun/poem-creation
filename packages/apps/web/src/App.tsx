@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { analyzeSync, RhymeDictType } from '@poem/parser/kernel';
+import { identifyQuickFill } from '@poem/poem-kit';
+import type { QuickFillCandidate } from '@poem/poem-kit';
 import { createDraftStore } from './persist';
 import type { PoemCreationDraft, PoemCreationDraftSummary } from './persist';
 import type { Genre } from './constants/poem';
@@ -24,6 +26,8 @@ import { validateGridStrictly } from './utils/strictGridValidation';
 import type { StrictCharIssue } from './utils/strictGridValidation';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
 import type { AppRoute } from './utils/routing';
+import { loadCiBundle } from './utils/ciTemplate';
+import { createBrowserDict } from './utils/rhymeDict';
 import { getAllTemplates } from '@poem/poem-kit';
 import {
   loadUserSettings,
@@ -34,6 +38,22 @@ import './style.css';
 
 type ViewMode = AppRoute['mode'];
 type FrameActiveView = 'entry' | 'works' | 'editor' | 'settings';
+
+const QUICKFILL_MIN_CONFIDENCE = 0.55;
+
+type QuickFillRecognitionInput = {
+  title: string;
+  author: string;
+  lines: string[];
+};
+
+function quickFillInputText(lines: string[]): string {
+  return lines.map((line) => line.trim()).filter(Boolean).join('\n');
+}
+
+function candidateRhymeType(candidate: QuickFillCandidate): RhymeDictType {
+  return candidate.genre === 'ci' ? RhymeDictType.Cilin : RhymeDictType.Pingshui;
+}
 
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('entry');
@@ -453,6 +473,60 @@ export default function App() {
     navigateTo({ mode: 'quickfill' });
   }, [navigateTo, persistIfEditing]);
 
+  const handleRecognizeQuickFill = useCallback(
+    async (input: QuickFillRecognitionInput) => {
+      const text = quickFillInputText(input.lines);
+      if (!text) throw new Error('请先输入至少一句正文');
+
+      const [pingshuiDict, cilinDict, ciBundle] = await Promise.all([
+        createBrowserDict(RhymeDictType.Pingshui),
+        createBrowserDict(RhymeDictType.Cilin),
+        loadCiBundle(),
+      ]);
+      const meterCandidates = identifyQuickFill(text, pingshuiDict, undefined, {
+        topN: 6,
+      });
+      const ciCandidates = identifyQuickFill(
+        text,
+        cilinDict,
+        Object.values(ciBundle),
+        { topN: 8 },
+      ).filter((candidate) => candidate.genre === 'ci');
+      const candidates = [...meterCandidates, ...ciCandidates].sort(
+        (a, b) => b.confidence - a.confidence,
+      );
+      const best = candidates[0];
+      if (!best || best.confidence < QUICKFILL_MIN_CONFIDENCE) {
+        throw new Error('暂未识别到足够可信的格律或词牌，请补充分行或改用模板起笔');
+      }
+
+      const nextDraft: PoemCreationDraft = {
+        ...createEmptyDraft(),
+        title: input.title.trim(),
+        author: input.author.trim() || userSettings.defaultAuthor,
+        genre: best.genre,
+        selectedTune: best.tuneName,
+        selectedVariant: best.variantId,
+        rhymeType: candidateRhymeType(best),
+        chars: best.normalizedLines,
+      };
+      await draftStore.saveDraft(nextDraft);
+      applyDraft(nextDraft);
+      await refreshDraftList();
+      navigateTo({ mode: 'editor', draftId: nextDraft.id });
+      setAppError(
+        `已识别为${best.tuneName} · ${best.variantName}（置信度 ${Math.round(best.confidence * 100)}%）`,
+      );
+    },
+    [
+      applyDraft,
+      draftStore,
+      navigateTo,
+      refreshDraftList,
+      userSettings.defaultAuthor,
+    ],
+  );
+
   const handleSettingsChange = useCallback((settings: UserSettings) => {
     setUserSettings(settings);
     setSaveStatus('saved');
@@ -595,7 +669,12 @@ export default function App() {
       />
     );
   } else if (viewMode === 'quickfill') {
-    pageContent = <QuickFillPage onReturn={handleOpenEntry} />;
+    pageContent = (
+      <QuickFillPage
+        onRecognize={handleRecognizeQuickFill}
+        onReturn={handleOpenEntry}
+      />
+    );
   } else if (viewMode === 'entry') {
     pageContent = (
       <EntryPage

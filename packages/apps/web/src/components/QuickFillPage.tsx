@@ -1,6 +1,11 @@
 import { useState } from 'react';
 
 type QuickFillPageProps = {
+  onRecognize: (input: {
+    title: string;
+    author: string;
+    lines: string[];
+  }) => Promise<void>;
   onReturn: () => void;
 };
 
@@ -9,12 +14,15 @@ function normalizeLineCount(lines: string[], minLength = 4): string[] {
   return Array.from({ length: targetLength }, (_, index) => lines[index] ?? '');
 }
 
-export function QuickFillPage({ onReturn }: QuickFillPageProps) {
+export function QuickFillPage({ onRecognize, onReturn }: QuickFillPageProps) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [lines, setLines] = useState<string[]>(() =>
     normalizeLineCount(['', '', '', '']),
   );
+  const [recognizing, setRecognizing] = useState(false);
+  const [recognitionStatus, setRecognitionStatus] = useState('');
+  const hasContent = lines.some((line) => line.trim());
 
   const updateLine = (index: number, value: string) => {
     setLines((current) => {
@@ -43,6 +51,20 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
     setTitle('');
     setAuthor('');
     setLines(normalizeLineCount(['', '', '', '']));
+    setRecognitionStatus('');
+  };
+
+  const handleRecognize = async () => {
+    setRecognizing(true);
+    setRecognitionStatus('识别中...');
+    try {
+      await onRecognize({ title, author, lines });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setRecognitionStatus(`识别失败：${message}`);
+    } finally {
+      setRecognizing(false);
+    }
   };
 
   return (
@@ -125,8 +147,16 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
             <li><span>3</span>匹配格律或词牌</li>
             <li><span>4</span>保存到作品</li>
           </ol>
-          <button type='button' className='primary-button' disabled>
-            识别功能开发中
+          {recognitionStatus && (
+            <div className='notice-inline'>{recognitionStatus}</div>
+          )}
+          <button
+            type='button'
+            className='primary-button'
+            disabled={!hasContent || recognizing}
+            onClick={() => void handleRecognize()}
+          >
+            {recognizing ? '识别中' : '识别并归档'}
           </button>
         </aside>
       </section>
