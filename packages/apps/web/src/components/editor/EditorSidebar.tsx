@@ -30,8 +30,8 @@ export function EditorSidebar({
     <aside className='panel editor-aside'>
       <div className='panel-heading'>
         <div>
-          <p className='section-kicker'>旁注</p>
-          <h2>轻提示</h2>
+          <p className='section-kicker'>工具</p>
+          <h2>作品信息</h2>
         </div>
         <button
           type='button'
@@ -42,6 +42,7 @@ export function EditorSidebar({
         </button>
       </div>
       <div className='aside-section'>
+        <h3>导出</h3>
         <div className='button-stack'>
           <button
             type='button'
@@ -57,18 +58,12 @@ export function EditorSidebar({
           >
             复制文字
           </button>
-          <button
-            type='button'
-            className='ghost-button'
-            onClick={onOpenExportPreview}
-          >
-            导出图片
-          </button>
         </div>
         {exportStatus && (
           <div className='notice-inline'>{exportStatus}</div>
         )}
         <div className='selection-summary'>
+          <h3>模板</h3>
           <div>体裁：{genre === 'meter' ? '诗' : '词'}</div>
           <div>模板：{selectedTune || '未选模板'}</div>
           <div>
@@ -84,13 +79,13 @@ export function EditorSidebar({
 
       <div className='legend-strip'>
         <span className='inline-flex items-center gap-1.5'>
-          <i className='h-3 w-3 border border-[#4d7a35] bg-[#e8f1df]' />合
+          <i className='legend-swatch legend-swatch-pass' />合
         </span>
         <span className='inline-flex items-center gap-1.5'>
-          <i className='h-3 w-3 border border-[#a43c2f] bg-[#f6e2dc]' />误
+          <i className='legend-swatch legend-swatch-fail' />误
         </span>
         <span className='inline-flex items-center gap-1.5'>
-          <i className='h-3 w-3 border border-[#9b7a5d] bg-[#fffaf0]' />
+          <i className='legend-swatch legend-swatch-empty' />
           待填
         </span>
       </div>

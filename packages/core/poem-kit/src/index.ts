@@ -132,6 +132,11 @@ export function firstVariantForTune(
   );
 }
 
+// ============ QuickFill 识别 ============
+
+export { identifyQuickFill } from "./identify.js";
+export type { QuickFillCandidate, QuickFillOptions } from "./identify.js";
+
 // ============ 草稿规范化 ============
 
 function inferTemplateNameFromVariant(

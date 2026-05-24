@@ -1,7 +1,7 @@
 import { Tone } from '@poem/parser/kernel';
 import type { RhymeDict, ToneConstraint } from '@poem/parser/kernel';
 
-type StrictCharIssue = {
+export type StrictCharIssue = {
   lineIndex: number;
   col: number;
   char: string;

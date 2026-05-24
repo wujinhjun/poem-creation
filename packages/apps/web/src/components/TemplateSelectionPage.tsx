@@ -22,8 +22,6 @@ type TemplateSelectionPageProps = {
   onReturn: () => void;
 };
 
-type TemplateStep = 1 | 2;
-
 function toneMark(cell: ToneConstraint): string {
   if (cell.type === 'fixed') return cell.tone;
   if (cell.type === 'rhyme') return '韵';
@@ -48,23 +46,31 @@ function PatternPreview({
       {pattern.length === 0 ? (
         <p className='empty-copy'>暂无体式预览，请先选择模板。</p>
       ) : (
-        <div className='pattern-preview-lines'>
-          {pattern.slice(0, 10).map((line, index) => (
-            <div key={`${index}-${line.length}`} className='pattern-preview-line'>
-              <span>{index + 1}</span>
-              <div>
-                {line.map((cell, cellIndex) => (
-                  <i
-                    key={`${index}-${cellIndex}`}
-                    className={cell.type === 'rhyme' ? 'is-rhyme' : ''}
-                  >
-                    {toneMark(cell)}
-                  </i>
-                ))}
+        <>
+          <div className='pattern-preview-legend'>
+            <span>平</span>
+            <span>仄</span>
+            <span>中：可平可仄</span>
+            <span>韵：押韵</span>
+          </div>
+          <div className='pattern-preview-lines'>
+            {pattern.map((line, index) => (
+              <div key={`${index}-${line.length}`} className='pattern-preview-line'>
+                <span>{index + 1}</span>
+                <div>
+                  {line.map((cell, cellIndex) => (
+                    <i
+                      key={`${index}-${cellIndex}`}
+                      className={cell.type === 'rhyme' ? 'is-rhyme' : ''}
+                    >
+                      {toneMark(cell)}
+                    </i>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -84,12 +90,12 @@ export function TemplateSelectionPage({
   onStartDraft,
   onReturn,
 }: TemplateSelectionPageProps) {
-  const [step, setStep] = useState<TemplateStep>(1);
   const [ciPattern, setCiPattern] = useState<ToneConstraint[][]>([]);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
-  }, [step]);
+  }, []);
 
   const selectedTemplate = templateOptions.find((option) => option.value === selectedTune);
   const selectedVariantOption = variantOptions.find((option) => option.value === selectedVariant);
@@ -100,6 +106,8 @@ export function TemplateSelectionPage({
   const patternTitle = selectedTemplate?.value ?? '';
   const patternSubtitle =
     selectedVariantOption?.label ?? selectedTemplate?.label ?? '';
+  const previewLimit = 10;
+  const visiblePattern = previewExpanded ? pattern : pattern.slice(0, previewLimit);
 
   useEffect(() => {
     if (genre !== 'ci' || !selectedTune || !selectedVariant) {
@@ -128,11 +136,13 @@ export function TemplateSelectionPage({
   }, [genre, selectedTune, selectedVariant]);
 
   const pickGenre = (nextGenre: Genre) => {
+    if (nextGenre === genre) return;
+    setPreviewExpanded(false);
     onGenreChange(nextGenre);
-    setStep(2);
   };
 
   const pickTune = (nextTune: string) => {
+    setPreviewExpanded(false);
     onTuneChange(nextTune);
   };
 
@@ -142,62 +152,48 @@ export function TemplateSelectionPage({
         <button type='button' className='text-link' onClick={onReturn}>
           返回起笔
         </button>
-        <div className='template-steps' aria-label='模板选择步骤'>
-          {[
-            { id: 1, label: '选择体裁' },
-            { id: 2, label: genre === 'meter' ? '格律 / 变体 / 韵书' : '词牌 / 变体 / 韵书' },
-          ].map((item) => (
-            <button
-              key={item.id}
-              type='button'
-              className={`template-step${step === item.id ? ' is-active' : ''}${step > item.id ? ' is-done' : ''}`}
-              onClick={() => setStep(item.id as TemplateStep)}
-            >
-              <span>{item.id}</span>
-              {item.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       <section className='template-layout'>
         <div className='template-main'>
-          {step === 1 && (
-            <section className='template-section'>
-              <p className='section-kicker'>第一步</p>
-              <h1>先选择要写诗，还是填词</h1>
-              <p className='page-lede'>保持纯色块与线条，把选择拆清楚，下一步再看格律和词牌。</p>
-              <div className='genre-choice-grid'>
-                <button
-                  type='button'
-                  className={`genre-choice${genre === 'meter' ? ' is-active' : ''}`}
-                  onClick={() => pickGenre('meter')}
-                >
-                  <span>诗</span>
-                  <strong>近体格律</strong>
-                  <small>五绝、七绝、律诗与排律</small>
-                </button>
-                <button
-                  type='button'
-                  className={`genre-choice${genre === 'ci' ? ' is-active' : ''}`}
-                  onClick={() => pickGenre('ci')}
-                >
-                  <span>词</span>
-                  <strong>词牌体式</strong>
-                  <small>如梦令、浣溪沙、更多词牌</small>
-                </button>
-              </div>
-            </section>
-          )}
-
-          {step === 2 && (
-            <section className='template-section'>
-              <p className='section-kicker'>第二步</p>
+          <section className='template-section'>
+            <p className='section-kicker'>模板</p>
+            <div className='template-heading-row'>
               <h1>{genre === 'meter' ? '选择格律、变体与韵书' : '选择词牌、变体与韵书'}</h1>
-              <p className='page-lede'>
-                在这一页完成全部规则选择，右侧和下方会同步预览当前体式。
-              </p>
-              <div className='template-search-row'>
+            </div>
+            <div className='template-search-row'>
+              <div className='template-field template-field-genre'>
+                <span className='field-title'>体裁</span>
+                <div className='genre-segment' aria-label='选择体裁'>
+                  <button
+                    type='button'
+                    className={genre === 'meter' ? 'is-active' : ''}
+                    onClick={() => pickGenre('meter')}
+                  >
+                    诗
+                  </button>
+                  <button
+                    type='button'
+                    className={genre === 'ci' ? 'is-active' : ''}
+                    onClick={() => pickGenre('ci')}
+                  >
+                    词
+                  </button>
+                </div>
+              </div>
+              <div className='template-field template-field-rhyme'>
+                <span className='field-title'>韵书</span>
+                <CustomSelect
+                  value={rhymeType}
+                  options={RHYME_OPTIONS}
+                  placeholder='请选择韵书'
+                  onChange={(next) => {
+                    if (next) onRhymeTypeChange(next);
+                  }}
+                />
+              </div>
+              <div className='template-field template-field-tune'>
+                <span className='field-title'>{genre === 'meter' ? '格律' : '词牌'}</span>
                 <CustomSelect
                   value={selectedTune}
                   options={templateOptions}
@@ -208,41 +204,70 @@ export function TemplateSelectionPage({
                     if (nextTune) pickTune(nextTune);
                   }}
                 />
+              </div>
+              <div className='template-field template-field-variant'>
+                <span className='field-title'>变体</span>
                 <CustomSelect
                   value={selectedVariant}
                   options={variantOptions}
-                  placeholder='请选择变体'
+                  placeholder={selectedTune ? '请选择变体' : '请先选模板'}
+                  disabled={!selectedTune}
                   searchable
                   searchPlaceholder='搜索作者、押韵或字数'
-                  onChange={onVariantChange}
-                />
-                <CustomSelect
-                  value={rhymeType}
-                  options={RHYME_OPTIONS}
-                  placeholder='请选择韵书'
-                  onChange={(next) => {
-                    if (next) onRhymeTypeChange(next);
+                  onChange={(nextVariant) => {
+                    setPreviewExpanded(false);
+                    onVariantChange(nextVariant);
                   }}
                 />
               </div>
-              <PatternPreview
-                title={patternTitle}
-                subtitle={patternSubtitle}
-                pattern={pattern}
-              />
-              <div className='template-action-row'>
-                <button
-                  type='button'
-                  className='primary-button'
-                  disabled={!selectedVariant}
-                  onClick={onStartDraft}
-                >
-                  开始新作
-                </button>
-              </div>
-            </section>
-          )}
+            </div>
+            <div className='template-action-row'>
+              <button
+                type='button'
+                className='primary-button'
+                disabled={!selectedVariant}
+                onClick={onStartDraft}
+              >
+                开始新作
+              </button>
+            </div>
+          </section>
         </div>
+        <aside className='template-preview'>
+          <PatternPreview
+            title={patternTitle}
+            subtitle={patternSubtitle}
+            pattern={visiblePattern}
+          />
+          {pattern.length > visiblePattern.length && (
+            <div className='pattern-preview-footer'>
+              <p className='pattern-preview-note'>
+                已展示前 {visiblePattern.length} 行，全 {pattern.length} 行
+              </p>
+              <button
+                type='button'
+                className='text-link'
+                onClick={() => setPreviewExpanded(true)}
+              >
+                展开全部
+              </button>
+            </div>
+          )}
+          {previewExpanded && pattern.length > previewLimit && (
+            <div className='pattern-preview-footer'>
+              <p className='pattern-preview-note'>
+                已展示全部 {pattern.length} 行
+              </p>
+              <button
+                type='button'
+                className='text-link'
+                onClick={() => setPreviewExpanded(false)}
+              >
+                收起
+              </button>
+            </div>
+          )}
+        </aside>
       </section>
     </main>
   );

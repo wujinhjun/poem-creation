@@ -1,36 +1,33 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 type QuickFillPageProps = {
+  onRecognize: (input: {
+    title: string;
+    author: string;
+    lines: string[];
+  }) => Promise<void>;
   onReturn: () => void;
 };
 
 function normalizeLineCount(lines: string[], minLength = 4): string[] {
-  const lastFilledIndex = lines.reduce(
-    (last, line, index) => (line.trim() ? index : last),
-    -1,
-  );
-  const targetLength = Math.max(4, minLength, lastFilledIndex + 2);
+  const targetLength = Math.max(1, minLength);
   return Array.from({ length: targetLength }, (_, index) => lines[index] ?? '');
 }
 
-export function QuickFillPage({ onReturn }: QuickFillPageProps) {
+export function QuickFillPage({ onRecognize, onReturn }: QuickFillPageProps) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [lines, setLines] = useState<string[]>(() =>
     normalizeLineCount(['', '', '', '']),
   );
-  const filledCount = useMemo(
-    () => lines.filter((line) => line.trim()).length,
-    [lines],
-  );
+  const [recognizing, setRecognizing] = useState(false);
+  const [recognitionStatus, setRecognitionStatus] = useState('');
+  const hasContent = lines.some((line) => line.trim());
 
   const updateLine = (index: number, value: string) => {
     setLines((current) => {
       const next = [...current];
       next[index] = value;
-      if (index === current.length - 1 && value.trim()) {
-        next.push('');
-      }
       return normalizeLineCount(next, current.length);
     });
   };
@@ -43,10 +40,31 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
     });
   };
 
+  const removeLine = (index: number) => {
+    setLines((current) => {
+      const next = current.filter((_, lineIndex) => lineIndex !== index);
+      return normalizeLineCount(next, Math.max(1, next.length));
+    });
+  };
+
   const clearDraft = () => {
     setTitle('');
     setAuthor('');
     setLines(normalizeLineCount(['', '', '', '']));
+    setRecognitionStatus('');
+  };
+
+  const handleRecognize = async () => {
+    setRecognizing(true);
+    setRecognitionStatus('识别中...');
+    try {
+      await onRecognize({ title, author, lines });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setRecognitionStatus(`识别失败：${message}`);
+    } finally {
+      setRecognizing(false);
+    }
   };
 
   return (
@@ -82,6 +100,15 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
                     }
                   }}
                 />
+                <button
+                  type='button'
+                  className='quickfill-remove-line'
+                  aria-label={`删除第 ${index + 1} 行`}
+                  disabled={lines.length <= 1}
+                  onClick={() => removeLine(index)}
+                >
+                  ×
+                </button>
               </div>
             ))}
           </div>
@@ -120,8 +147,16 @@ export function QuickFillPage({ onReturn }: QuickFillPageProps) {
             <li><span>3</span>匹配格律或词牌</li>
             <li><span>4</span>保存到作品</li>
           </ol>
-          <button type='button' className='primary-button' disabled={filledCount === 0}>
-            识别并归档
+          {recognitionStatus && (
+            <div className='notice-inline'>{recognitionStatus}</div>
+          )}
+          <button
+            type='button'
+            className='primary-button'
+            disabled={!hasContent || recognizing}
+            onClick={() => void handleRecognize()}
+          >
+            {recognizing ? '识别中' : '识别并归档'}
           </button>
         </aside>
       </section>

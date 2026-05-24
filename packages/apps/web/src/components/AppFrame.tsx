@@ -1,22 +1,38 @@
 import type { ReactNode } from 'react';
 
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 type AppFrameProps = {
   activeView: "entry" | "works" | "editor" | "settings";
   children: ReactNode;
+  persistenceMode: 'local' | 'supabase';
+  saveStatus: SaveStatus;
   onOpenEntry: () => void;
   onOpenWorks: () => void;
   onOpenSettings: () => void;
 };
 
 const navItems = [
-  { key: "entry", label: "起笔", mark: "一" },
-  { key: "works", label: "作品", mark: "目" },
-  { key: "settings", label: "设置", mark: "设" },
+  { key: "entry", label: "起笔", mark: "笔" },
+  { key: "works", label: "作品", mark: "卷" },
+  { key: "settings", label: "设置", mark: "設" },
 ] as const;
+
+function saveStatusLabel(
+  saveStatus: SaveStatus,
+  persistenceMode: AppFrameProps['persistenceMode'],
+): string {
+  if (saveStatus === 'saving') return '保存中';
+  if (saveStatus === 'error') return '保存失败';
+  if (persistenceMode === 'supabase') return '已同步到 Supabase';
+  return '已本地保存';
+}
 
 export function AppFrame({
   activeView,
   children,
+  persistenceMode,
+  saveStatus,
   onOpenEntry,
   onOpenWorks,
   onOpenSettings,
@@ -39,13 +55,13 @@ export function AppFrame({
         <button type='button' className='brand-lockup' onClick={onOpenEntry}>
           <span className='brand-seal'>诗</span>
           <span className='brand-copy'>
-            <span className='brand-title'>Poem Creation</span>
-            <span className='brand-subtitle'>本地诗词创作工具</span>
+            <span className='brand-title'>诗笺</span>
+            <span className='brand-subtitle'>Poem Creation</span>
           </span>
         </button>
-        <div className='save-status' aria-live='polite'>
+        <div className={`save-status is-${saveStatus}`} aria-live='polite'>
           <span className='save-dot' />
-          已本地保存
+          {saveStatusLabel(saveStatus, persistenceMode)}
         </div>
       </header>
 
