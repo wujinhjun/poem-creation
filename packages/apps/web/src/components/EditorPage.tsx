@@ -78,11 +78,6 @@ export function EditorPage({
     <main className='page page-editor'>
       <section className='editor-layout'>
         <section className='editor-sheet'>
-          <div className='editor-mode-tabs' aria-label='编辑模式'>
-            <button type='button'>入门</button>
-            <button type='button' className='is-active'>创作</button>
-            <button type='button'>考据</button>
-          </div>
           <WorkMetadataFields
             title={title}
             description={description}

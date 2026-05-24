@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createTextImageDataUrl, downloadImageDataUrl } from '../utils/exportText';
 
 type ExportPreviewModalProps = {
@@ -14,6 +14,8 @@ export function ExportPreviewModal({
 }: ExportPreviewModalProps) {
   const [imageUrl, setImageUrl] = useState('');
   const [imageError, setImageError] = useState('');
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -28,35 +30,84 @@ export function ExportPreviewModal({
     });
   }, [text]);
 
+  useEffect(() => {
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frameId = requestAnimationFrame(() => dialogRef.current?.focus());
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      previouslyFocusedRef.current?.focus();
+    };
+  }, []);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      onClose();
+      return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    const focusableElements = Array.from(
+      dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    ).filter((element) => element.offsetParent !== null);
+
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      dialogRef.current?.focus();
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (
+      event.shiftKey &&
+      (document.activeElement === firstElement || document.activeElement === dialogRef.current)
+    ) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
+
   return (
     <div
-      className='fixed inset-0 z-40 grid place-items-center bg-[#201610]/35 px-4 py-8'
-      role='dialog'
-      aria-modal='true'
-      aria-labelledby='export-preview-title'
+      className='export-modal-backdrop'
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className='max-h-[min(820px,calc(100vh-64px))] w-[min(900px,100%)] overflow-auto border border-[#8b6a4c] bg-[#fffaf0] p-5 shadow-[0_24px_60px_rgba(32,22,16,0.28)]'>
-        <div className='mb-4 flex items-center justify-between gap-3'>
-          <h3
-            id='export-preview-title'
-            className='m-0 text-[22px] font-bold text-[#4b3729]'
-          >
+      <section
+        ref={dialogRef}
+        className='export-modal-panel'
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby='export-preview-title'
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+      >
+        <div className='export-modal-header'>
+          <h3 id='export-preview-title' className='export-modal-title'>
             导出预览
           </h3>
-          <div className='flex gap-2'>
+          <div className='export-modal-actions'>
             <button
               type='button'
-              className='border border-[#8b6a4c] px-3 py-1.5 text-[14px] text-[#5b402f] transition hover:bg-[#efe1c6]'
+              className='export-modal-button'
               onClick={onCopy}
             >
               复制文字
             </button>
             <button
               type='button'
-              className='border border-[#8b6a4c] px-3 py-1.5 text-[14px] text-[#5b402f] transition hover:bg-[#efe1c6] disabled:cursor-not-allowed disabled:opacity-50'
+              className='export-modal-button'
               disabled={!imageUrl}
               onClick={() => downloadImageDataUrl(imageUrl)}
             >
@@ -64,7 +115,7 @@ export function ExportPreviewModal({
             </button>
             <button
               type='button'
-              className='border border-[#8b6a4c] px-3 py-1.5 text-[14px] text-[#5b402f] transition hover:bg-[#efe1c6]'
+              className='export-modal-button'
               onClick={onClose}
             >
               关闭
@@ -72,20 +123,16 @@ export function ExportPreviewModal({
           </div>
         </div>
         {imageError && (
-          <div className='border border-[#a43c2f] bg-[#f6e2dc] px-3 py-2 text-[14px] text-[#7d2e25]'>
-            {imageError}
-          </div>
+          <div className='export-modal-error'>{imageError}</div>
         )}
         {!imageUrl && !imageError && (
-          <div className='grid min-h-80 place-items-center text-[15px] text-[#806851]'>
-            生成图片预览中...
-          </div>
+          <div className='export-modal-loading'>生成图片预览中...</div>
         )}
         {imageUrl && (
           <img
             src={imageUrl}
             alt='导出图片预览'
-            className='mx-auto block h-auto max-w-full bg-[#fff7e6]'
+            className='export-modal-image'
           />
         )}
       </section>

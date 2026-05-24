@@ -1,10 +1,8 @@
 type EntryEditorPanelProps = {
-  onOpenQuickFill: () => void;
   onOpenTemplateSelection: () => void;
 };
 
 export function EntryEditorPanel({
-  onOpenQuickFill,
   onOpenTemplateSelection,
 }: EntryEditorPanelProps) {
   return (
@@ -29,7 +27,7 @@ export function EntryEditorPanel({
           <div className='start-method-action'>
             <button
               type='button'
-              className='ghost-button'
+              className='primary-button'
               onClick={onOpenTemplateSelection}
             >
               选择模板
@@ -45,10 +43,11 @@ export function EntryEditorPanel({
           <div className='start-method-action'>
             <button
               type='button'
-              className='primary-button'
-              onClick={onOpenQuickFill}
+              className='ghost-button'
+              disabled
+              aria-disabled='true'
             >
-              直接开写
+              功能开发中
             </button>
           </div>
         </article>

@@ -482,16 +482,6 @@ export default function App() {
     pushRoute({ mode: 'template' });
   }, [buildCurrentDraft, draftStore, refreshDraftList, viewMode]);
 
-  const handleOpenQuickFill = useCallback(async () => {
-    const current = buildCurrentDraft();
-    if (viewMode === 'editor' && current) {
-      await draftStore.saveDraft(current);
-      await refreshDraftList();
-    }
-    setViewMode('quickfill');
-    pushRoute({ mode: 'quickfill' });
-  }, [buildCurrentDraft, draftStore, refreshDraftList, viewMode]);
-
   const handleSettingsChange = useCallback((settings: UserSettings) => {
     setUserSettings(settings);
     saveUserSettings(settings);
@@ -683,7 +673,6 @@ export default function App() {
             void handleNewDraftFromTemplate(nextGenre, tuneName)
           }
           onOpenTemplateSelection={() => void handleOpenTemplateSelection()}
-          onOpenQuickFill={() => void handleOpenQuickFill()}
           onOpenWorks={() => void handleOpenWorks()}
           onOpenDraft={(id) => void handleOpenDraft(id)}
           onDeleteDraft={(id) => void handleDeleteDraft(id)}

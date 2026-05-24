@@ -11,7 +11,6 @@ type EntryPageProps = {
   drafts: PoemCreationDraftSummary[];
   onStartWithTemplate: (genre: Genre, tuneName: string) => void;
   onOpenTemplateSelection: () => void;
-  onOpenQuickFill: () => void;
   onOpenWorks: () => void;
   onOpenDraft: (id: string) => void;
   onDeleteDraft: (id: string) => void;
@@ -21,7 +20,6 @@ export function EntryPage({
   drafts,
   onStartWithTemplate,
   onOpenTemplateSelection,
-  onOpenQuickFill,
   onOpenWorks,
   onOpenDraft,
 }: EntryPageProps) {
@@ -36,7 +34,6 @@ export function EntryPage({
     <main className='page page-entry home-stage'>
       <section className='home-primary'>
         <EntryEditorPanel
-          onOpenQuickFill={onOpenQuickFill}
           onOpenTemplateSelection={onOpenTemplateSelection}
         />
       </section>
