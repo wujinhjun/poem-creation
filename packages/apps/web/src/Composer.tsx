@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ClipboardEvent, KeyboardEvent, MouseEvent } from 'react';
 import {
   createEditorPatternSignature,
   createEmptyEditorGrid,
@@ -22,6 +23,16 @@ type GridState = {
   grid: string[][];
 };
 
+type CellPosition = {
+  line: number;
+  col: number;
+};
+
+type CellSelection = {
+  anchor: CellPosition;
+  focus: CellPosition;
+};
+
 function createInitialGrid(
   pattern: ToneConstraint[][],
   initialChars?: string[][],
@@ -30,6 +41,14 @@ function createInitialGrid(
   return pattern.map((row, lineIdx) =>
     row.map((_, colIdx) => initialChars[lineIdx]?.[colIdx] ?? ''),
   );
+}
+
+function cloneGrid(grid: string[][]): string[][] {
+  return grid.map((row) => [...row]);
+}
+
+function positionKey(position: CellPosition): string {
+  return `${position.line}:${position.col}`;
 }
 
 /** 正文编辑器 */
@@ -68,6 +87,8 @@ export default function Composer({
     gridState.signature === patternSignature
       ? gridState.grid
       : createEmptyEditorGrid(pattern);
+  const gridRef = useRef(grid);
+  const historyRef = useRef<string[][][]>([]);
   const activeInputRef = useRef<HTMLInputElement | null>(null);
   const composingRef = useRef(false);
   const pendingCompleteRef = useRef<string[][] | null>(null);
@@ -83,6 +104,8 @@ export default function Composer({
       : null,
   );
   const [draft, setDraft] = useState('');
+  const [selection, setSelection] = useState<CellSelection | null>(null);
+  const [selecting, setSelecting] = useState(false);
   const groups = useMemo(
     () =>
       visualLineGroups && visualLineGroups.length > 0
@@ -90,6 +113,24 @@ export default function Composer({
         : pattern.map((_, index) => [index]),
     [pattern, visualLineGroups],
   );
+  const flatPositions = useMemo(
+    () =>
+      pattern.flatMap((row, line) =>
+        row.map((_, col): CellPosition => ({ line, col })),
+      ),
+    [pattern],
+  );
+  const positionIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    flatPositions.forEach((position, index) => {
+      map.set(positionKey(position), index);
+    });
+    return map;
+  }, [flatPositions]);
+
+  useEffect(() => {
+    gridRef.current = grid;
+  }, [grid]);
 
   useEffect(() => {
     if (!activeCell) return;
@@ -97,6 +138,76 @@ export default function Composer({
       activeInputRef.current?.focus();
     });
   }, [activeCell]);
+
+  useEffect(() => {
+    const handlePointerUp = () => setSelecting(false);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => window.removeEventListener('pointerup', handlePointerUp);
+  }, []);
+
+  useEffect(() => {
+    historyRef.current = [];
+  }, [patternSignature]);
+
+  const selectionRange = useMemo(() => {
+    if (!selection) return null;
+    const anchorIndex = positionIndex.get(positionKey(selection.anchor));
+    const focusIndex = positionIndex.get(positionKey(selection.focus));
+    if (anchorIndex === undefined || focusIndex === undefined) return null;
+    return {
+      start: Math.min(anchorIndex, focusIndex),
+      end: Math.max(anchorIndex, focusIndex),
+    };
+  }, [positionIndex, selection]);
+
+  const selectedPositions = useMemo(() => {
+    if (!selectionRange) return [];
+    return flatPositions.slice(selectionRange.start, selectionRange.end + 1);
+  }, [flatPositions, selectionRange]);
+
+  const selectedPositionKeys = useMemo(
+    () => new Set(selectedPositions.map(positionKey)),
+    [selectedPositions],
+  );
+
+  const selectedText = useCallback(() => {
+    if (selectedPositions.length === 0) return '';
+    const lineMap = new Map<number, string[]>();
+    selectedPositions.forEach((position) => {
+      const cells = lineMap.get(position.line) ?? [];
+      cells.push(gridRef.current[position.line]?.[position.col] ?? '');
+      lineMap.set(position.line, cells);
+    });
+    return [...lineMap.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([, cells]) => cells.join(''))
+      .join('\n');
+  }, [selectedPositions]);
+
+  const pushHistory = useCallback((source: string[][]) => {
+    historyRef.current = [...historyRef.current.slice(-49), cloneGrid(source)];
+  }, []);
+
+  const undo = useCallback(() => {
+    const previous = historyRef.current.at(-1);
+    if (!previous) return;
+    historyRef.current = historyRef.current.slice(0, -1);
+    setDraft('');
+    setSelection(null);
+    setGridState({ signature: patternSignature, grid: cloneGrid(previous) });
+  }, [patternSignature]);
+
+  const clearSelectionInGrid = useCallback(
+    (source: string[][]) => {
+      if (selectedPositions.length === 0) return source;
+      const next = cloneGrid(source);
+      selectedPositions.forEach(({ line, col }) => {
+        if (next[line]) next[line][col] = '';
+      });
+      return next;
+    },
+    [selectedPositions],
+  );
 
   const writeCharsAt = useCallback(
     (lineIdx: number, colIdx: number, chars: string[]) => {
@@ -106,6 +217,7 @@ export default function Composer({
           prev.signature === patternSignature
             ? prev.grid
             : createEmptyEditorGrid(pattern);
+        pushHistory(source);
         const result = writeEditorCharsAt(
           source,
           pattern,
@@ -119,9 +231,10 @@ export default function Composer({
 
       const result = writeEditorCharsAt(grid, pattern, lineIdx, colIdx, chars);
       setDraft('');
+      setSelection(null);
       setActiveCell(result.nextPosition);
     },
-    [grid, pattern, patternSignature],
+    [grid, pattern, patternSignature, pushHistory],
   );
 
   const clearCellAt = useCallback(
@@ -131,12 +244,14 @@ export default function Composer({
           prev.signature === patternSignature
             ? prev.grid
             : createEmptyEditorGrid(pattern);
+        if (!source[lineIdx]?.[colIdx]) return prev;
+        pushHistory(source);
         const next = source.map((row) => [...row]);
         if (next[lineIdx]) next[lineIdx][colIdx] = '';
         return { signature: patternSignature, grid: next };
       });
     },
-    [pattern, patternSignature],
+    [pattern, patternSignature, pushHistory],
   );
 
   const lastFilledCol = useCallback(
@@ -213,11 +328,14 @@ export default function Composer({
 
   const pasteAt = useCallback(
     (lineIdx: number, colIdx: number, text: string) => {
+      const normalized = normalizeEditorInput(text);
+      if (normalized.length === 0) return;
       setGridState((prev) => {
         const source =
           prev.signature === patternSignature
             ? prev.grid
             : createEmptyEditorGrid(pattern);
+        pushHistory(source);
         const result = pasteEditorTextAt(
           source,
           pattern,
@@ -230,9 +348,211 @@ export default function Composer({
       });
 
       const result = pasteEditorTextAt(grid, pattern, lineIdx, colIdx, text);
+      setSelection(null);
       setActiveCell(result.nextPosition);
     },
-    [grid, pattern, patternSignature],
+    [grid, pattern, patternSignature, pushHistory],
+  );
+
+  const replaceSelectionWithText = useCallback(
+    (text: string) => {
+      const normalized = normalizeEditorInput(text);
+      if (normalized.length === 0) return;
+      const start = selectedPositions[0] ?? activeCell;
+      if (!start) return;
+
+      setGridState((prev) => {
+        const source =
+          prev.signature === patternSignature
+            ? prev.grid
+            : createEmptyEditorGrid(pattern);
+        pushHistory(source);
+        const cleared = clearSelectionInGrid(source);
+        const result = pasteEditorTextAt(
+          cleared,
+          pattern,
+          start.line,
+          start.col,
+          text,
+        );
+        if (result.completed) pendingCompleteRef.current = result.grid;
+        return { signature: patternSignature, grid: result.grid };
+      });
+
+      const result = pasteEditorTextAt(
+        clearSelectionInGrid(grid),
+        pattern,
+        start.line,
+        start.col,
+        text,
+      );
+      setDraft('');
+      setSelection(null);
+      setActiveCell(result.nextPosition);
+    },
+    [
+      activeCell,
+      clearSelectionInGrid,
+      grid,
+      pattern,
+      patternSignature,
+      pushHistory,
+      selectedPositions,
+    ],
+  );
+
+  const copySelectionToClipboard = useCallback(
+    (event?: ClipboardEvent<HTMLInputElement>) => {
+      const text =
+        selectedPositions.length > 0
+          ? selectedText()
+          : activeCell
+            ? gridRef.current[activeCell.line]?.[activeCell.col] ?? ''
+            : '';
+      if (!text) return;
+      event?.preventDefault();
+      if (event?.clipboardData) {
+        event.clipboardData.setData('text/plain', text);
+        return;
+      }
+      void navigator.clipboard?.writeText(text);
+    },
+    [activeCell, selectedPositions.length, selectedText],
+  );
+
+  const handleCellMouseDown = useCallback(
+    (
+      position: CellPosition,
+      event: MouseEvent<HTMLButtonElement>,
+    ) => {
+      event.preventDefault();
+      setDraft('');
+      setActiveCell(position);
+      setSelecting(true);
+      setSelection((current) =>
+        event.shiftKey && current
+          ? { anchor: current.anchor, focus: position }
+          : { anchor: position, focus: position },
+      );
+    },
+    [],
+  );
+
+  const handleCellMouseEnter = useCallback(
+    (
+      position: CellPosition,
+      event: MouseEvent<HTMLButtonElement>,
+    ) => {
+      if (!selecting || event.buttons !== 1) return;
+      setSelection((current) =>
+        current ? { anchor: current.anchor, focus: position } : current,
+      );
+      setActiveCell(position);
+    },
+    [selecting],
+  );
+
+  const handleCellSelect = useCallback((position: CellPosition) => {
+    setDraft('');
+    setSelection(null);
+    setActiveCell(position);
+  }, []);
+
+  const handleEditorKeyDown = useCallback(
+    (
+      event: KeyboardEvent<HTMLInputElement>,
+      position: CellPosition,
+    ) => {
+      const shortcut = event.metaKey || event.ctrlKey;
+      if (shortcut && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        undo();
+        return;
+      }
+      if (shortcut && event.key.toLowerCase() === 'c') {
+        copySelectionToClipboard();
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'Escape') {
+        setSelection(null);
+        setDraft('');
+        return;
+      }
+
+      const { line: li, col: ci } = position;
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        setSelection(null);
+        moveActiveCellHorizontal(li, ci, -1);
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        setSelection(null);
+        moveActiveCellHorizontal(li, ci, 1);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setSelection(null);
+        moveActiveCellVertical(li, ci, -1);
+      } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setSelection(null);
+        moveActiveCellVertical(li, ci, 1);
+      } else if (event.key === 'Backspace' && draft === '') {
+        event.preventDefault();
+        if (selectedPositions.length > 0) {
+          setGridState((prev) => {
+            const source =
+              prev.signature === patternSignature
+                ? prev.grid
+                : createEmptyEditorGrid(pattern);
+            pushHistory(source);
+            return {
+              signature: patternSignature,
+              grid: clearSelectionInGrid(source),
+            };
+          });
+          setSelection(null);
+          return;
+        }
+        if (grid[li]?.[ci]) {
+          clearCellAt(li, ci);
+        } else {
+          moveActiveCellHorizontal(li, ci, -1);
+        }
+      } else if (event.key === 'Delete' && draft === '') {
+        event.preventDefault();
+        if (selectedPositions.length > 0) {
+          setGridState((prev) => {
+            const source =
+              prev.signature === patternSignature
+                ? prev.grid
+                : createEmptyEditorGrid(pattern);
+            pushHistory(source);
+            return {
+              signature: patternSignature,
+              grid: clearSelectionInGrid(source),
+            };
+          });
+          setSelection(null);
+          return;
+        }
+        clearCellAt(li, ci);
+      }
+    },
+    [
+      clearCellAt,
+      clearSelectionInGrid,
+      copySelectionToClipboard,
+      draft,
+      grid,
+      moveActiveCellHorizontal,
+      moveActiveCellVertical,
+      pattern,
+      patternSignature,
+      pushHistory,
+      selectedPositions.length,
+      undo,
+    ],
   );
 
   const handleDraftChange = useCallback(
@@ -244,13 +564,17 @@ export default function Composer({
 
       const chars = normalizeEditorInput(value);
       if (chars.length > 0) {
-        writeCharsAt(lineIdx, colIdx, chars);
+        if (selectedPositions.length > 0) {
+          replaceSelectionWithText(value);
+        } else {
+          writeCharsAt(lineIdx, colIdx, chars);
+        }
         setDraft('');
       } else {
         setDraft(value);
       }
     },
-    [writeCharsAt],
+    [replaceSelectionWithText, selectedPositions.length, writeCharsAt],
   );
 
   const evaluations = useMemo(() => {
@@ -370,6 +694,7 @@ export default function Composer({
                     }
                   }
                   active={activeCell?.line === li && activeCell.col === ci}
+                  selected={selectedPositionKeys.has(positionKey({ line: li, col: ci }))}
                   draft={
                     activeCell?.line === li && activeCell.col === ci ? draft : ''
                   }
@@ -384,43 +709,33 @@ export default function Composer({
                   }}
                   onCompositionEnd={(value) => {
                     composingRef.current = false;
-                    writeCharsAt(li, ci, normalizeEditorInput(value));
+                    if (selectedPositions.length > 0) {
+                      replaceSelectionWithText(value);
+                    } else {
+                      writeCharsAt(li, ci, normalizeEditorInput(value));
+                    }
                     setDraft('');
                   }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'ArrowLeft') {
-                      event.preventDefault();
-                      moveActiveCellHorizontal(li, ci, -1);
-                    } else if (event.key === 'ArrowRight') {
-                      event.preventDefault();
-                      moveActiveCellHorizontal(li, ci, 1);
-                    } else if (event.key === 'ArrowUp') {
-                      event.preventDefault();
-                      moveActiveCellVertical(li, ci, -1);
-                    } else if (event.key === 'ArrowDown') {
-                      event.preventDefault();
-                      moveActiveCellVertical(li, ci, 1);
-                    } else if (event.key === 'Backspace' && draft === '') {
-                      event.preventDefault();
-                      if (grid[li]?.[ci]) {
-                        clearCellAt(li, ci);
-                      } else {
-                        moveActiveCellHorizontal(li, ci, -1);
-                      }
-                    } else if (event.key === 'Delete' && draft === '') {
-                      event.preventDefault();
-                      clearCellAt(li, ci);
-                    }
-                  }}
+                  onKeyDown={(event) =>
+                    handleEditorKeyDown(event, { line: li, col: ci })
+                  }
+                  onCopy={copySelectionToClipboard}
                   onPaste={(event) => {
                     event.preventDefault();
-                    pasteAt(li, ci, event.clipboardData.getData('text'));
+                    if (selectedPositions.length > 0) {
+                      replaceSelectionWithText(event.clipboardData.getData('text'));
+                    } else {
+                      pasteAt(li, ci, event.clipboardData.getData('text'));
+                    }
                     setDraft('');
                   }}
-                  onSelect={() => {
-                    setDraft('');
-                    setActiveCell({ line: li, col: ci });
-                  }}
+                  onSelect={() => handleCellSelect({ line: li, col: ci })}
+                  onSelectStart={(event) =>
+                    handleCellMouseDown({ line: li, col: ci }, event)
+                  }
+                  onSelectExtend={(event) =>
+                    handleCellMouseEnter({ line: li, col: ci }, event)
+                  }
                 />
               ))}
               <span className='line-punctuation'>

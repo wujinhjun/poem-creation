@@ -37,11 +37,11 @@ export function WorksPage({
       <section className='works-header'>
         <div>
           <p className='section-kicker'>作品</p>
-          <h1>{persistenceMode === 'supabase' ? '云端作品' : '本地作品'}</h1>
+          <h1>{persistenceMode === 'supabase' ? '云端作品' : '我的作品'}</h1>
           <p className='page-lede'>
             {persistenceMode === 'supabase'
-              ? '草稿会自动同步到你的 Supabase 项目。这里用于继续编辑、导入导出和清理旧作。'
-              : '草稿会自动保存，只保存在当前浏览器。这里用于继续编辑、导入导出和清理旧作。'}
+              ? '作品会自动同步。这里用于继续编辑、导入导出和清理旧作。'
+              : '作品会自动保存到这台设备。这里用于继续编辑、导入导出和清理旧作。'}
           </p>
         </div>
         <button type='button' className='primary-button' onClick={onCreateDraft}>

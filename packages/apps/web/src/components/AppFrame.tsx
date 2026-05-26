@@ -24,7 +24,7 @@ function saveStatusLabel(
 ): string {
   if (saveStatus === 'saving') return '保存中';
   if (saveStatus === 'error') return '保存失败';
-  if (persistenceMode === 'supabase') return '已同步到 Supabase';
+  if (persistenceMode === 'supabase') return '已云端保存';
   return '已本地保存';
 }
 

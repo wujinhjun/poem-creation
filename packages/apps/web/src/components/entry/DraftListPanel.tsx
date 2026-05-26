@@ -34,7 +34,7 @@ export function DraftListPanel({
     <section className='panel draft-list-panel'>
       <div className='panel-heading'>
         <div>
-          <p className='section-kicker'>本地</p>
+          <p className='section-kicker'>作品</p>
           <h2>最近作品</h2>
         </div>
         <div className='panel-actions'>

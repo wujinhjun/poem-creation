@@ -1631,6 +1631,18 @@ h3 {
   box-shadow: 0 0 0 3px rgba(168, 50, 40, 0.12);
 }
 
+.char-input.is-selected {
+  border-color: var(--cinnabar);
+  background: #f3ddd9;
+  box-shadow: inset 0 0 0 2px rgba(168, 50, 40, 0.18);
+}
+
+.char-input.is-selected.is-active {
+  box-shadow:
+    inset 0 0 0 2px rgba(168, 50, 40, 0.18),
+    0 0 0 3px rgba(168, 50, 40, 0.12);
+}
+
 .status-pass {
   border-color: var(--success);
   background: #eef6ef;
