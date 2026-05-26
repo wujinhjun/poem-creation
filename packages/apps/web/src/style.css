@@ -1478,10 +1478,15 @@ h3 {
 
 .description-input {
   width: 100%;
+  min-height: 24px;
+  max-height: 160px;
+  resize: vertical;
+  overflow: hidden;
   padding: 0 8px;
   text-align: center;
   color: var(--muted);
   font-size: 15px;
+  line-height: 1.65;
 }
 
 .author-input {

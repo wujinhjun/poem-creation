@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 type WorkMetadataFieldsProps = {
   title: string;
   description: string;
@@ -15,6 +17,15 @@ export function WorkMetadataFields({
   onDescriptionChange,
   onAuthorChange,
 }: WorkMetadataFieldsProps) {
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const textarea = descriptionRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [description]);
+
   return (
     <div className='work-meta'>
       <span className='meta-rule'>题目</span>
@@ -24,10 +35,12 @@ export function WorkMetadataFields({
         className='title-input'
         onChange={(event) => onTitleChange(event.currentTarget.value)}
       />
-      <input
+      <textarea
+        ref={descriptionRef}
         value={description}
         placeholder='题记、说明或备注'
         className='description-input'
+        rows={1}
         onChange={(event) => onDescriptionChange(event.currentTarget.value)}
       />
       <input
