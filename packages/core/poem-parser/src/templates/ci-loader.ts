@@ -32,7 +32,7 @@ export interface CompactTuneRaw {
   id: string;
   name: string;
   aliases?: string[];
-  variants: Array<CiVariantStored | null>;
+  variants: Array<CiVariantStored>;
 }
 
 export type CompactBundleRaw = Record<string, CompactTuneRaw>;
@@ -91,7 +91,6 @@ export function loadCiBundle(
   const canonicalMap = new Map<string, CiVariantFull>();
   for (const tune of Object.values(raw)) {
     for (const v of tune.variants) {
-      if (!v) continue;
       if (v.kind === "full") {
         canonicalMap.set(v.id, v);
       }
@@ -102,9 +101,7 @@ export function loadCiBundle(
 
   for (const [tuneName, rawTune] of Object.entries(raw)) {
     const cacheKey = nsKey(namespace, rawTune.id);
-    const storedVariants = rawTune.variants.filter(
-      (variant): variant is CiVariantStored => variant !== null,
-    );
+    const storedVariants = rawTune.variants;
 
     // 检查缓存
     const cached = _templateCache.get(cacheKey);
