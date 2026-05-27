@@ -40,8 +40,9 @@ export interface CiVariantFull {
 export type EditOp =
   | { op: "setTone"; at: LineAddr; col: number; tone: "P" | "Z" }
   | { op: "setFlex"; at: LineAddr; col: number }
-  | { op: "addRhyme"; at: LineAddr; tone: "ping" | "ze" }
+  | { op: "addRhyme"; at: LineAddr; tone: "ping" | "ze"; xieyun?: boolean }
   | { op: "dropRhyme"; at: LineAddr }
+  | { op: "setXieyun"; at: LineAddr; value: boolean }
   | { op: "insertChar"; at: LineAddr; col: number; cons: "P" | "Z" | "F" | "p" | "z" | "+p" | "+z" }
   | { op: "removeChar"; at: LineAddr; col: number }
   | { op: "splitLine"; at: LineAddr; col: number }
@@ -109,6 +110,7 @@ function sectionsToVariant(full: CiVariantFull): CiTemplateVariant {
         pattern,
         isRhymeLine: rhymeToken !== null,
         rhymeType: rhymeToken?.tone as RhymeTone | undefined,
+        isXieyun: rhymeToken?.xieyun,
       };
     });
 
@@ -255,8 +257,32 @@ function applyRegularEdit(result: CiSectionStored[], edit: EditOp): void {
       if (!dsl) return;
       if (extractRhymeToken(dsl)) return; // already a rhyme line
 
-      const token = edit.tone === "ping" ? "p" : "z";
+      const base = edit.tone === "ping" ? "p" : "z";
+      const token = edit.xieyun ? `+${base}` : base;
       setLine(result, edit.at, dsl + token);
+      break;
+    }
+
+    case "setXieyun": {
+      const dsl = getLine(result, edit.at);
+      if (!dsl) return;
+      const rhymeInfo = extractRhymeToken(dsl);
+      if (!rhymeInfo) return; // not a rhyme line
+
+      if (edit.value === rhymeInfo.xieyun) return; // no change
+
+      // 在 p/z 和 +p/+z 之间切换
+      const chars = [...dsl];
+      if (edit.value) {
+        // 普通韵脚 → 叶韵：p → +p, z → +z
+        chars.splice(chars.length - 1, 0, "+");
+      } else {
+        // 叶韵 → 普通韵脚：+p → p, +z → z
+        if (chars[chars.length - 2] === "+") {
+          chars.splice(chars.length - 2, 1);
+        }
+      }
+      setLine(result, edit.at, chars.join(""));
       break;
     }
 
@@ -449,7 +475,7 @@ function computeLineDiff(
 
   // 处理韵脚本身的变化
   if (!baseRhyme && targetRhyme) {
-    edits.push({ op: "addRhyme", at, tone: targetRhyme.tone });
+    edits.push({ op: "addRhyme", at, tone: targetRhyme.tone, xieyun: targetRhyme.xieyun });
   } else if (baseRhyme && !targetRhyme) {
     edits.push({ op: "dropRhyme", at });
   } else if (baseRhyme && targetRhyme) {
@@ -459,8 +485,7 @@ function computeLineDiff(
       edits.push({ op: "setTone", at, col: baseNonRhyme.length, tone });
     }
     if (baseRhyme.xieyun !== targetRhyme.xieyun) {
-      // 叶韵标志变化：无法用简单 EditOp 表达，回退
-      // 目前处理：忽略 + 差异，由数据标注保证
+      edits.push({ op: "setXieyun", at, value: targetRhyme.xieyun });
     }
   }
 
@@ -475,8 +500,12 @@ function computeLineDiff(
 
     if (!bc && tc) {
       // 插入：位置 cap 在 base 非韵脚长度以内（插入到韵脚之前）
-      const insertPos = Math.min(i, baseChars.length);
-      edits.push({ op: "insertChar", at, col: insertPos, cons: tc as "P" | "Z" | "F" });
+      // 非韵脚部分只允许 F/P/Z 三种 token
+      if (tc === "F" || tc === "P" || tc === "Z") {
+        const insertPos = Math.min(i, baseChars.length);
+        edits.push({ op: "insertChar", at, col: insertPos, cons: tc });
+      }
+      // 其他字符（如 +，理论上不会出现在非韵脚部分）安全跳过
       continue;
     }
     if (bc && !tc) {

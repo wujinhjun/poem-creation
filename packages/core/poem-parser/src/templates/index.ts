@@ -22,6 +22,8 @@ export interface CiTemplateLine {
   pattern: ToneConstraint[];
   isRhymeLine: boolean;
   rhymeType?: RhymeTone;
+  /** 叶韵（+ 修饰），续上一韵组而非开新组 */
+  isXieyun?: boolean;
   rhymeSwitch?: RhymeTone;
 }
 

@@ -176,6 +176,39 @@ describe("applyEdits", () => {
     expect(result[0].lines[0]).toMatch(/p$/); // 韵脚保留
   });
 
+  it("addRhyme 带 xieyun 应写 +p/+z", () => {
+    const sections: CiSectionStored[] = [
+      { lines: ["FZFPPZZ"] },
+    ];
+    const edits: EditOp[] = [
+      { op: "addRhyme", at: [0, 0], tone: "ping", xieyun: true },
+    ];
+    const result = applyEdits(sections, edits);
+    expect(result[0].lines[0]).toBe("FZFPPZZ+p");
+  });
+
+  it("setXieyun 应将 p 转为 +p（普通→叶韵）", () => {
+    const sections: CiSectionStored[] = [
+      { lines: ["FPFZZPp"] },
+    ];
+    const edits: EditOp[] = [
+      { op: "setXieyun", at: [0, 0], value: true },
+    ];
+    const result = applyEdits(sections, edits);
+    expect(result[0].lines[0]).toBe("FPFZZP+p");
+  });
+
+  it("setXieyun 应将 +p 转为 p（叶韵→普通）", () => {
+    const sections: CiSectionStored[] = [
+      { lines: ["FPFZZP+p"] },
+    ];
+    const edits: EditOp[] = [
+      { op: "setXieyun", at: [0, 0], value: false },
+    ];
+    const result = applyEdits(sections, edits);
+    expect(result[0].lines[0]).toBe("FPFZZPp");
+  });
+
   it("splitLine 应正确拆分一行", () => {
     const sections: CiSectionStored[] = [
       { lines: ["FPFZZPp", "ZFPPFZp"] },
@@ -294,6 +327,7 @@ describe("computeDiff", () => {
       op: "addRhyme",
       at: [0, 0],
       tone: "ping",
+      xieyun: false,
     });
   });
 
@@ -332,6 +366,22 @@ describe("computeDiff", () => {
     ];
     const result = computeDiff(base, target);
     expect(result).toBeNull();
+  });
+
+  it("xieyun 差异应产生 setXieyun op 并往返还原", () => {
+    const base: CiSectionStored[] = [
+      { lines: ["FPFZZPp"] },
+    ];
+    const target: CiSectionStored[] = [
+      { lines: ["FPFZZP+p"] },
+    ];
+
+    const edits = computeDiff(base, target);
+    expect(edits).not.toBeNull();
+    expect(edits!).toContainEqual({ op: "setXieyun", at: [0, 0], value: true });
+
+    const roundTripped = applyEdits(base, edits!);
+    expect(roundTripped).toEqual(target);
   });
 
   it("diff→applyEdits 往返应还原 target", () => {

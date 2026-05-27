@@ -239,20 +239,21 @@ function buildCohortFromCiVariant(
       if (!line.isRhymeLine || !line.rhymeType) continue;
 
       const tone = line.rhymeType;
+      const xieyun = line.isXieyun === true;
+
       if (slots.length === 0) {
         cohortId = 1;
         cohortTone = tone;
-      } else if (tone !== cohortTone) {
+      } else if (xieyun) {
+        // 叶韵 → 续上一组，不改变 cohortTone
+      } else if (tone === cohortTone) {
+        // 同声调 → 续组
+      } else {
         cohortId += 1;
         cohortTone = tone;
       }
-      // 同声调 → 续组，cohortId 不变
 
-      slots.push({
-        pos: [si, li],
-        cohortId,
-        token: { tone, xieyun: false },
-      });
+      slots.push({ pos: [si, li], cohortId, token: { tone, xieyun } });
     }
   }
 
