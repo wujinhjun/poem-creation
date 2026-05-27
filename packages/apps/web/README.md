@@ -5,8 +5,8 @@
 ## 运行
 
 ```sh
-pnpm --filter poem-creation-web dev    # 开发服务器 (http://localhost:5173)
-pnpm --filter poem-creation-web build  # 生产构建
+pnpm --filter @poem/web dev    # 开发服务器 (http://localhost:5173)
+pnpm --filter @poem/web build  # 生产构建
 ```
 
 ## 组件
@@ -49,6 +49,8 @@ pattern → Composer 渲染逐字格子
 | `ci-catalog.json` | 373KB → 编译进 bundle | 初始化 | 模板下拉列表 |
 | `tone-lookup.json` | ~200KB | 初始化 | 浏览器韵书（实时查平仄） |
 | `ci-tunes-bundle-compact.json` | 1.1MB / 132KB gzip | 选中词牌时 | 词牌紧凑格律 DSL |
+
+`public/data/` 下的数据文件由 Vite 启动或构建时从 `packages/core/*/data/` 复制生成，不在仓库里提交副本。
 
 ## 校验规则
 
