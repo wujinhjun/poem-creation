@@ -2,6 +2,15 @@ import { CoupletNode, RescueDetail, Tone } from "../core/types.js";
 import { RhymeDict } from "../rhyme-dict/index.js";
 import { MeterTemplate } from "../templates/index.js";
 
+export {
+  RESCUE_TEMPLATES,
+  getRescueTemplatesByLength,
+  getRescueTemplatesByCategory,
+  matchRescueTemplate,
+  tonesToMarks,
+} from "./templates.js";
+export type { RescueTemplate, RescueCategory } from "./templates.js";
+
 function fixedMismatchCols(coupletLine: CoupletNode["upper"], expected: MeterTemplate["pattern"][number]) {
   const cols: number[] = [];
   for (let col = 0; col < expected.length; col += 1) {
