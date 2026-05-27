@@ -596,13 +596,13 @@ export default function Composer({
           };
         }
 
+        if (constraint.type === 'flexible') {
+          return { status: 'pass', label: '中', title: '可平可仄' };
+        }
+
         const entries = dict.lookup(value);
         if (entries.length === 0) {
           return { status: 'fail', label: baseLabel, title: '韵书未收此字' };
-        }
-
-        if (constraint.type === 'flexible') {
-          return { status: 'pass', label: '中', title: '可平可仄，韵书有收录' };
         }
 
         if (constraint.type === 'fixed') {
