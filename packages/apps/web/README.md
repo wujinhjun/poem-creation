@@ -24,7 +24,7 @@ pnpm --filter poem-creation-web build  # 生产构建
   │
   ├─ 诗体: loadMeterTemplates() → pattern → ToneConstraint[][]
   │
-  └─ 词牌: fetch ci-tunes-bundle-compact.json（首次按需加载，浏览器缓存）
+  └─ 词牌: 优先 fetch ci-tunes-bundle-compact.json.gz，失败回退 json
               → parser loadCiBundle() 物化变体 → 展平为 ToneConstraint[][]
 
 pattern → Composer 渲染逐字格子
