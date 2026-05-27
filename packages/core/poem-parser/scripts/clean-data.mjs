@@ -162,26 +162,6 @@ function buildToneLookup(rawToneMap) {
   return toSortedObject(result);
 }
 
-function buildWordExplain(rawExplain) {
-  const output = {};
-  for (const [char, items] of Object.entries(rawExplain)) {
-    if (!isSingleHanChar(char) || !Array.isArray(items)) continue;
-    const pronunciations = [];
-    for (const item of items) {
-      const pronunciation = String(item?.pronunciation ?? "").trim();
-      if (!pronunciation) continue;
-      pronunciations.push({
-        pronunciation,
-        explains: Array.isArray(item?.explains)
-          ? item.explains.map((v) => String(v).trim()).filter(Boolean)
-          : []
-      });
-    }
-    if (pronunciations.length > 0) output[char] = pronunciations;
-  }
-  return toSortedObject(output);
-}
-
 function cleanCiCatalog(rawCatalog) {
   const output = {};
   for (const [category, items] of Object.entries(rawCatalog)) {
@@ -284,7 +264,6 @@ async function main() {
     xinyunRaw,
     xinyunFourRaw,
     wordTuneRaw,
-    wordExplainRaw,
     ciWordTuneRaw,
     ciCatalogRaw,
     ciTunesRaw
@@ -294,7 +273,6 @@ async function main() {
     readJson("Xinyun_Rhyme.json"),
     readJson("Xinyun_Rhyme_FourRhyme_Edition.json"),
     readJson("Word_Tune.json"),
-    readJson("Word_Explain.json"),
     readJson("Ci_Word_Tune.json"),
     readJson("Ci_Catalog.json"),
     readJson("Ci_Tunes.json")
@@ -315,7 +293,6 @@ async function main() {
   );
 
   const toneLookup = buildToneLookup(wordTuneRaw);
-  const explainLookup = buildWordExplain(wordExplainRaw);
   const ciCatalog = cleanCiCatalog(ciCatalogRaw);
   const ciTunes = cleanCiTunes(ciTunesRaw);
   const ciTuneIndex = await writeSplitCiTunes(ciTunes);
@@ -323,14 +300,12 @@ async function main() {
   await Promise.all([
     writeJson("rhyme-char-index.json", merged),
     writeJson("tone-lookup.json", toneLookup),
-    writeJson("word-explain-cleaned.json", explainLookup),
     writeJson("ci-catalog-cleaned.json", ciCatalog),
     writeJson("ci-tunes-index.json", ciTuneIndex),
     writeJson("stats.json", {
       generatedAt: new Date().toISOString(),
       rhyme: buildStats(merged),
       toneLookupSize: Object.keys(toneLookup).length,
-      explainLookupSize: Object.keys(explainLookup).length,
       ciTuneCount: Object.keys(ciTunes).length
     })
   ]);

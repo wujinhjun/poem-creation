@@ -120,7 +120,7 @@ flowchart TD
 
 同一作者有多个版本时加数字后缀（如 `苏轼体1`、`苏轼体2`），按原始数据出场顺序编号。
 
-> 原始数据来源：钦定词谱等公开词谱文献，经 `scripts/clean-data.mjs` 清洗 → `scripts/build-ci-bundle.mjs` 合并编译，再由 `scripts/build-compact-bundle.ts` 生成紧凑 DSL bundle。
+> 原始数据来源：钦定词谱等公开词谱文献，经清洗与紧凑 DSL 编码后生成当前 bundle。
 
 ### 韵书（RhymeDict）
 

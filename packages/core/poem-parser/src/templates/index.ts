@@ -2,7 +2,7 @@
  * 模板类型定义
  *
  * 纯类型模块 —— 无 fs / path / process 依赖。
- * 词牌数据加载由调用方自行处理（如读取 ci-tunes-bundle.json 后直接使用）。
+ * 词牌数据加载由调用方自行处理（如读取 ci-tunes-bundle-compact.json 后用 loadCiBundle 物化）。
  *
  * @module templates
  */

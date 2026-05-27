@@ -1,7 +1,6 @@
 import type { RhymeDictType } from '@poem/parser/kernel';
 import type { Genre } from '../../constants/poem';
 import { RHYME_OPTIONS } from '../../constants/poem';
-import { WordLookupPanel } from './WordLookupPanel';
 
 type EditorSidebarProps = {
   genre: Genre;
@@ -89,7 +88,6 @@ export function EditorSidebar({
           待填
         </span>
       </div>
-      <WordLookupPanel />
     </aside>
   );
 }

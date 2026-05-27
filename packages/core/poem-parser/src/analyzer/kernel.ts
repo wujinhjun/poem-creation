@@ -66,7 +66,7 @@ export type { LineValidationSummary };
  * 所有依赖通过参数注入，不访问文件系统。
  *
  * @param input    诗词文本（诗体按 \\n 分行，词牌按标点分句）
- * @param template 格律或词牌模板，通过 `loadMeterTemplates()` 或从 `ci-tunes-bundle.json` 获取
+ * @param template 格律或词牌模板，通过 `loadMeterTemplates()` 或 `loadCiBundle()` 获取
  * @param dict     韵书实例，实现 `RhymeDict` 接口
  * @param options  可选配置：preferredType（优先体裁）、variantId（词牌变体，必传）
  * @returns 完整分析结果：AST、匹配置信度、逐行校验、合规率
