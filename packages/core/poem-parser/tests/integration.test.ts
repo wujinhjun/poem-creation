@@ -1,12 +1,30 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { analyze, analyzeLine } from "./_helpers.js";
 import { analyzeSync } from "../src/analyzer/kernel.js";
 import { runPipeline } from "../src/analyzer/pipeline.js";
-import { loadMeterTemplates } from "../src/templates/index.js";
+import {
+  clearCiBundleCache,
+  loadCiBundle,
+  loadMeterTemplates,
+} from "../src/templates/index.js";
+import type { CompactBundleRaw } from "../src/templates/index.js";
 import { getTemplateById } from "./_helpers.js";
 import { createRhymeDict } from "@poem/rhyme-book";
 import { analyzeStreamSync, getSentenceCharCounts } from "../src/analyzer/stream.js";
 import type { CiTemplate } from "../src/templates/index.js";
+
+const SHUIDIAOGETOU_TEXT = [
+  "明月几时有？把酒问青天。",
+  "不知天上宫阙，今夕是何年。",
+  "我欲乘风归去，又恐琼楼玉宇，高处不胜寒。",
+  "起舞弄清影，何似在人间。",
+  "转朱阁，低绮户，照无眠。",
+  "不应有恨，何事长向别时圆？",
+  "人有悲欢离合，月有阴晴圆缺，此事古难全。",
+  "但愿人长久，千里共婵娟。",
+].join("\n");
 
 // ============ analyzer/index.ts ============
 
@@ -32,6 +50,29 @@ describe("analyzeSync 无匹配变体", () => {
     expect(() => analyzeSync("测试文本", template, dict)).toThrow(
       "词牌分析必须指定 variantId",
     );
+  });
+});
+
+describe("compact ci bundle 集成", () => {
+  it("应能用 compact bundle 物化词牌并完成整词分析", async () => {
+    clearCiBundleCache();
+    const raw = JSON.parse(
+      readFileSync(resolve("data", "ci-tunes-bundle-compact.json"), "utf8"),
+    ) as CompactBundleRaw;
+    const bundle = loadCiBundle(raw);
+    const template = bundle["水调歌头"];
+    const dict = await createRhymeDict("cilin");
+
+    expect(template).toBeDefined();
+    expect(template.variants.some((variant) => variant.id === "水调歌头-苏轼体1")).toBe(true);
+
+    const result = analyzeSync(SHUIDIAOGETOU_TEXT, template, dict, {
+      variantId: "水调歌头-苏轼体1",
+    });
+
+    expect(result.ast.lines).toHaveLength(19);
+    expect(result.bestMatch?.templateId).toBe("水调歌头");
+    expect(result.lineValidations.length).toBe(19);
   });
 });
 

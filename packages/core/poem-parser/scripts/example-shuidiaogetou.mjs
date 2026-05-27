@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { analyzeSync } from "../dist/kernel.js";
+import { analyzeSync, loadCiBundle as materializeCiBundle } from "../dist/kernel.js";
 import { createRhymeDict } from "../../rhyme-book/dist/index.js";
 
 const DATA_DIR = resolve("./data");
-function loadCiBundle() { return JSON.parse(readFileSync(resolve(DATA_DIR, "ci-tunes-bundle.json"), "utf8")); }
+function loadCiBundle() {
+  return materializeCiBundle(
+    JSON.parse(readFileSync(resolve(DATA_DIR, "ci-tunes-bundle-compact.json"), "utf8")),
+  );
+}
 
 const text = [
   '明月几时有？把酒问青天。',

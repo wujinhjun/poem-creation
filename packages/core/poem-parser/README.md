@@ -110,7 +110,7 @@ flowchart TD
 
 ### 词牌格律（CiTemplate）
 
-818 首词牌、2475 个变体预编译于 `data/ci-tunes-bundle.json`（8.7 MB），运行时 O(1) 查找。变体以作者命名：
+818 首词牌、2475 个变体预编译于 `data/ci-tunes-bundle-compact.json`（1.1 MB，`data/ci-tunes-bundle-compact.json.gz` 为 132 KB），运行时 O(1) 查找。变体以作者命名：
 
 ```
 水调歌头-苏轼体1      ← 苏轼《明月几时有》
@@ -120,7 +120,7 @@ flowchart TD
 
 同一作者有多个版本时加数字后缀（如 `苏轼体1`、`苏轼体2`），按原始数据出场顺序编号。
 
-> 原始数据来源：钦定词谱等公开词谱文献，经 `scripts/clean-data.mjs` 清洗 → `scripts/build-ci-bundle.mjs` 合并编译。
+> 原始数据来源：钦定词谱等公开词谱文献，经清洗与紧凑 DSL 编码后生成当前 bundle。
 
 ### 韵书（RhymeDict）
 

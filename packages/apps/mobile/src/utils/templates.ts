@@ -1,6 +1,13 @@
 import { findCiTune } from "@poem/parser/catalog";
-import { Tone } from "@poem/parser/kernel";
-import type { CiTemplate, ToneConstraint } from "@poem/parser/kernel";
+import {
+  loadCiBundle as materializeCiBundle,
+  Tone,
+} from "@poem/parser/kernel";
+import type {
+  CiTemplate,
+  CompactBundleRaw,
+  ToneConstraint,
+} from "@poem/parser/kernel";
 import {
   ciPatternForEditor,
   firstVariantForTune,
@@ -12,10 +19,10 @@ import {
 } from "@poem/poem-kit";
 import type { CiPatternForEditor } from "@poem/poem-kit";
 
-import ciBundleData from "../../../../core/poem-parser/data/ci-tunes-bundle.json";
+import compactCiBundleData from "../../../../core/poem-parser/data/ci-tunes-bundle-compact.json";
 import type { Genre } from "../constants/poem";
 
-const ciBundle = ciBundleData as Record<string, CiTemplate>;
+const ciBundle = materializeCiBundle(compactCiBundleData as CompactBundleRaw);
 
 export function patternForSelection(
   genre: Genre,

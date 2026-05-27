@@ -92,10 +92,10 @@ export function SettingsPage({
           <div className='settings-storage-card'>
             <div className='settings-storage-head'>
               <div>
-                <p className='section-kicker'>持久化</p>
-                <h3>数据保存位置</h3>
+                <p className='section-kicker'>保存</p>
+                <h3>作品保存方式</h3>
               </div>
-              <div className='storage-mode-toggle' aria-label='选择数据保存位置'>
+              <div className='storage-mode-toggle' aria-label='选择作品保存方式'>
                 <button
                   type='button'
                   className={
@@ -103,7 +103,7 @@ export function SettingsPage({
                   }
                   onClick={() => setPersistenceMode('local')}
                 >
-                  本地
+                  当前设备
                 </button>
                 {SUPABASE_BYOK_ENABLED && (
                   <button
@@ -113,7 +113,7 @@ export function SettingsPage({
                     }
                     onClick={() => setPersistenceMode('supabase')}
                   >
-                    Supabase BYOK
+                    云端保存
                   </button>
                 )}
               </div>
@@ -121,9 +121,9 @@ export function SettingsPage({
 
             {!isSupabaseMode && (
               <div className='settings-local-note'>
-                <p>当前作品只保存在这个浏览器的 IndexedDB。</p>
+                <p>作品会自动保存在这台设备上。</p>
                 <p>
-                  适合单机写作。换浏览器、清理站点数据或换设备前，请先到作品页导出备份。
+                  换设备、清理浏览器数据前，请先到作品页导出备份。
                 </p>
               </div>
             )}
@@ -131,13 +131,13 @@ export function SettingsPage({
             {isSupabaseMode && (
               <>
                 <p className='settings-help'>
-                  填入你自己的 Supabase Project URL 和 anon public key 后，
-                  新草稿会写入 Supabase。浏览器端不要填写 service_role key。
+                  填入你的云端项目地址和公开访问密钥后，
+                  新作品会自动保存到云端。不要填写管理员密钥。
                 </p>
 
                 <div className='settings-grid'>
                   <div className='form-field'>
-                    <span className='field-title'>Supabase Project URL</span>
+                    <span className='field-title'>云端项目地址</span>
                     <input
                       value={settings.persistence.supabase.url}
                       placeholder='https://xxxx.supabase.co'
@@ -150,7 +150,7 @@ export function SettingsPage({
                   </div>
 
                   <div className='form-field'>
-                    <span className='field-title'>anon public key</span>
+                    <span className='field-title'>公开访问密钥</span>
                     <input
                       value={settings.persistence.supabase.anonKey}
                       placeholder='eyJhbGciOi...'

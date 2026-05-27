@@ -1,7 +1,7 @@
 /**
  * 验证模块
  *
- * 负责单行验证、字符校验、拗救标记等核心校验逻辑。
+ * 负责单行验证、字符校验、拗救标记、韵组 cohort 校验等核心校验逻辑。
  */
 
 import { CharValidationStatus } from '../core/types.js';
@@ -9,14 +9,13 @@ import type {
   CharNode,
   Diagnostic,
   LineNode,
-  LineValidationResult,
   RescueDetail,
-  Tone,
   ToneConstraint,
   ToneAmbiguity,
 } from '../core/types.js';
 import type { ResolvedLineTemplate } from './types.js';
 import type { RhymeDict } from '../rhyme-dict/index.js';
+import type { CohortedRhymeSlot } from '../templates/index.js';
 
 /**
  * 判断某位置是否是多音字（歧义字）
@@ -272,11 +271,14 @@ export function applyRescueMarks(
 }
 
 /**
- * 校验韵脚一致性。
+ * 校验韵脚一致性（单行模式）。
+ *
+ * 比较本行韵脚字与前置韵脚基准字是否同韵部。
+ * 用于 analyzeLineSync 逐句模式；全诗分析请用 {@link validateRhymeCohorts}。
  *
  * @param chars             字符节点数组
  * @param resolvedTemplate  行模板信息
- * @param precedingRhymes   前置韵脚
+ * @param precedingRhymes   前置韵脚（第一个为基准）
  * @param dict              韵书实例
  */
 export function validateRhyme(
@@ -305,4 +307,125 @@ export function validateRhyme(
     expectedRhymeGroup,
     isConsistent,
   };
+}
+
+// ========== 韵组 Cohort 校验（全诗模式） ==========
+
+/**
+ * 按韵组 cohort 校验全诗韵脚一致性。
+ *
+ * 规则：
+ * - 同一 cohort 内的韵脚必须互押（同韵部）。
+ * - 单声调 cohort（全 ping 或全 ze）：所有韵脚字互押，与首字比较。
+ * - 跨声调 cohort（含 + 叶韵）：需要 RhymeDict.yunjieFamilyOf 接口，
+ *   当前版本暂跳过；未实现时不报错。
+ *
+ * @param lines        全诗行节点（须已填充 sectionIndex / lineIndexInSection）
+ * @param cohortSlots  韵组 cohort 索引（来自 ci-loader）
+ * @param dict         韵书实例
+ * @returns 诊断信息数组
+ */
+export function validateRhymeCohorts(
+  lines: LineNode[],
+  cohortSlots: CohortedRhymeSlot[],
+  dict: RhymeDict,
+): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+
+  const firstSlot = cohortSlots[0];
+  if (firstSlot?.token.xieyun) {
+    const firstLine = _findLineBySectionAddr(lines, firstSlot.pos);
+    diagnostics.push({
+      type: "info",
+      severity: "warning",
+      position: {
+        line: firstLine ? lines.indexOf(firstLine) : 0,
+        col: firstLine ? Math.max(firstLine.charCount - 1, 0) : undefined,
+      },
+      message: "词谱数据异常：首个韵脚不能标记为叶韵",
+    });
+  }
+
+  // 按 cohortId 分组
+  const cohortGroups = new Map<number, CohortedRhymeSlot[]>();
+  for (const slot of cohortSlots) {
+    const group = cohortGroups.get(slot.cohortId);
+    if (group) {
+      group.push(slot);
+    } else {
+      cohortGroups.set(slot.cohortId, [slot]);
+    }
+  }
+
+  for (const [, slots] of cohortGroups) {
+    if (slots.length < 2) continue;
+
+    // 取第一个韵脚作为基准
+    const firstSlot = slots[0];
+    const firstLine = _findLineBySectionAddr(lines, firstSlot.pos);
+    if (!firstLine) continue;
+
+    const firstChar = firstLine.rhymeChar ?? firstLine.chars.at(-1);
+    if (!firstChar) continue;
+
+    // 是否跨声调（含叶韵）
+    const isCrossTone = slots.some(
+      (s) => s.token.tone !== firstSlot.token.tone,
+    );
+
+    if (isCrossTone) {
+      // 跨声调 cohort：需要 yunjieFamilyOf，当前版本暂跳过
+      // 未来：取 firstChar 的 yunjieFamily，校验其余韵脚字是否同 family
+      diagnostics.push({
+        type: "info",
+        severity: "info",
+        position: {
+          line: lines.indexOf(firstLine),
+          col: firstLine.charCount - 1,
+        },
+        message: "叶韵韵组暂未校验韵部通押关系",
+      });
+      continue;
+    }
+
+    // 单声调 cohort：检查韵部一致性
+    for (let i = 1; i < slots.length; i++) {
+      const slot = slots[i];
+      const line = _findLineBySectionAddr(lines, slot.pos);
+      if (!line) continue;
+
+      const rhymeChar = line.rhymeChar ?? line.chars.at(-1);
+      if (!rhymeChar) continue;
+
+      if (!dict.isSameRhyme(firstChar.char, rhymeChar.char)) {
+        const globalLineIdx = lines.indexOf(line);
+        diagnostics.push({
+          type: "violation",
+          severity: "error",
+          position: { line: globalLineIdx, col: line.charCount - 1 },
+          message:
+            `韵脚「${rhymeChar.char}」与同组首韵「${firstChar.char}」不在同一韵部`,
+          relatedPositions: [
+            {
+              line: lines.indexOf(firstLine),
+              col: firstLine.charCount - 1,
+              label: `首韵「${firstChar.char}」`,
+            },
+          ],
+        });
+      }
+    }
+  }
+
+  return diagnostics;
+}
+
+/** 按 section 地址查找行节点 */
+function _findLineBySectionAddr(
+  lines: LineNode[],
+  pos: [number, number],
+): LineNode | undefined {
+  return lines.find(
+    (l) => l.sectionIndex === pos[0] && l.lineIndexInSection === pos[1],
+  );
 }

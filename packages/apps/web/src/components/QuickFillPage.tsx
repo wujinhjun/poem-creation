@@ -139,7 +139,7 @@ export function QuickFillPage({ onRecognize, onReturn }: QuickFillPageProps) {
           </div>
           <div className='quickfill-note'>
             <p>先按句意分行写下草稿，行数可以随时增减。</p>
-            <p>完成后再交给 parser 判断诗、词、格律和变体。</p>
+            <p>完成后自动判断诗、词、格律和变体。</p>
           </div>
           <ol className='quickfill-flow'>
             <li><span>1</span>完成分行草稿</li>

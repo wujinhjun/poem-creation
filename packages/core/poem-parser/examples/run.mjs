@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { analyzeSync } from "../dist/kernel.js";
+import { analyzeSync, loadCiBundle as materializeCiBundle } from "../dist/kernel.js";
 import { createRhymeDict } from "../../rhyme-book/dist/index.js";
 import { loadMeterTemplates } from "../dist/templates/meters.js";
 
@@ -16,8 +16,8 @@ const DATA_DIR = resolve("./data");
 // ---- 加载 ----
 
 function loadCiBundle() {
-  const raw = readFileSync(resolve(DATA_DIR, "ci-tunes-bundle.json"), "utf8");
-  return JSON.parse(raw);
+  const raw = readFileSync(resolve(DATA_DIR, "ci-tunes-bundle-compact.json"), "utf8");
+  return materializeCiBundle(JSON.parse(raw));
 }
 
 function getTemplate(id) {

@@ -195,7 +195,6 @@ button:disabled {
   min-height: 84px;
   place-items: center;
   align-content: center;
-  gap: 6px;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
@@ -219,15 +218,6 @@ button:disabled {
 
 .rail-item.is-active::before {
   background: var(--cinnabar);
-}
-
-.rail-mark {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border: 1px solid currentColor;
-  font-size: 12px;
 }
 
 .app-content {
@@ -1478,10 +1468,15 @@ h3 {
 
 .description-input {
   width: 100%;
+  min-height: 24px;
+  max-height: 160px;
+  resize: vertical;
+  overflow: hidden;
   padding: 0 8px;
   text-align: center;
   color: var(--muted);
   font-size: 15px;
+  line-height: 1.65;
 }
 
 .author-input {
@@ -1583,6 +1578,7 @@ h3 {
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
+  user-select: none;
 }
 
 .slot-label-rhyme {
@@ -1625,8 +1621,7 @@ h3 {
   color: var(--cinnabar);
 }
 
-.char-input:focus-visible,
-.char-input.is-active {
+.char-input:focus-visible {
   border-color: var(--cinnabar);
   box-shadow: 0 0 0 3px rgba(168, 50, 40, 0.12);
 }
@@ -1833,8 +1828,7 @@ h3 {
   background: var(--paper);
 }
 
-.aside-section,
-.lookup-panel {
+.aside-section {
   display: grid;
   gap: 12px;
   border-top: 1px solid var(--line);
@@ -1858,35 +1852,6 @@ h3 {
   padding-top: 16px;
   color: var(--muted);
   font-size: 13px;
-}
-
-.lookup-panel h3 {
-  margin-bottom: 2px;
-}
-
-.lookup-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-}
-
-.lookup-result {
-  display: grid;
-  max-height: 210px;
-  gap: 12px;
-  overflow: auto;
-  color: var(--ink-soft);
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.lookup-result p {
-  margin: 0;
-}
-
-.lookup-pronunciation {
-  color: var(--cinnabar);
-  font-weight: 700;
 }
 
 .notice-inline {
@@ -2049,7 +2014,6 @@ h3 {
 
   .rail-item {
     min-height: 58px;
-    grid-auto-flow: column;
     place-content: center;
     font-size: 18px;
   }
@@ -2058,11 +2022,6 @@ h3 {
     inset: auto 0 0 0;
     width: auto;
     height: 3px;
-  }
-
-  .rail-mark {
-    width: 22px;
-    height: 22px;
   }
 
   .page,
@@ -2239,14 +2198,7 @@ h3 {
 
   .rail-item {
     min-height: 50px;
-    gap: 5px;
     font-size: 16px;
-  }
-
-  .rail-mark {
-    width: 20px;
-    height: 20px;
-    font-size: 11px;
   }
 
   .save-status {
@@ -2396,38 +2348,50 @@ h3 {
 
   .composer-line {
     min-width: 0;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 10px;
-    padding-bottom: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px 14px;
+    overflow-x: visible;
+    padding-bottom: 12px;
   }
 
   .composer-logical-line {
-    flex: 0 0 auto;
-    flex-wrap: nowrap;
-    gap: 4px;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 3px;
   }
 
   .char-input {
-    width: 34px;
-    height: 38px;
-    font-size: 21px;
+    width: 30px;
+    height: 34px;
+    border-radius: 5px;
+    font-size: 18px;
   }
 
   .active-cell-editor {
-    width: 32px;
-    height: 38px;
-    font-size: 21px;
+    left: 1px;
+    width: 28px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .active-cell-editor.after-char {
+    left: calc(50% + 6px);
+    width: 10px;
   }
 
   .slot-label {
-    min-height: 15px;
-    font-size: 12px;
+    min-height: 13px;
+    font-size: 11px;
   }
 
   .line-punctuation {
-    min-width: 14px;
-    font-size: 22px;
+    min-width: 10px;
+    padding-bottom: 2px;
+    font-size: 18px;
   }
 
   .analysis-bar > .primary-button {

@@ -15,10 +15,17 @@ import { annotate, AnnotationResult } from "../phonology/index.js";
 import type { RhymeDict } from "../rhyme-dict/index.js";
 import { isMeterTemplate, isCiTemplate } from "../templates/index.js";
 import type { CiTemplate, MeterTemplate, AnyTemplate } from "../templates/index.js";
+import { buildCohortFromSlots } from "../templates/index.js";
 import { buildAstFromAnnotation, applyMeterTemplateToAst, buildLexResultFromRawLines } from "./ast.js";
-import { validateLineAgainstPattern, applyValidationToLine, LineValidationSummary } from "./validation.js";
+import {
+  validateLineAgainstPattern,
+  applyValidationToLine,
+  validateRhymeCohorts,
+  LineValidationSummary,
+} from "./validation.js";
 import { scoreCiVariant, applyCiVariantToAst } from "./ci.js";
 import { getTemplateType } from "./templates.js";
+import type { CohortedRhymeSlot, RhymeCohortSourceSlot } from "../templates/index.js";
 
 // ============ 公共类型 ============
 
@@ -210,6 +217,51 @@ function countHanzi(input: string): number {
   return count;
 }
 
+// ============ 韵组 Cohort 构建 ============
+
+/**
+ * 从词牌变体构建韵组 cohort 索引。
+ *
+ * 扫描变体所有行，按韵脚声调划分 cohort：
+ * - 同声调连续韵脚 → 同一 cohort
+ * - 声调切换 → 新 cohort
+ */
+function buildCohortFromCiVariant(
+  variant: import("../templates/index.js").CiTemplateVariant,
+): CohortedRhymeSlot[] {
+  const sourceSlots: RhymeCohortSourceSlot[] = [];
+
+  for (let si = 0; si < variant.sections.length; si++) {
+    const sec = variant.sections[si];
+    for (let li = 0; li < sec.lines.length; li++) {
+      const line = sec.lines[li];
+      if (!line.isRhymeLine || !line.rhymeType) continue;
+
+      const tone = line.rhymeType;
+      const xieyun = line.isXieyun === true;
+
+      sourceSlots.push({ pos: [si, li], token: { tone, xieyun } });
+    }
+  }
+
+  return buildCohortFromSlots(sourceSlots);
+}
+
+/**
+ * 从律诗/绝句模板构建韵组 cohort 索引。
+ *
+ * 格律诗只有一个韵组：所有韵脚行同押平声韵。
+ */
+function buildCohortFromMeter(
+  template: import("../templates/index.js").MeterTemplate,
+): CohortedRhymeSlot[] {
+  return template.rhymeLineIndices.map((lineIdx) => ({
+    pos: [0, lineIdx] as [number, number],
+    cohortId: 1,
+    token: { tone: "ping" as const, xieyun: false },
+  }));
+}
+
 // ============ 完整管线 ============
 
 export function runPipeline(input: PipelineInput): PipelineOutput {
@@ -267,6 +319,18 @@ export function runPipeline(input: PipelineInput): PipelineOutput {
 
   // 7. 校验
   const { lineValidations, complianceRate, isCompliant, fullyCompliant } = validate(ast, uniqueAmbiguities);
+
+  // 8. 韵组 cohort 校验
+  let cohortSlots: CohortedRhymeSlot[];
+  if (isMeterTemplate(template)) {
+    cohortSlots = buildCohortFromMeter(template);
+  } else {
+    const variant = template.variants.find((v) => v.id === variantId);
+    cohortSlots = variant ? buildCohortFromCiVariant(variant) : [];
+  }
+
+  const rhymeDiagnostics = validateRhymeCohorts(ast.lines, cohortSlots, dict);
+  ast.diagnostics.push(...rhymeDiagnostics);
 
   return {
     ast,

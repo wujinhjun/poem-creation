@@ -14,9 +14,6 @@
 - `tone-lookup.json`
   - 单字平仄速查：`{ [char]: "平" | "仄" | "多" | "未知" }`
 
-- `word-explain-cleaned.json`
-  - 多音字读音和释义：`{ [char]: [{ pronunciation, explains[] }] }`
-
 - `ci-catalog-cleaned.json`
   - 词牌分类索引，`tunes` 字段规范为 `sketch`
 

@@ -14,15 +14,21 @@ import { analyzeSync, analyzeLineSync } from "../src/analyzer/kernel.js";
 import { analyzeStreamSync, getSentenceCharCounts, StreamAnalyzeResult } from "../src/analyzer/stream.js";
 import { createRhymeDict } from "@poem/rhyme-book";
 import { loadMeterTemplates } from "../src/templates/meters.js";
+import {
+  loadCiBundle as materializeCiBundle,
+} from "../src/templates/index.js";
+import type { CompactBundleRaw } from "../src/templates/index.js";
 
 const DATA_DIR = resolve("./data");
-const BUNDLE_PATH = resolve(DATA_DIR, "ci-tunes-bundle.json");
+const BUNDLE_PATH = resolve(DATA_DIR, "ci-tunes-bundle-compact.json");
 
 let _ciBundle: Record<string, CiTemplate> | null = null;
 
 function loadCiBundle(): Record<string, CiTemplate> {
   if (!_ciBundle) {
-    _ciBundle = JSON.parse(readFileSync(BUNDLE_PATH, "utf8"));
+    _ciBundle = materializeCiBundle(
+      JSON.parse(readFileSync(BUNDLE_PATH, "utf8")) as CompactBundleRaw,
+    );
   }
   return _ciBundle!;
 }

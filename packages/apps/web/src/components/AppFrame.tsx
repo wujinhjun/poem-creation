@@ -13,9 +13,9 @@ type AppFrameProps = {
 };
 
 const navItems = [
-  { key: "entry", label: "起笔", mark: "笔" },
-  { key: "works", label: "作品", mark: "卷" },
-  { key: "settings", label: "设置", mark: "設" },
+  { key: "entry", label: "起笔" },
+  { key: "works", label: "作品" },
+  { key: "settings", label: "设置" },
 ] as const;
 
 function saveStatusLabel(
@@ -24,7 +24,7 @@ function saveStatusLabel(
 ): string {
   if (saveStatus === 'saving') return '保存中';
   if (saveStatus === 'error') return '保存失败';
-  if (persistenceMode === 'supabase') return '已同步到 Supabase';
+  if (persistenceMode === 'supabase') return '已云端保存';
   return '已本地保存';
 }
 
@@ -78,7 +78,6 @@ export function AppFrame({
                 className={`rail-item${active ? ' is-active' : ''}`}
                 onClick={() => handleNav(item.key)}
               >
-                <span className='rail-mark'>{item.mark}</span>
                 <span>{item.label}</span>
               </button>
             );
