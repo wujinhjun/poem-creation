@@ -64,3 +64,27 @@ export function isMeterTemplate(
 export function isCiTemplate(template: AnyTemplate): template is CiTemplate {
   return !('pattern' in template);
 }
+
+// DSL 编解码
+export { parseLineDSL, encodeLineDSL, extractRhymeToken } from "./dsl.js";
+export type { EncodeLineOptions, RhymeTokenInfo } from "./dsl.js";
+
+// 变体压缩
+export type {
+  CiVariantFull,
+  CiVariantDelta,
+  CiVariantStored,
+  CiSectionStored,
+  EditOp,
+  LineAddr,
+} from "./ci-compress.js";
+export { materializeVariant, applyEdits, computeDiff } from "./ci-compress.js";
+
+// 词牌装载
+export {
+  loadCiBundle,
+  getCohortIndex,
+  buildCohortIndex,
+  clearCiBundleCache,
+} from "./ci-loader.js";
+export type { CompactTuneRaw, CompactBundleRaw, CohortedRhymeSlot } from "./ci-loader.js";
