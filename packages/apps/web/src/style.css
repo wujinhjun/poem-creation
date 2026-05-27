@@ -1630,22 +1630,9 @@ h3 {
   color: var(--cinnabar);
 }
 
-.char-input:focus-visible,
-.char-input.is-active {
+.char-input:focus-visible {
   border-color: var(--cinnabar);
   box-shadow: 0 0 0 3px rgba(168, 50, 40, 0.12);
-}
-
-.char-input.is-selected {
-  border-color: #8f7f6b;
-  background: #f2ecdf;
-  box-shadow: inset 0 0 0 2px rgba(111, 88, 68, 0.16);
-}
-
-.char-input.is-selected.is-active {
-  box-shadow:
-    inset 0 0 0 2px rgba(111, 88, 68, 0.16),
-    0 0 0 3px rgba(111, 88, 68, 0.14);
 }
 
 .status-pass {
@@ -1657,14 +1644,6 @@ h3 {
   border-color: var(--cinnabar);
   background: #f8e8e5;
   box-shadow: inset 0 -3px 0 rgba(168, 50, 40, 0.45);
-}
-
-.char-input.status-fail.is-selected {
-  border-color: var(--cinnabar);
-  background: #f8e8e5;
-  box-shadow:
-    inset 0 0 0 2px rgba(168, 50, 40, 0.18),
-    inset 0 -3px 0 rgba(168, 50, 40, 0.45);
 }
 
 .status-pending,
@@ -2421,38 +2400,49 @@ h3 {
 
   .composer-line {
     min-width: 0;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 10px;
-    padding-bottom: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px 0;
+    overflow-x: visible;
+    padding-bottom: 12px;
   }
 
   .composer-logical-line {
-    flex: 0 0 auto;
-    flex-wrap: nowrap;
-    gap: 4px;
+    flex: 0 1 350px;
+    max-width: min(100%, 350px);
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 3px;
   }
 
   .char-input {
-    width: 34px;
-    height: 38px;
-    font-size: 21px;
+    width: 30px;
+    height: 34px;
+    border-radius: 5px;
+    font-size: 18px;
   }
 
   .active-cell-editor {
-    width: 32px;
-    height: 38px;
-    font-size: 21px;
+    left: 1px;
+    width: 28px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .active-cell-editor.after-char {
+    left: calc(50% + 6px);
+    width: 10px;
   }
 
   .slot-label {
-    min-height: 15px;
-    font-size: 12px;
+    min-height: 13px;
+    font-size: 11px;
   }
 
   .line-punctuation {
-    min-width: 14px;
-    font-size: 22px;
+    min-width: 10px;
+    padding-bottom: 2px;
+    font-size: 18px;
   }
 
   .analysis-bar > .primary-button {
