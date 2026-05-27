@@ -17,20 +17,15 @@ import {
   linePunctuation,
   rhymeToneLabel,
 } from './components/composer/utils';
+import {
+  positionKey,
+  useEditorSelection,
+} from './hooks/useEditorSelection';
+import type { CellPosition } from './hooks/useEditorSelection';
 
 type GridState = {
   signature: string;
   grid: string[][];
-};
-
-type CellPosition = {
-  line: number;
-  col: number;
-};
-
-type CellSelection = {
-  anchor: CellPosition;
-  focus: CellPosition;
 };
 
 function createInitialGrid(
@@ -45,10 +40,6 @@ function createInitialGrid(
 
 function cloneGrid(grid: string[][]): string[][] {
   return grid.map((row) => [...row]);
-}
-
-function positionKey(position: CellPosition): string {
-  return `${position.line}:${position.col}`;
 }
 
 /** 正文编辑器 */
@@ -92,20 +83,18 @@ export default function Composer({
   const activeInputRef = useRef<HTMLInputElement | null>(null);
   const composingRef = useRef(false);
   const pendingCompleteRef = useRef<string[][] | null>(null);
-  const [activeCell, setActiveCell] = useState<{
-    line: number;
-    col: number;
-  } | null>(
-    focusTarget
-      ? {
-          line: focusTarget.lineIndex,
-          col: focusTarget.col,
-        }
-      : null,
-  );
   const [draft, setDraft] = useState('');
-  const [selection, setSelection] = useState<CellSelection | null>(null);
-  const [selecting, setSelecting] = useState(false);
+  const {
+    activeCell,
+    setActiveCell,
+    selectedPositionKeys,
+    selectedPositions,
+    selectedText,
+    clearSelection,
+    beginSelection,
+    extendSelection,
+    selectCell,
+  } = useEditorSelection({ pattern, gridRef, focusTarget });
   const groups = useMemo(
     () =>
       visualLineGroups && visualLineGroups.length > 0
@@ -113,20 +102,6 @@ export default function Composer({
         : pattern.map((_, index) => [index]),
     [pattern, visualLineGroups],
   );
-  const flatPositions = useMemo(
-    () =>
-      pattern.flatMap((row, line) =>
-        row.map((_, col): CellPosition => ({ line, col })),
-      ),
-    [pattern],
-  );
-  const positionIndex = useMemo(() => {
-    const map = new Map<string, number>();
-    flatPositions.forEach((position, index) => {
-      map.set(positionKey(position), index);
-    });
-    return map;
-  }, [flatPositions]);
 
   useEffect(() => {
     gridRef.current = grid;
@@ -140,49 +115,8 @@ export default function Composer({
   }, [activeCell]);
 
   useEffect(() => {
-    const handlePointerUp = () => setSelecting(false);
-    window.addEventListener('pointerup', handlePointerUp);
-    return () => window.removeEventListener('pointerup', handlePointerUp);
-  }, []);
-
-  useEffect(() => {
     historyRef.current = [];
   }, [patternSignature]);
-
-  const selectionRange = useMemo(() => {
-    if (!selection) return null;
-    const anchorIndex = positionIndex.get(positionKey(selection.anchor));
-    const focusIndex = positionIndex.get(positionKey(selection.focus));
-    if (anchorIndex === undefined || focusIndex === undefined) return null;
-    return {
-      start: Math.min(anchorIndex, focusIndex),
-      end: Math.max(anchorIndex, focusIndex),
-    };
-  }, [positionIndex, selection]);
-
-  const selectedPositions = useMemo(() => {
-    if (!selectionRange) return [];
-    return flatPositions.slice(selectionRange.start, selectionRange.end + 1);
-  }, [flatPositions, selectionRange]);
-
-  const selectedPositionKeys = useMemo(
-    () => new Set(selectedPositions.map(positionKey)),
-    [selectedPositions],
-  );
-
-  const selectedText = useCallback(() => {
-    if (selectedPositions.length === 0) return '';
-    const lineMap = new Map<number, string[]>();
-    selectedPositions.forEach((position) => {
-      const cells = lineMap.get(position.line) ?? [];
-      cells.push(gridRef.current[position.line]?.[position.col] ?? '');
-      lineMap.set(position.line, cells);
-    });
-    return [...lineMap.entries()]
-      .sort(([a], [b]) => a - b)
-      .map(([, cells]) => cells.join(''))
-      .join('\n');
-  }, [selectedPositions]);
 
   const pushHistory = useCallback((source: string[][]) => {
     historyRef.current = [...historyRef.current.slice(-49), cloneGrid(source)];
@@ -193,9 +127,9 @@ export default function Composer({
     if (!previous) return;
     historyRef.current = historyRef.current.slice(0, -1);
     setDraft('');
-    setSelection(null);
+    clearSelection();
     setGridState({ signature: patternSignature, grid: cloneGrid(previous) });
-  }, [patternSignature]);
+  }, [clearSelection, patternSignature]);
 
   const clearSelectionInGrid = useCallback(
     (source: string[][]) => {
@@ -231,10 +165,10 @@ export default function Composer({
 
       const result = writeEditorCharsAt(grid, pattern, lineIdx, colIdx, chars);
       setDraft('');
-      setSelection(null);
+      clearSelection();
       setActiveCell(result.nextPosition);
     },
-    [grid, pattern, patternSignature, pushHistory],
+    [clearSelection, grid, pattern, patternSignature, pushHistory, setActiveCell],
   );
 
   const clearCellAt = useCallback(
@@ -300,7 +234,7 @@ export default function Composer({
         col: Math.max(0, Math.min(colIdx + delta, rowLength - 1)),
       });
     },
-    [lastFilledCol, pattern],
+    [lastFilledCol, pattern, setActiveCell],
   );
 
   const moveActiveCellVertical = useCallback(
@@ -323,7 +257,7 @@ export default function Composer({
         col: targetCol,
       });
     },
-    [lastFilledCol, pattern],
+    [lastFilledCol, pattern, setActiveCell],
   );
 
   const pasteAt = useCallback(
@@ -348,10 +282,10 @@ export default function Composer({
       });
 
       const result = pasteEditorTextAt(grid, pattern, lineIdx, colIdx, text);
-      setSelection(null);
+      clearSelection();
       setActiveCell(result.nextPosition);
     },
-    [grid, pattern, patternSignature, pushHistory],
+    [clearSelection, grid, pattern, patternSignature, pushHistory, setActiveCell],
   );
 
   const replaceSelectionWithText = useCallback(
@@ -387,17 +321,19 @@ export default function Composer({
         text,
       );
       setDraft('');
-      setSelection(null);
+      clearSelection();
       setActiveCell(result.nextPosition);
     },
     [
       activeCell,
+      clearSelection,
       clearSelectionInGrid,
       grid,
       pattern,
       patternSignature,
       pushHistory,
       selectedPositions,
+      setActiveCell,
     ],
   );
 
@@ -427,15 +363,9 @@ export default function Composer({
     ) => {
       event.preventDefault();
       setDraft('');
-      setActiveCell(position);
-      setSelecting(true);
-      setSelection((current) =>
-        event.shiftKey && current
-          ? { anchor: current.anchor, focus: position }
-          : { anchor: position, focus: position },
-      );
+      beginSelection(position, event.shiftKey);
     },
-    [],
+    [beginSelection],
   );
 
   const handleCellMouseEnter = useCallback(
@@ -443,20 +373,16 @@ export default function Composer({
       position: CellPosition,
       event: MouseEvent<HTMLButtonElement>,
     ) => {
-      if (!selecting || event.buttons !== 1) return;
-      setSelection((current) =>
-        current ? { anchor: current.anchor, focus: position } : current,
-      );
-      setActiveCell(position);
+      if (event.buttons !== 1) return;
+      extendSelection(position);
     },
-    [selecting],
+    [extendSelection],
   );
 
   const handleCellSelect = useCallback((position: CellPosition) => {
     setDraft('');
-    setSelection(null);
-    setActiveCell(position);
-  }, []);
+    selectCell(position);
+  }, [selectCell]);
 
   const handleEditorKeyDown = useCallback(
     (
@@ -475,7 +401,7 @@ export default function Composer({
         return;
       }
       if (event.key === 'Escape') {
-        setSelection(null);
+        clearSelection();
         setDraft('');
         return;
       }
@@ -483,19 +409,19 @@ export default function Composer({
       const { line: li, col: ci } = position;
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        setSelection(null);
+        clearSelection();
         moveActiveCellHorizontal(li, ci, -1);
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        setSelection(null);
+        clearSelection();
         moveActiveCellHorizontal(li, ci, 1);
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setSelection(null);
+        clearSelection();
         moveActiveCellVertical(li, ci, -1);
       } else if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setSelection(null);
+        clearSelection();
         moveActiveCellVertical(li, ci, 1);
       } else if (event.key === 'Backspace' && draft === '') {
         event.preventDefault();
@@ -511,7 +437,7 @@ export default function Composer({
               grid: clearSelectionInGrid(source),
             };
           });
-          setSelection(null);
+          clearSelection();
           return;
         }
         if (grid[li]?.[ci]) {
@@ -533,7 +459,7 @@ export default function Composer({
               grid: clearSelectionInGrid(source),
             };
           });
-          setSelection(null);
+          clearSelection();
           return;
         }
         clearCellAt(li, ci);
@@ -542,6 +468,7 @@ export default function Composer({
     [
       clearCellAt,
       clearSelectionInGrid,
+      clearSelection,
       copySelectionToClipboard,
       draft,
       grid,
