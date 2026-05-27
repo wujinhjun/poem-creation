@@ -48,7 +48,7 @@ pattern → Composer 渲染逐字格子
 |------|------|----------|------|
 | `ci-catalog.json` | 373KB → 编译进 bundle | 初始化 | 模板下拉列表 |
 | `tone-lookup.json` | ~200KB | 初始化 | 浏览器韵书（实时查平仄） |
-| `ci-tunes-bundle-compact.json` | 1.1MB / 按需加载 | 选中词牌时 | 词牌紧凑格律 DSL |
+| `ci-tunes-bundle-compact.json` | 1.1MB / 132KB gzip | 选中词牌时 | 词牌紧凑格律 DSL |
 
 ## 校验规则
 
