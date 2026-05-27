@@ -15,6 +15,7 @@ import { annotate, AnnotationResult } from "../phonology/index.js";
 import type { RhymeDict } from "../rhyme-dict/index.js";
 import { isMeterTemplate, isCiTemplate } from "../templates/index.js";
 import type { CiTemplate, MeterTemplate, AnyTemplate } from "../templates/index.js";
+import { buildCohortFromSlots } from "../templates/index.js";
 import { buildAstFromAnnotation, applyMeterTemplateToAst, buildLexResultFromRawLines } from "./ast.js";
 import {
   validateLineAgainstPattern,
@@ -24,7 +25,7 @@ import {
 } from "./validation.js";
 import { scoreCiVariant, applyCiVariantToAst } from "./ci.js";
 import { getTemplateType } from "./templates.js";
-import type { CohortedRhymeSlot } from "../templates/ci-loader.js";
+import type { CohortedRhymeSlot, RhymeCohortSourceSlot } from "../templates/index.js";
 
 // ============ 公共类型 ============
 
@@ -228,9 +229,7 @@ function countHanzi(input: string): number {
 function buildCohortFromCiVariant(
   variant: import("../templates/index.js").CiTemplateVariant,
 ): CohortedRhymeSlot[] {
-  const slots: CohortedRhymeSlot[] = [];
-  let cohortId = 1;
-  let cohortTone: "ping" | "ze" | null = null;
+  const sourceSlots: RhymeCohortSourceSlot[] = [];
 
   for (let si = 0; si < variant.sections.length; si++) {
     const sec = variant.sections[si];
@@ -241,23 +240,11 @@ function buildCohortFromCiVariant(
       const tone = line.rhymeType;
       const xieyun = line.isXieyun === true;
 
-      if (slots.length === 0) {
-        cohortId = 1;
-        cohortTone = tone;
-      } else if (xieyun) {
-        // 叶韵 → 续上一组，不改变 cohortTone
-      } else if (tone === cohortTone) {
-        // 同声调 → 续组
-      } else {
-        cohortId += 1;
-        cohortTone = tone;
-      }
-
-      slots.push({ pos: [si, li], cohortId, token: { tone, xieyun } });
+      sourceSlots.push({ pos: [si, li], token: { tone, xieyun } });
     }
   }
 
-  return slots;
+  return buildCohortFromSlots(sourceSlots);
 }
 
 /**

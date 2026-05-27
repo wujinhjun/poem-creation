@@ -67,7 +67,18 @@ export { loadMeterTemplates } from "./templates/meters.js";
 export type { MeterTemplate } from "./templates/meters.js";
 
 // 词牌类型（import type 不加载模块，无 fs 副作用）
-export type { CiTemplate, CiTemplateVariant, AnyTemplate } from "./templates/index.js";
+export {
+  loadCiBundle,
+  clearCiBundleCache,
+  getCohortIndex,
+} from "./templates/index.js";
+export type {
+  CiTemplate,
+  CiTemplateVariant,
+  AnyTemplate,
+  CompactBundleRaw,
+  CompactTuneRaw,
+} from "./templates/index.js";
 
 // 韵书接口（import type 不加载模块）
 export type { RhymeDict, RhymeEntry } from "./rhyme-dict/index.js";

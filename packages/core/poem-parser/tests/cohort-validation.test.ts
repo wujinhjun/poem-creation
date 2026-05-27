@@ -9,10 +9,10 @@ import { Tone } from "../src/core/types.js";
 import type { CharNode, LineNode, Diagnostic } from "../src/core/types.js";
 import type { RhymeDict, RhymeEntry } from "../src/rhyme-dict/index.js";
 import { validateRhymeCohorts } from "../src/analyzer/validation.js";
-import { buildCohortIndex } from "../src/templates/ci-loader.js";
+import { buildCohortFromSlots, buildCohortIndex } from "../src/templates/index.js";
 import type {
   CohortedRhymeSlot,
-} from "../src/templates/ci-loader.js";
+} from "../src/templates/index.js";
 import type { CiSectionStored } from "../src/templates/ci-compress.js";
 
 // ---- Mock RhymeDict ----
@@ -157,6 +157,18 @@ describe("buildCohortIndex", () => {
     expect(slots[1]).toMatchObject({ pos: [0, 1], cohortId: 1 });
     expect(slots[2]).toMatchObject({ pos: [1, 1], cohortId: 1 });
   });
+
+  it("共享 cohort builder 应与 compact DSL 路径一致", () => {
+    const slots = buildCohortFromSlots([
+      { pos: [0, 0], token: { tone: "ze", xieyun: false } },
+      { pos: [0, 1], token: { tone: "ping", xieyun: true } },
+      { pos: [0, 2], token: { tone: "ping", xieyun: true } },
+      { pos: [0, 3], token: { tone: "ze", xieyun: false } },
+      { pos: [0, 4], token: { tone: "ping", xieyun: false } },
+    ]);
+
+    expect(slots.map((slot) => slot.cohortId)).toEqual([1, 1, 1, 1, 2]);
+  });
 });
 
 // ---- validateRhymeCohorts 测试 ----
@@ -261,7 +273,7 @@ describe("validateRhymeCohorts", () => {
     expect(diags).toHaveLength(0);
   });
 
-  it("跨声调 cohort（叶韵）当前版本跳过", () => {
+  it("跨声调 cohort（叶韵）当前版本给出 info 诊断", () => {
     const lines: LineNode[] = [
       makeLineNode([makeCharNode("风", "一东")], {
         globalLineIndex: 0,
@@ -287,9 +299,40 @@ describe("validateRhymeCohorts", () => {
       { pos: [0, 1], cohortId: 1, token: { tone: "ping", xieyun: true } },
     ];
 
-    // 跨声调当前跳过，不产生 diagnostic
     const diags = validateRhymeCohorts(lines, slots, dict);
-    expect(diags).toHaveLength(0);
+    expect(diags).toHaveLength(1);
+    expect(diags[0]).toMatchObject({
+      type: "info",
+      severity: "info",
+      position: { line: 0, col: 0 },
+    });
+    expect(diags[0].message).toContain("叶韵");
+  });
+
+  it("首韵脚标记为叶韵应给出 warning", () => {
+    const lines: LineNode[] = [
+      makeLineNode([makeCharNode("风", "一东")], {
+        globalLineIndex: 0,
+        sectionIndex: 0,
+        lineIndexInSection: 0,
+        isRhymeLine: true,
+        rhymeChar: makeCharNode("风", "一东"),
+        expectedRhymeType: "ping",
+      }),
+    ];
+
+    const slots: CohortedRhymeSlot[] = [
+      { pos: [0, 0], cohortId: 1, token: { tone: "ping", xieyun: true } },
+    ];
+
+    const diags = validateRhymeCohorts(lines, slots, dict);
+    expect(diags).toHaveLength(1);
+    expect(diags[0]).toMatchObject({
+      type: "info",
+      severity: "warning",
+      position: { line: 0, col: 0 },
+    });
+    expect(diags[0].message).toContain("首个韵脚");
   });
 
   it("单韵脚行不产生 diagnostic", () => {

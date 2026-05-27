@@ -1,4 +1,11 @@
-import type { CiTemplate, ToneConstraint } from '@poem/parser/kernel';
+import {
+  loadCiBundle as materializeCiBundle,
+} from '@poem/parser/kernel';
+import type {
+  CiTemplate,
+  CompactBundleRaw,
+  ToneConstraint,
+} from '@poem/parser/kernel';
 import {
   ciPatternForEditor,
   inferCiRhymeTone,
@@ -14,7 +21,14 @@ let ciBundlePromise: Promise<Record<string, CiTemplate>> | null = null;
 // only when the editor actually needs a selected ci variant.
 export function loadCiBundle(): Promise<Record<string, CiTemplate>> {
   if (!ciBundlePromise) {
-    ciBundlePromise = fetch(publicAssetPath('data/ci-tunes-bundle.json')).then((r) => r.json());
+    ciBundlePromise = fetch(publicAssetPath('data/ci-tunes-bundle-compact.json'))
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`词谱加载失败：${response.status}`);
+        }
+        return response.json() as Promise<CompactBundleRaw>;
+      })
+      .then((raw) => materializeCiBundle(raw));
   }
   return ciBundlePromise;
 }

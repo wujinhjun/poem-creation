@@ -15,7 +15,7 @@ import type {
 } from '../core/types.js';
 import type { ResolvedLineTemplate } from './types.js';
 import type { RhymeDict } from '../rhyme-dict/index.js';
-import type { CohortedRhymeSlot } from '../templates/ci-loader.js';
+import type { CohortedRhymeSlot } from '../templates/index.js';
 
 /**
  * 判断某位置是否是多音字（歧义字）
@@ -332,6 +332,20 @@ export function validateRhymeCohorts(
 ): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
 
+  const firstSlot = cohortSlots[0];
+  if (firstSlot?.token.xieyun) {
+    const firstLine = _findLineBySectionAddr(lines, firstSlot.pos);
+    diagnostics.push({
+      type: "info",
+      severity: "warning",
+      position: {
+        line: firstLine ? lines.indexOf(firstLine) : 0,
+        col: firstLine ? Math.max(firstLine.charCount - 1, 0) : undefined,
+      },
+      message: "词谱数据异常：首个韵脚不能标记为叶韵",
+    });
+  }
+
   // 按 cohortId 分组
   const cohortGroups = new Map<number, CohortedRhymeSlot[]>();
   for (const slot of cohortSlots) {
@@ -362,6 +376,15 @@ export function validateRhymeCohorts(
     if (isCrossTone) {
       // 跨声调 cohort：需要 yunjieFamilyOf，当前版本暂跳过
       // 未来：取 firstChar 的 yunjieFamily，校验其余韵脚字是否同 family
+      diagnostics.push({
+        type: "info",
+        severity: "info",
+        position: {
+          line: lines.indexOf(firstLine),
+          col: firstLine.charCount - 1,
+        },
+        message: "叶韵韵组暂未校验韵部通押关系",
+      });
       continue;
     }
 

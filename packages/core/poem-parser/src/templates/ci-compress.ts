@@ -73,27 +73,34 @@ export type CiVariantStored = CiVariantFull | CiVariantDelta;
 export function materializeVariant(
   stored: CiVariantStored,
   canonicalMap: ReadonlyMap<string, CiVariantFull>,
+  expanded?: CiVariantFull,
 ): CiTemplateVariant {
-  let full: CiVariantFull;
+  return sectionsToVariant(expanded ?? expandStoredVariant(stored, canonicalMap));
+}
 
+/**
+ * 将存储形态的变体展开为完整 DSL sections。
+ */
+export function expandStoredVariant(
+  stored: CiVariantStored,
+  canonicalMap: ReadonlyMap<string, CiVariantFull>,
+): CiVariantFull {
   if (stored.kind === "full") {
-    full = stored;
-  } else {
-    const base = canonicalMap.get(stored.base);
-    if (!base) {
-      throw new Error(`Canonical variant not found: ${stored.base}`);
-    }
-    full = {
-      kind: "full",
-      id: stored.id,
-      author: stored.author,
-      sketch: stored.sketch,
-      rhymeType: base.rhymeType,
-      sections: applyEdits(base.sections, stored.edits),
-    };
+    return stored;
   }
 
-  return sectionsToVariant(full);
+  const base = canonicalMap.get(stored.base);
+  if (!base) {
+    throw new Error(`Canonical variant not found: ${stored.base}`);
+  }
+  return {
+    kind: "full",
+    id: stored.id,
+    author: stored.author,
+    sketch: stored.sketch,
+    rhymeType: base.rhymeType,
+    sections: applyEdits(base.sections, stored.edits),
+  };
 }
 
 /**

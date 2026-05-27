@@ -80,7 +80,7 @@ export type {
   EditOp,
   LineAddr,
 } from "./ci-compress.js";
-export { materializeVariant, applyEdits, computeDiff } from "./ci-compress.js";
+export { materializeVariant, expandStoredVariant, applyEdits, computeDiff } from "./ci-compress.js";
 
 // 词牌装载
 export {
@@ -90,3 +90,5 @@ export {
   clearCiBundleCache,
 } from "./ci-loader.js";
 export type { CompactTuneRaw, CompactBundleRaw, CohortedRhymeSlot } from "./ci-loader.js";
+export { buildCohortFromSlots } from "./cohort.js";
+export type { RhymeCohortSourceSlot, RhymeCohortToken } from "./cohort.js";
