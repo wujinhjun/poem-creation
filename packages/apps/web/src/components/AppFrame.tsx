@@ -13,9 +13,9 @@ type AppFrameProps = {
 };
 
 const navItems = [
-  { key: "entry", label: "起笔", mark: "笔" },
-  { key: "works", label: "作品", mark: "卷" },
-  { key: "settings", label: "设置", mark: "設" },
+  { key: "entry", label: "起笔" },
+  { key: "works", label: "作品" },
+  { key: "settings", label: "设置" },
 ] as const;
 
 function saveStatusLabel(
@@ -78,7 +78,6 @@ export function AppFrame({
                 className={`rail-item${active ? ' is-active' : ''}`}
                 onClick={() => handleNav(item.key)}
               >
-                <span className='rail-mark'>{item.mark}</span>
                 <span>{item.label}</span>
               </button>
             );
