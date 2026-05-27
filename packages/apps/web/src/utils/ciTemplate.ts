@@ -19,6 +19,22 @@ const COMPACT_CI_BUNDLE_PATH = 'data/ci-tunes-bundle-compact.json';
 
 let ciBundlePromise: Promise<Record<string, CiTemplate>> | null = null;
 
+async function parseCompressedCiResponse(
+  response: Response,
+): Promise<CompactBundleRaw> {
+  const contentEncoding = response.headers.get('content-encoding')?.toLowerCase() ?? '';
+  if (contentEncoding.includes('gzip')) {
+    return await response.json() as CompactBundleRaw;
+  }
+
+  if (!response.body) {
+    throw new Error('词谱压缩包内容为空');
+  }
+
+  const stream = response.body.pipeThrough(new DecompressionStream('gzip'));
+  return await new Response(stream).json() as CompactBundleRaw;
+}
+
 async function fetchCompactCiBundle(): Promise<CompactBundleRaw> {
   if ('DecompressionStream' in globalThis) {
     try {
@@ -26,12 +42,7 @@ async function fetchCompactCiBundle(): Promise<CompactBundleRaw> {
       if (!response.ok) {
         throw new Error(`词谱压缩包加载失败：${response.status}`);
       }
-      if (!response.body) {
-        throw new Error('词谱压缩包内容为空');
-      }
-
-      const stream = response.body.pipeThrough(new DecompressionStream('gzip'));
-      return await new Response(stream).json() as CompactBundleRaw;
+      return await parseCompressedCiResponse(response);
     } catch (error) {
       console.warn('词谱压缩包加载失败，改用原始词谱。', error);
     }
