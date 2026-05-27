@@ -2402,14 +2402,15 @@ h3 {
     min-width: 0;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 12px 0;
+    gap: 12px 14px;
     overflow-x: visible;
     padding-bottom: 12px;
   }
 
   .composer-logical-line {
-    flex: 0 1 350px;
-    max-width: min(100%, 350px);
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
     flex-wrap: wrap;
     justify-content: center;
     gap: 6px 3px;
