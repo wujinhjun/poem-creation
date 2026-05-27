@@ -4,7 +4,7 @@ import type { RhymeDict, ToneConstraint } from "@poem/parser/kernel";
 import type { Genre } from "../constants/poem";
 import { templateForAnalyze } from "./templates";
 
-export function analyzeGrid({
+export async function analyzeGrid({
   genre,
   selectedTune,
   selectedVariant,
@@ -18,11 +18,11 @@ export function analyzeGrid({
   chars: string[][];
   dict: RhymeDict;
   pattern: ToneConstraint[][];
-}): string {
+}): Promise<string> {
   if (!selectedVariant || pattern.length === 0) return "";
   const text = chars.map((row) => row.join("")).join("\n");
   if (!text.trim()) return "";
-  const template = templateForAnalyze(genre, selectedTune, selectedVariant);
+  const template = await templateForAnalyze(genre, selectedTune, selectedVariant);
   if (!template) return "错误: 未找到模板";
 
   const result = analyzeSync(text, template, dict, { variantId: selectedVariant });

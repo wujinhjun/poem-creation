@@ -22,6 +22,7 @@ export function EditorScreen({
   visualLineGroups,
   sectionBreakBeforeGroups,
   analyzeResult,
+  templateMessage,
   onBack,
   onTitleChange,
   onDescriptionChange,
@@ -43,6 +44,7 @@ export function EditorScreen({
   visualLineGroups: number[][];
   sectionBreakBeforeGroups: number[];
   analyzeResult: string;
+  templateMessage: string;
   onBack: () => void;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
@@ -82,7 +84,9 @@ export function EditorScreen({
         />
 
         {pattern.length === 0 ? (
-          <Text style={styles.empty}>未找到格律，请返回重新选择。</Text>
+          <Text style={styles.empty}>
+            {templateMessage || "未找到格律，请返回重新选择。"}
+          </Text>
         ) : (
           <RnComposer
             key={`${activeDraftId}:${selectedTune}:${selectedVariantLabel}`}
