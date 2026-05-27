@@ -92,3 +92,7 @@ export {
 export type { CompactTuneRaw, CompactBundleRaw, CohortedRhymeSlot } from "./ci-loader.js";
 export { buildCohortFromSlots } from "./cohort.js";
 export type { RhymeCohortSourceSlot, RhymeCohortToken } from "./cohort.js";
+
+// 变体相似度
+export { computeVariantSimilarity, findSimilarVariants } from "./variant-similarity.js";
+export type { VariantSimilarityResult } from "./variant-similarity.js";
