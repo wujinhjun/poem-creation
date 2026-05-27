@@ -378,6 +378,7 @@ function applyStructuralEdit(
 
 /**
  * 计算两个 sections 之间的 EditOp 差异。
+ * 使用行级 LCS 对齐，支持检测 splitLine / mergeLines 结构变化。
  * 返回 null 表示差异过大，应回退为 full。
  */
 export function computeDiff(
@@ -385,9 +386,6 @@ export function computeDiff(
   target: CiSectionStored[],
   maxEditRatio = 0.4,
 ): EditOp[] | null {
-  const edits: EditOp[] = [];
-
-  // 展平所有行
   const baseLines = flattenLines(base);
   const targetLines = flattenLines(target);
 
@@ -396,39 +394,209 @@ export function computeDiff(
     totalPositions += [...line].length;
   }
 
-  // 对齐行
-  const maxLines = Math.max(baseLines.length, targetLines.length);
+  // 行级 LCS 对齐
+  const alignment = alignLines(baseLines, targetLines);
+  if (!alignment) return null;
 
-  for (let i = 0; i < maxLines; i++) {
-    const baseDsl = baseLines[i];
-    const targetDsl = targetLines[i];
+  const edits: EditOp[] = [];
+  const { pairs } = alignment;
+  let bi = 0;
+  let ti = 0;
 
-    if (!baseDsl && targetDsl) {
-      // 新增行——无法用现有 EditOp 表达，回退 full
+  while (bi < baseLines.length || ti < targetLines.length) {
+    if (bi < baseLines.length && ti < targetLines.length && pairs.get(bi) === ti) {
+      // 1:1 匹配行
+      const addr = findSectionAddr(base, bi);
+      if (addr[0] < 0) return null;
+      const lineEdits = computeLineDiff(baseLines[bi], targetLines[ti], addr);
+      edits.push(...lineEdits);
+      bi++;
+      ti++;
+    } else if (
+      bi < baseLines.length &&
+      ti + 1 < targetLines.length &&
+      isSplitCandidate(baseLines[bi], targetLines[ti], targetLines[ti + 1])
+    ) {
+      // 1 base → 2 target: splitLine
+      const addr = findSectionAddr(base, bi);
+      if (addr[0] < 0) return null;
+
+      const { nonRhyme: bNR } = stripRhymeToken(baseLines[bi]);
+      const { nonRhyme: t1NR } = stripRhymeToken(targetLines[ti]);
+      const splitCol = t1NR.length;
+
+      edits.push({ op: "splitLine", at: addr, col: splitCol });
+
+      // 对 split 后的两部分分别做字符级 diff
+      const concatTarget = mergeTargetPair(targetLines[ti], targetLines[ti + 1]);
+      const lineEdits = computeLineDiff(baseLines[bi], concatTarget, addr);
+      edits.push(...lineEdits);
+
+      bi++;
+      ti += 2;
+    } else if (
+      bi + 1 < baseLines.length &&
+      ti < targetLines.length &&
+      isMergeCandidate(baseLines[bi], baseLines[bi + 1], targetLines[ti])
+    ) {
+      // 2 base → 1 target: mergeLines
+      const addr = findSectionAddr(base, bi);
+      if (addr[0] < 0) return null;
+
+      edits.push({ op: "mergeLines", at: addr });
+
+      // 字符级差异分布在两条 base 行上，各行使用自己的行地址
+      const b1 = stripRhymeToken(baseLines[bi]);
+      const b2 = stripRhymeToken(baseLines[bi + 1]);
+      const t = stripRhymeToken(targetLines[ti]);
+
+      // 第一条 base 行 → target 前 b1.nonRhyme.length 个非韵脚字符
+      const t1Seg = t.nonRhyme.slice(0, b1.nonRhyme.length) + b1.rhymeToken;
+      const addr1 = findSectionAddr(base, bi);
+      if (addr1[0] < 0) return null;
+      edits.push(...computeLineDiff(baseLines[bi], t1Seg, addr1));
+
+      // 第二条 base 行 → target 剩余非韵脚字符 + target 韵脚
+      const t2Seg = t.nonRhyme.slice(b1.nonRhyme.length) + t.rhymeToken;
+      const addr2 = findSectionAddr(base, bi + 1);
+      if (addr2[0] < 0) return null;
+      edits.push(...computeLineDiff(baseLines[bi + 1], t2Seg, addr2));
+
+      bi += 2;
+      ti++;
+    } else {
+      // 无法处理的结构差异
       return null;
     }
-    if (baseDsl && !targetDsl) {
-      // 删除行——无法表达，回退 full
-      return null;
-    }
-    if (!baseDsl && !targetDsl) continue;
-
-    const [sectionIdx, lineIdx] = findSectionAddr(base, i);
-    if (sectionIdx < 0) return null;
-
-    const lineEdits = computeLineDiff(
-      baseDsl!,
-      targetDsl!,
-      [sectionIdx, lineIdx],
-    );
-    edits.push(...lineEdits);
   }
 
-  // 检查是否超过阈值
+  // 检查是否超过阈值（splitLine/mergeLines 是结构性编辑，不计入）
   const maxEdits = Math.floor(totalPositions * maxEditRatio);
-  if (edits.length > maxEdits) return null;
+  const regularEdits = edits.filter(
+    (e) => e.op !== "splitLine" && e.op !== "mergeLines",
+  );
+  if (regularEdits.length > maxEdits) return null;
 
   return edits;
+}
+
+// ========== 行级对齐（LCS） ==========
+
+/**
+ * 行级 LCS 对齐结果。
+ * pairs: baseIdx → targetIdx 的匹配映射。
+ */
+interface LineAlignment {
+  pairs: Map<number, number>;
+}
+
+/**
+ * 对两个行序列做 LCS 对齐。
+ * 两行"匹配"当且仅当它们的非韵脚部分长度相同。
+ * 返回 null 表示行数差异过大（>50% 行无法对齐）。
+ */
+function alignLines(
+  baseLines: string[],
+  targetLines: string[],
+): LineAlignment | null {
+  const m = baseLines.length;
+  const n = targetLines.length;
+
+  // LCS DP
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (linesStructurallyMatch(baseLines[i - 1], targetLines[j - 1])) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  // 检查总非韵脚字符数是否兼容（防止完全无关的 sections 进入）
+  const totalBaseNonRhyme = baseLines.reduce((sum, l) => sum + stripRhymeToken(l).nonRhyme.length, 0);
+  const totalTargetNonRhyme = targetLines.reduce((sum, l) => sum + stripRhymeToken(l).nonRhyme.length, 0);
+  if (totalBaseNonRhyme !== totalTargetNonRhyme) return null;
+
+  // 回溯构建匹配对
+  const pairs = new Map<number, number>();
+  let i = m;
+  let j = n;
+  while (i > 0 && j > 0) {
+    if (linesStructurallyMatch(baseLines[i - 1], targetLines[j - 1])) {
+      pairs.set(i - 1, j - 1);
+      i--;
+      j--;
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      i--;
+    } else {
+      j--;
+    }
+  }
+
+  return { pairs };
+}
+
+/** 两行结构匹配：非韵脚部分长度相同 */
+function linesStructurallyMatch(a: string, b: string): boolean {
+  const sa = stripRhymeToken(a);
+  const sb = stripRhymeToken(b);
+  return sa.nonRhyme.length === sb.nonRhyme.length;
+}
+
+// ========== Split / Merge 检测 ==========
+
+/**
+ * 检测 1 base → 2 target 是否为合法的 splitLine。
+ * 条件：两 target 的非韵脚部分拼接后长度等于 base 的非韵脚部分。
+ */
+function isSplitCandidate(
+  baseLine: string,
+  targetLine1: string,
+  targetLine2: string,
+): boolean {
+  const b = stripRhymeToken(baseLine);
+  const t1 = stripRhymeToken(targetLine1);
+  const t2 = stripRhymeToken(targetLine2);
+  return b.nonRhyme.length === t1.nonRhyme.length + t2.nonRhyme.length;
+}
+
+/**
+ * 检测 2 base → 1 target 是否为合法的 mergeLines。
+ * 条件：两 base 的非韵脚部分拼接后长度等于 target 的非韵脚部分。
+ */
+function isMergeCandidate(
+  baseLine1: string,
+  baseLine2: string,
+  targetLine: string,
+): boolean {
+  const b1 = stripRhymeToken(baseLine1);
+  const b2 = stripRhymeToken(baseLine2);
+  const t = stripRhymeToken(targetLine);
+  return b1.nonRhyme.length + b2.nonRhyme.length === t.nonRhyme.length;
+}
+
+/**
+ * 将两条 target 行合并为一条"虚拟 base 行"用于字符级 diff。
+ * 第一行剥离韵脚 token，第二行保留韵脚 token。
+ */
+function mergeTargetPair(line1: string, line2: string): string {
+  const { nonRhyme: nr1 } = stripRhymeToken(line1);
+  const r2 = stripRhymeToken(line2);
+  // 如果 line1 末尾有韵脚，将其移除（split 后韵脚在第二部分）
+  return nr1 + r2.nonRhyme + r2.rhymeToken;
+}
+
+/** 从 DSL 行中剥离韵脚 token，返回非韵脚部分和韵脚 token */
+function stripRhymeToken(dsl: string): { nonRhyme: string; rhymeToken: string } {
+  const info = extractRhymeToken(dsl);
+  if (!info) return { nonRhyme: dsl, rhymeToken: "" };
+  const len = info.xieyun ? 2 : 1;
+  return {
+    nonRhyme: dsl.slice(0, dsl.length - len),
+    rhymeToken: dsl.slice(dsl.length - len),
+  };
 }
 
 function flattenLines(sections: CiSectionStored[]): string[] {
@@ -487,7 +655,6 @@ function computeLineDiff(
     edits.push({ op: "dropRhyme", at });
   } else if (baseRhyme && targetRhyme) {
     if (baseRhyme.tone !== targetRhyme.tone) {
-      // 韵调变化：通过 setTone 在韵脚位置表达
       const tone = targetRhyme.tone === "ping" ? "P" : "Z";
       edits.push({ op: "setTone", at, col: baseNonRhyme.length, tone });
     }
@@ -506,23 +673,18 @@ function computeLineDiff(
     const tc = targetChars[i];
 
     if (!bc && tc) {
-      // 插入：位置 cap 在 base 非韵脚长度以内（插入到韵脚之前）
-      // 非韵脚部分只允许 F/P/Z 三种 token
       if (tc === "F" || tc === "P" || tc === "Z") {
         const insertPos = Math.min(i, baseChars.length);
         edits.push({ op: "insertChar", at, col: insertPos, cons: tc });
       }
-      // 其他字符（如 +，理论上不会出现在非韵脚部分）安全跳过
       continue;
     }
     if (bc && !tc) {
-      // 删除：从 base 的非韵脚位置删除
       edits.push({ op: "removeChar", at, col: i });
       continue;
     }
     if (bc === tc) continue;
 
-    // 字符不同：setTone 或 setFlex
     if (tc === "F") {
       edits.push({ op: "setFlex", at, col: i });
     } else if (tc === "P" || tc === "Z") {

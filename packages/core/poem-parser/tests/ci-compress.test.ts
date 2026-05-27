@@ -357,12 +357,12 @@ describe("computeDiff", () => {
     expect(result).toBeNull();
   });
 
-  it("行数不同应回退 null", () => {
+  it("行数不同且非合法 split/merge 应回退 null", () => {
     const base: CiSectionStored[] = [
       { lines: ["FPFZZPp"] },
     ];
     const target: CiSectionStored[] = [
-      { lines: ["FPFZZPp", "ZFPPFZp"] }, // 多一行
+      { lines: ["FPFZZPp", "ZFPPFZp"] }, // 多一行但总长度不对齐
     ];
     const result = computeDiff(base, target);
     expect(result).toBeNull();
@@ -379,6 +379,92 @@ describe("computeDiff", () => {
     const edits = computeDiff(base, target);
     expect(edits).not.toBeNull();
     expect(edits!).toContainEqual({ op: "setXieyun", at: [0, 0], value: true });
+
+    const roundTripped = applyEdits(base, edits!);
+    expect(roundTripped).toEqual(target);
+  });
+
+  it("应检测 splitLine 并往返还原", () => {
+    // 1 base line (7 chars) → 2 target lines (3 + 4 chars)
+    const base: CiSectionStored[] = [
+      { lines: ["FPFZZPp"] },
+    ];
+    const target: CiSectionStored[] = [
+      { lines: ["FPF", "ZZPp"] }, // split at col 3
+    ];
+
+    const edits = computeDiff(base, target);
+    expect(edits).not.toBeNull();
+    expect(edits!).toContainEqual({ op: "splitLine", at: [0, 0], col: 3 });
+
+    const roundTripped = applyEdits(base, edits!);
+    expect(roundTripped).toEqual(target);
+  });
+
+  it("应检测 splitLine 配合 setTone 差异", () => {
+    // 摊破：1 base line (7 chars P tone) → 2 target lines with tone change
+    const base: CiSectionStored[] = [
+      { lines: ["FZFPPZPp"] },
+    ];
+    const target: CiSectionStored[] = [
+      { lines: ["FZF", "ZPZPp"] }, // split at 3, col 3 P→Z
+    ];
+
+    const edits = computeDiff(base, target);
+    expect(edits).not.toBeNull();
+    expect(edits!).toContainEqual({ op: "splitLine", at: [0, 0], col: 3 });
+
+    const roundTripped = applyEdits(base, edits!);
+    expect(roundTripped).toEqual(target);
+  });
+
+  it("应检测 mergeLines 并往返还原", () => {
+    // 2 base lines (3 + 4 chars) → 1 target line (7 chars)
+    const base: CiSectionStored[] = [
+      { lines: ["FPF", "ZZPp"] },
+    ];
+    const target: CiSectionStored[] = [
+      { lines: ["FPFZZPp"] }, // merged
+    ];
+
+    const edits = computeDiff(base, target);
+    expect(edits).not.toBeNull();
+    expect(edits!).toContainEqual({ op: "mergeLines", at: [0, 0] });
+
+    const roundTripped = applyEdits(base, edits!);
+    expect(roundTripped).toEqual(target);
+  });
+
+  it("应检测 mergeLines 配合 setTone 差异", () => {
+    const base: CiSectionStored[] = [
+      { lines: ["FPF", "ZPZp"] },
+    ];
+    const target: CiSectionStored[] = [
+      { lines: ["FPFZZPp"] }, // merged + col 3 F→Z
+    ];
+
+    const edits = computeDiff(base, target);
+    expect(edits).not.toBeNull();
+    expect(edits!).toContainEqual({ op: "mergeLines", at: [0, 0] });
+
+    const roundTripped = applyEdits(base, edits!);
+    expect(roundTripped).toEqual(target);
+  });
+
+  it("多行混合场景应正确检测 split/merge + 普通 diff", () => {
+    // 4 base lines → 4 target lines, with one split
+    const base: CiSectionStored[] = [
+      { lines: ["FPFZZPp", "ZFPPFZp", "FZFPPZZ", "FPFZZPZ"] },
+    ];
+    const target: CiSectionStored[] = [
+      { lines: ["FPF", "ZZPp", "ZFPPFZp", "FZFPPZZ", "FPFZZPZ"] },
+    ];
+    // base[0] "FPFZZPp" split into target[0]"FPF" + target[1]"ZZPp"
+    // rest are 1:1
+
+    const edits = computeDiff(base, target);
+    expect(edits).not.toBeNull();
+    expect(edits!).toContainEqual({ op: "splitLine", at: [0, 0], col: 3 });
 
     const roundTripped = applyEdits(base, edits!);
     expect(roundTripped).toEqual(target);
