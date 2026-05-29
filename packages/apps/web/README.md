@@ -50,7 +50,7 @@ pattern → Composer 渲染逐字格子
 | `tone-lookup.json` | ~200KB | 初始化 | 浏览器韵书（实时查平仄） |
 | `ci-tunes-bundle-compact.json` | 1.1MB / 132KB gzip | 选中词牌时 | 词牌紧凑格律 DSL |
 
-`public/data/` 下的数据文件由 Vite 启动或构建时从 `packages/core/*/data/` 复制生成，不在仓库里提交副本。
+`public/data/` 下的数据文件由 Vite 启动或构建时从 `packages/core/*/data/` 复制生成，不在仓库里提交副本。开发时如果修改了 core 数据文件，需要重启 web dev server 才会重新复制。
 
 ## 校验规则
 
