@@ -85,10 +85,10 @@ export const RESCUE_TEMPLATES: RescueTemplate[] = [
     id: "wuyan-guping-jiu",
     category: "guping-jiou",
     lineLength: 5,
-    base: ["Z", "Z", "P", "Z", "P"],
-    nao:  ["Z", "P", "Z", "P", "P"],  // col1 Z→P 救孤平
-    naoCol: 2,   // 原 P→Z（犯孤平）
-    jiuCol: 1,   // 原 Z→P（救）
+    base: ["P", "P", "Z", "Z", "P"],  // 平平仄仄平
+    nao:  ["Z", "P", "P", "Z", "P"],  // 仄平平仄平: col0 P→Z(拗,孤平), col2 Z→P(救)
+    naoCol: 0,
+    jiuCol: 2,
     requiresCounterpart: false,
     description: "五言孤平拗救：平平仄仄平 → 仄平平仄平。第一字拗仄犯孤平，第三字改平救之。",
   },
@@ -97,8 +97,8 @@ export const RESCUE_TEMPLATES: RescueTemplate[] = [
     id: "wuyan-sansi-hujiu",
     category: "sansi-hujiou",
     lineLength: 5,
-    base: ["P", "P", "P", "Z", "Z"],
-    nao:  ["P", "P", "Z", "P", "Z"],  // col2 P→Z, col3 Z→P
+    base: ["P", "P", "P", "Z", "Z"],  // 平平平仄仄
+    nao:  ["P", "P", "Z", "P", "Z"],  // 平平仄平仄: col2 P→Z(拗), col3 Z→P(救)
     naoCol: 2,
     jiuCol: 3,
     requiresCounterpart: false,
@@ -111,34 +111,34 @@ export const RESCUE_TEMPLATES: RescueTemplate[] = [
     id: "wuyan-daao-jiu",
     category: "daao-jiou",
     lineLength: 5,
-    base: ["Z", "Z", "P", "P", "Z"],
-    nao:  ["Z", "Z", "P", "Z", "Z"],  // col3 P→Z（大拗）
+    base: ["Z", "Z", "P", "P", "Z"],  // 仄仄平平仄
+    nao:  ["Z", "Z", "P", "Z", "Z"],  // 仄仄平仄仄: col3 P→Z(大拗)
     naoCol: 3,
-    jiuCol: -1,  // 需对句救
+    jiuCol: -1,
     requiresCounterpart: true,
     counterpart: {
-      base: ["P", "P", "P", "Z", "P"],
-      jiu:  ["P", "P", "Z", "P", "P"],  // col2 P→Z（救大拗）
-      jiuCol: 2,
+      base: ["P", "P", "Z", "Z", "P"],  // 平平仄仄平
+      jiu:  ["P", "P", "Z", "P", "P"],  // 平平仄平平: col3 Z→P(救大拗)
+      jiuCol: 3,
     },
-    description: "五言大拗对句救：出句仄仄平平仄 → 仄仄平仄仄（第四字拗仄），对句平平平仄平 → 平平仄平平（第三字改平救）。",
+    description: "五言大拗对句救：出句仄仄平平仄 → 仄仄平仄仄（第四字拗仄），对句平平仄仄平 → 平平仄平平（第四字改平救）。",
   },
 
   {
     id: "wuyan-ban-ao-duijiu",
     category: "duiju-xiangjiou",
     lineLength: 5,
-    base: ["Z", "Z", "P", "P", "Z"],
-    nao:  ["Z", "Z", "Z", "P", "Z"],  // col2 P→Z（半拗）
+    base: ["Z", "Z", "P", "P", "Z"],  // 仄仄平平仄
+    nao:  ["Z", "Z", "Z", "P", "Z"],  // 仄仄仄平仄: col2 P→Z(半拗)
     naoCol: 2,
     jiuCol: -1,
     requiresCounterpart: true,
     counterpart: {
-      base: ["P", "P", "P", "Z", "P"],
-      jiu:  ["P", "P", "Z", "P", "P"],  // col2 P→Z（救）
-      jiuCol: 2,
+      base: ["P", "P", "Z", "Z", "P"],  // 平平仄仄平
+      jiu:  ["P", "P", "Z", "P", "P"],  // 平平仄平平: col3 Z→P(救)
+      jiuCol: 3,
     },
-    description: "五言半拗对句救：出句仄仄平平仄 → 仄仄仄平仄（第三字拗仄，可救可不救），若救则对句第三字改平。",
+    description: "五言半拗对句救：出句仄仄平平仄 → 仄仄仄平仄（第三字拗仄，可救可不救），若救则对句第四字改平。",
   },
 
   // ===== 五言 本句自救 (对句侧) =====
@@ -147,12 +147,12 @@ export const RESCUE_TEMPLATES: RescueTemplate[] = [
     id: "wuyan-duiju-benju-jiu",
     category: "benju-zijiou",
     lineLength: 5,
-    base: ["P", "P", "P", "Z", "P"],
-    nao:  ["Z", "P", "Z", "P", "P"],  // col0 P→Z, col2 P→Z（对句自救）
+    base: ["P", "P", "Z", "Z", "P"],  // 平平仄仄平
+    nao:  ["Z", "P", "P", "Z", "P"],  // 仄平平仄平: col0 P→Z(拗,孤平), col2 Z→P(救)
     naoCol: 0,
     jiuCol: 2,
     requiresCounterpart: false,
-    description: "五言对句自救：平平平仄平 → 仄平平仄平。第一字拗仄，第三字改平救（同孤平救逻辑在对句侧的表现）。",
+    description: "五言对句自救（孤平救在对句侧的表现）：平平仄仄平 → 仄平平仄平。第一字拗仄犯孤平，第三字改平救之。",
   },
 
   // ===== 七言 本句自救 =====
@@ -161,8 +161,8 @@ export const RESCUE_TEMPLATES: RescueTemplate[] = [
     id: "qiyan-guping-jiu",
     category: "guping-jiou",
     lineLength: 7,
-    base: ["Z", "Z", "P", "P", "Z", "Z", "P"],
-    nao:  ["Z", "Z", "Z", "P", "Z", "P", "P"],  // col2 P→Z（孤平）, col4 Z→P（救）
+    base: ["Z", "Z", "P", "P", "Z", "Z", "P"],  // 仄仄平平仄仄平
+    nao:  ["Z", "Z", "Z", "P", "P", "Z", "P"],  // 仄仄仄平平仄平: col2 P→Z(拗,孤平), col4 Z→P(救)
     naoCol: 2,
     jiuCol: 4,
     requiresCounterpart: false,
@@ -173,12 +173,12 @@ export const RESCUE_TEMPLATES: RescueTemplate[] = [
     id: "qiyan-sansi-hujiu",
     category: "sansi-hujiou",
     lineLength: 7,
-    base: ["P", "P", "Z", "Z", "P", "Z", "Z"],
-    nao:  ["P", "P", "Z", "Z", "Z", "P", "Z"],  // col4 Z→Z(ok), col5 Z→P(jiu)
-    naoCol: 4,   // 第三字（实际第七字位置）
-    jiuCol: 5,   // 第四字（实际第六字位置）
+    base: ["Z", "Z", "P", "P", "P", "Z", "Z"],  // 仄仄平平平仄仄
+    nao:  ["Z", "Z", "P", "P", "Z", "P", "Z"],  // 仄仄平平仄平仄: col4 P→Z(拗), col5 Z→P(救)
+    naoCol: 4,
+    jiuCol: 5,
     requiresCounterpart: false,
-    description: "七言三四互救（特种拗救）：平平仄仄平平仄 → 平平仄仄仄平仄。第五字拗仄，第六字改平救之。",
+    description: "七言特种拗救（三四互救）：仄仄平平平仄仄 → 仄仄平平仄平仄。第五字拗仄，第六字改平救之。",
   },
 
   // ===== 七言 对句相救 =====
@@ -187,14 +187,14 @@ export const RESCUE_TEMPLATES: RescueTemplate[] = [
     id: "qiyan-daao-jiu",
     category: "daao-jiou",
     lineLength: 7,
-    base: ["P", "P", "Z", "Z", "P", "P", "Z"],
-    nao:  ["P", "P", "Z", "Z", "P", "Z", "Z"],  // col5 P→Z（大拗）
+    base: ["P", "P", "Z", "Z", "P", "P", "Z"],  // 平平仄仄平平仄
+    nao:  ["P", "P", "Z", "Z", "P", "Z", "Z"],  // 平平仄仄平仄仄: col5 P→Z(大拗)
     naoCol: 5,
     jiuCol: -1,
     requiresCounterpart: true,
     counterpart: {
-      base: ["Z", "Z", "P", "P", "Z", "Z", "P"],
-      jiu:  ["Z", "Z", "P", "Z", "P", "Z", "P"],  // col4 P→Z（救大拗）
+      base: ["Z", "Z", "P", "P", "Z", "Z", "P"],  // 仄仄平平仄仄平
+      jiu:  ["Z", "Z", "P", "P", "P", "Z", "P"],  // 仄仄平平平仄平: col4 Z→P(救大拗)
       jiuCol: 4,
     },
     description: "七言大拗对句救：出句平平仄仄平平仄 → 平平仄仄平仄仄（第六字拗仄），对句仄仄平平仄仄平 → 仄仄平平平仄平（第五字改平救）。",
@@ -206,17 +206,17 @@ export const RESCUE_TEMPLATES: RescueTemplate[] = [
     id: "qiyan-shuangjiu",
     category: "duiju-xiangjiou",
     lineLength: 7,
-    base: ["P", "P", "Z", "Z", "P", "P", "Z"],
-    nao:  ["P", "P", "Z", "Z", "Z", "Z", "Z"],  // col4 P→Z, col5 P→Z（大拗）
-    naoCol: 4,
+    base: ["P", "P", "Z", "Z", "P", "P", "Z"],  // 平平仄仄平平仄
+    nao:  ["P", "P", "Z", "Z", "P", "Z", "Z"],  // 平平仄仄平仄仄: col5 P→Z(大拗)
+    naoCol: 5,
     jiuCol: -1,
     requiresCounterpart: true,
     counterpart: {
-      base: ["Z", "Z", "P", "P", "Z", "Z", "P"],
-      jiu:  ["Z", "Z", "Z", "P", "Z", "P", "P"],  // col2 P→Z, col4 Z→P, col5 Z→P
+      base: ["Z", "Z", "P", "P", "Z", "Z", "P"],  // 仄仄平平仄仄平
+      jiu:  ["Z", "Z", "Z", "P", "P", "Z", "P"],  // 仄仄仄平平仄平: col2 P→Z(拗,自救), col4 Z→P(救出句大拗)
       jiuCol: 4,
     },
-    description: "七言双救：出句第六字拗仄（大拗），对句第五字改平救出句大拗，同时第三字拗仄的对句自身也形成自救结构。",
+    description: "七言双救：出句第六字拗仄（大拗），对句第五字改平救出句大拗，同时第三字拗仄的对句自身也形成孤平自救结构。",
   },
 ];
 
@@ -232,16 +232,92 @@ export function getRescueTemplatesByCategory(category: RescueCategory): RescueTe
   return RESCUE_TEMPLATES.filter((t) => t.category === category);
 }
 
-/** 按行长度和 base 序列匹配拗救模板 */
+/** 按行长度和 base 序列匹配拗救模板（仅匹配单行模板，不匹配 requiresCounterpart 模板） */
 export function matchRescueTemplate(
   lineLength: 5 | 7,
   actualTones: ToneMark[],
 ): RescueTemplate | undefined {
-  const candidates = RESCUE_TEMPLATES.filter((t) => t.lineLength === lineLength);
+  const candidates = RESCUE_TEMPLATES.filter(
+    (t) => t.lineLength === lineLength && !t.requiresCounterpart,
+  );
   return candidates.find((t) => {
     if (t.nao.length !== actualTones.length) return false;
     return t.nao.every((expected, i) => expected === "F" || expected === actualTones[i]);
   });
+}
+
+/**
+ * 扩展版：可匹配 requiresCounterpart 模板，需同时提供对句实际声调。
+ * 返回匹配的模板或 undefined。仅当出句和对句都满足模板才返回。
+ */
+export function matchRescueTemplateWithCounterpart(
+  lineLength: 5 | 7,
+  upperTones: ToneMark[],
+  lowerTones: ToneMark[],
+): RescueTemplate | undefined {
+  return RESCUE_TEMPLATES.find((t) => {
+    if (t.lineLength !== lineLength || !t.requiresCounterpart || !t.counterpart) return false;
+    if (t.nao.length !== upperTones.length || t.counterpart.jiu.length !== lowerTones.length) return false;
+    const upperMatch = t.nao.every((e, i) => e === "F" || e === upperTones[i]);
+    const lowerMatch = t.counterpart.jiu.every((e, i) => e === "F" || e === lowerTones[i]);
+    return upperMatch && lowerMatch;
+  });
+}
+
+/** 验证模板数据一致性，返回错误信息数组（空数组表示通过） */
+export function validateRescueTemplates(): string[] {
+  const errors: string[] = [];
+
+  for (const t of RESCUE_TEMPLATES) {
+    const id = t.id;
+
+    // base 和 nao 长度一致
+    if (t.base.length !== t.lineLength || t.nao.length !== t.lineLength) {
+      errors.push(`${id}: base/nao length != lineLength ${t.lineLength}`);
+    }
+
+    // naoCol 指向真实变化
+    if (t.naoCol >= 0 && t.naoCol < t.base.length) {
+      if (t.base[t.naoCol] === t.nao[t.naoCol]) {
+        errors.push(`${id}: naoCol=${t.naoCol} but base[${t.naoCol}]=${t.base[t.naoCol]} === nao[${t.naoCol}]=${t.nao[t.naoCol]}`);
+      }
+    } else {
+      errors.push(`${id}: naoCol=${t.naoCol} out of range [0, ${t.lineLength})`);
+    }
+
+    // 同句救时，jiuCol 指向真实变化且方向与 nao 互补
+    if (t.jiuCol >= 0) {
+      if (t.jiuCol >= t.base.length) {
+        errors.push(`${id}: jiuCol=${t.jiuCol} out of range`);
+      } else if (t.base[t.jiuCol] === t.nao[t.jiuCol]) {
+        errors.push(`${id}: jiuCol=${t.jiuCol} but base[${t.jiuCol}] === nao[${t.jiuCol}]`);
+      }
+    }
+
+    // requiresCounterpart 时检查 counterpart
+    if (t.requiresCounterpart) {
+      if (!t.counterpart) {
+        errors.push(`${id}: requiresCounterpart but no counterpart`);
+      } else {
+        const c = t.counterpart;
+        if (c.base.length !== t.lineLength) {
+          errors.push(`${id}: counterpart.base length != lineLength`);
+        }
+        if (c.jiu.length !== t.lineLength) {
+          errors.push(`${id}: counterpart.jiu length != lineLength`);
+        }
+        if (c.jiuCol >= 0 && c.jiuCol < c.base.length) {
+          if (c.base[c.jiuCol] === c.jiu[c.jiuCol]) {
+            errors.push(`${id}: counterpart.jiuCol=${c.jiuCol} but no change`);
+          }
+        } else if (c.jiuCol >= 0) {
+          errors.push(`${id}: counterpart.jiuCol=${c.jiuCol} out of range`);
+        }
+      }
+    }
+  }
+
+  return errors;
 }
 
 /**

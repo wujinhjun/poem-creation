@@ -7,6 +7,8 @@ export {
   getRescueTemplatesByLength,
   getRescueTemplatesByCategory,
   matchRescueTemplate,
+  matchRescueTemplateWithCounterpart,
+  validateRescueTemplates,
   tonesToMarks,
 } from "./templates.js";
 export type { RescueTemplate, RescueCategory } from "./templates.js";
