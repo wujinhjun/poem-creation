@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { resolve } from "node:path";
 import { analyze, analyzeLine } from "./_helpers.js";
 import { analyzeSync } from "../src/analyzer/kernel.js";
@@ -73,6 +74,27 @@ describe("compact ci bundle 集成", () => {
     expect(result.ast.lines).toHaveLength(19);
     expect(result.bestMatch?.templateId).toBe("水调歌头");
     expect(result.lineValidations.length).toBe(19);
+  });
+
+  it("gz 和 JSON 格式应加载出相同的结果，且不抛异常", () => {
+    clearCiBundleCache();
+
+    const jsonRaw = JSON.parse(
+      readFileSync(resolve("data", "ci-tunes-bundle-compact.json"), "utf8"),
+    ) as CompactBundleRaw;
+
+    // 解压 gz 后应与 JSON 内容一致
+    const gzBuf = readFileSync(resolve("data", "ci-tunes-bundle-compact.json.gz"));
+    const gzJson = JSON.parse(gunzipSync(gzBuf).toString("utf8"));
+
+    // 两个来源都应能通过 loadCiBundle (no null variants)
+    const bundleJson = loadCiBundle(jsonRaw);
+    const bundleGz = loadCiBundle(gzJson as CompactBundleRaw);
+
+    expect(bundleJson["水调歌头"]).toBeDefined();
+    expect(bundleGz["水调歌头"]).toBeDefined();
+    expect(bundleJson["水调歌头"].variants.length)
+      .toBe(bundleGz["水调歌头"].variants.length);
   });
 });
 

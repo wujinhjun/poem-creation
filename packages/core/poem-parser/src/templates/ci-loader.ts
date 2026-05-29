@@ -32,7 +32,7 @@ export interface CompactTuneRaw {
   id: string;
   name: string;
   aliases?: string[];
-  variants: Array<CiVariantStored | null>;
+  variants: Array<CiVariantStored>;
 }
 
 export type CompactBundleRaw = Record<string, CompactTuneRaw>;
@@ -64,8 +64,14 @@ export function buildCohortIndex(
 
 // ========== 装载与缓存 ==========
 
+const DEFAULT_NAMESPACE = "default";
+
 const _templateCache = new Map<string, CiTemplate>();
 const _cohortCache = new Map<string, CohortedRhymeSlot[]>();
+
+function nsKey(namespace: string, key: string): string {
+  return `${namespace}:${key}`;
+}
 
 /**
  * 同步装载紧凑格式 bundle，返回物化后的 CiTemplate 映射。
@@ -74,16 +80,17 @@ const _cohortCache = new Map<string, CohortedRhymeSlot[]>();
  * 结果缓存，重复调用返回同一份数据。
  *
  * @param raw 紧凑格式 JSON 数据
+ * @param namespace 缓存命名空间，多 bundle 场景下避免 key 冲突（默认 "default"）
  * @returns 词牌名 → CiTemplate 的映射
  */
 export function loadCiBundle(
   raw: CompactBundleRaw,
+  namespace: string = DEFAULT_NAMESPACE,
 ): Record<string, CiTemplate> {
   // 构建 canonical map
   const canonicalMap = new Map<string, CiVariantFull>();
   for (const tune of Object.values(raw)) {
     for (const v of tune.variants) {
-      if (!v) continue;
       if (v.kind === "full") {
         canonicalMap.set(v.id, v);
       }
@@ -93,10 +100,8 @@ export function loadCiBundle(
   const result: Record<string, CiTemplate> = Object.create(null);
 
   for (const [tuneName, rawTune] of Object.entries(raw)) {
-    const cacheKey = rawTune.id;
-    const storedVariants = rawTune.variants.filter(
-      (variant): variant is CiVariantStored => variant !== null,
-    );
+    const cacheKey = nsKey(namespace, rawTune.id);
+    const storedVariants = rawTune.variants;
 
     // 检查缓存
     const cached = _templateCache.get(cacheKey);
@@ -124,7 +129,7 @@ export function loadCiBundle(
     // 为每个变体构建 cohort 索引
     for (let index = 0; index < storedVariants.length; index++) {
       const stored = storedVariants[index];
-      const cohortKey = stored.id;
+      const cohortKey = nsKey(namespace, stored.id);
       if (!_cohortCache.has(cohortKey)) {
         _cohortCache.set(cohortKey, buildCohortIndex(expandedVariants[index].sections));
       }
@@ -140,16 +145,30 @@ export function loadCiBundle(
  * 获取指定变体的韵组 cohort 索引。
  * 必须在 loadCiBundle 之后调用。
  */
-export function getCohortIndex(variantId: string): CohortedRhymeSlot[] {
-  return _cohortCache.get(variantId) ?? [];
+export function getCohortIndex(
+  variantId: string,
+  namespace: string = DEFAULT_NAMESPACE,
+): CohortedRhymeSlot[] {
+  return _cohortCache.get(nsKey(namespace, variantId)) ?? [];
 }
 
 /**
  * 清除缓存（主要用于测试）。
+ * 不传 namespace 清除全部缓存。
  */
-export function clearCiBundleCache(): void {
-  _templateCache.clear();
-  _cohortCache.clear();
+export function clearCiBundleCache(namespace?: string): void {
+  if (namespace) {
+    const prefix = `${namespace}:`;
+    for (const key of _templateCache.keys()) {
+      if (key.startsWith(prefix)) _templateCache.delete(key);
+    }
+    for (const key of _cohortCache.keys()) {
+      if (key.startsWith(prefix)) _cohortCache.delete(key);
+    }
+  } else {
+    _templateCache.clear();
+    _cohortCache.clear();
+  }
 }
 
 export type { CohortedRhymeSlot } from "./cohort.js";
