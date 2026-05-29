@@ -178,6 +178,36 @@ describe("computeVariantSimilarity", () => {
     expect(result.structure).toBeLessThan(0.7); // 1/3 line match ratio + section penalty
   });
 
+  it("前段完全相同、后段多行时前段分数不应被后段惩罚折损", () => {
+    // 回归二轮 review P2：lineSimSum 全局累加器 bug
+    // 第 1 阕 4 行完全相同，第 2 阕 a 有 4 行、b 有 5 行（多 1 行）
+    const line5 = (c: number) => ({
+      charCount: c, pattern: [P(), Z(), P(), Z(), P()] as Array<{ type: string; tone?: number }>,
+      isRhymeLine: true, rhymeType: "ping" as const,
+    });
+    const a = makeVariant("a", [
+      {
+        lines: [line5(5), line5(5), line5(5), line5(5)],
+      },
+      {
+        lines: [line5(5), line5(5), line5(5), line5(5)],
+      },
+    ]);
+    const b = makeVariant("b", [
+      {
+        lines: [line5(5), line5(5), line5(5), line5(5)],  // 第 1 阕：完全相同
+      },
+      {
+        lines: [line5(5), line5(5), line5(5), line5(5), line5(5)],  // 第 2 阕：多 1 行
+      },
+    ]);
+    const result = computeVariantSimilarity(a, b);
+    // 第 1 阕 4 行全匹配，不应被第 2 阕多 1 行大幅折损
+    expect(result.structure).toBeGreaterThan(0.8);
+    // 第 2 阕多一行，不会满分
+    expect(result.structure).toBeLessThan(1.0);
+  });
+
   it("rhyme position shift should lower rhyme score", () => {
     const a = makeVariant("a", [
       {
