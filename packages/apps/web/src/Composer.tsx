@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ClipboardEvent, KeyboardEvent, MouseEvent } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 import {
   createEditorPatternSignature,
   createEmptyEditorGrid,
   normalizeEditorInput,
-  pasteEditorTextAt,
   writeEditorCharsAt,
 } from '@poem/editor-core';
 import { Tone } from '@poem/parser/kernel';
@@ -22,11 +21,12 @@ import {
   useEditorSelection,
 } from './hooks/useEditorSelection';
 import type { CellPosition } from './hooks/useEditorSelection';
-
-type GridState = {
-  signature: string;
-  grid: string[][];
-};
+import {
+  cloneEditorGrid,
+  useEditorHistory,
+} from './hooks/useEditorHistory';
+import type { EditorGridState } from './hooks/useEditorHistory';
+import { useEditorClipboard } from './hooks/useEditorClipboard';
 
 function createInitialGrid(
   pattern: ToneConstraint[][],
@@ -36,10 +36,6 @@ function createInitialGrid(
   return pattern.map((row, lineIdx) =>
     row.map((_, colIdx) => initialChars[lineIdx]?.[colIdx] ?? ''),
   );
-}
-
-function cloneGrid(grid: string[][]): string[][] {
-  return grid.map((row) => [...row]);
 }
 
 /** 正文编辑器 */
@@ -70,7 +66,7 @@ export default function Composer({
     () => createEditorPatternSignature(pattern),
     [pattern],
   );
-  const [gridState, setGridState] = useState<GridState>(() => ({
+  const [gridState, setGridState] = useState<EditorGridState>(() => ({
     signature: patternSignature,
     grid: createInitialGrid(pattern, initialChars),
   }));
@@ -79,7 +75,6 @@ export default function Composer({
       ? gridState.grid
       : createEmptyEditorGrid(pattern);
   const gridRef = useRef(grid);
-  const historyRef = useRef<string[][][]>([]);
   const activeInputRef = useRef<HTMLInputElement | null>(null);
   const composingRef = useRef(false);
   const pendingCompleteRef = useRef<string[][] | null>(null);
@@ -95,6 +90,12 @@ export default function Composer({
     extendSelection,
     selectCell,
   } = useEditorSelection({ pattern, gridRef, focusTarget });
+  const { pushHistory, undo } = useEditorHistory({
+    patternSignature,
+    setDraft,
+    clearSelection,
+    setGridState,
+  });
   const groups = useMemo(
     () =>
       visualLineGroups && visualLineGroups.length > 0
@@ -113,35 +114,6 @@ export default function Composer({
       activeInputRef.current?.focus();
     });
   }, [activeCell]);
-
-  useEffect(() => {
-    historyRef.current = [];
-  }, [patternSignature]);
-
-  const pushHistory = useCallback((source: string[][]) => {
-    historyRef.current = [...historyRef.current.slice(-49), cloneGrid(source)];
-  }, []);
-
-  const undo = useCallback(() => {
-    const previous = historyRef.current.at(-1);
-    if (!previous) return;
-    historyRef.current = historyRef.current.slice(0, -1);
-    setDraft('');
-    clearSelection();
-    setGridState({ signature: patternSignature, grid: cloneGrid(previous) });
-  }, [clearSelection, patternSignature]);
-
-  const clearSelectionInGrid = useCallback(
-    (source: string[][]) => {
-      if (selectedPositions.length === 0) return source;
-      const next = cloneGrid(source);
-      selectedPositions.forEach(({ line, col }) => {
-        if (next[line]) next[line][col] = '';
-      });
-      return next;
-    },
-    [selectedPositions],
-  );
 
   const writeCharsAt = useCallback(
     (lineIdx: number, colIdx: number, chars: string[]) => {
@@ -180,7 +152,7 @@ export default function Composer({
             : createEmptyEditorGrid(pattern);
         if (!source[lineIdx]?.[colIdx]) return prev;
         pushHistory(source);
-        const next = source.map((row) => [...row]);
+        const next = cloneEditorGrid(source);
         if (next[lineIdx]) next[lineIdx][colIdx] = '';
         return { signature: patternSignature, grid: next };
       });
@@ -260,101 +232,26 @@ export default function Composer({
     [lastFilledCol, pattern, setActiveCell],
   );
 
-  const pasteAt = useCallback(
-    (lineIdx: number, colIdx: number, text: string) => {
-      const normalized = normalizeEditorInput(text);
-      if (normalized.length === 0) return;
-      setGridState((prev) => {
-        const source =
-          prev.signature === patternSignature
-            ? prev.grid
-            : createEmptyEditorGrid(pattern);
-        pushHistory(source);
-        const result = pasteEditorTextAt(
-          source,
-          pattern,
-          lineIdx,
-          colIdx,
-          text,
-        );
-        if (result.completed) pendingCompleteRef.current = result.grid;
-        return { signature: patternSignature, grid: result.grid };
-      });
-
-      const result = pasteEditorTextAt(grid, pattern, lineIdx, colIdx, text);
-      clearSelection();
-      setActiveCell(result.nextPosition);
-    },
-    [clearSelection, grid, pattern, patternSignature, pushHistory, setActiveCell],
-  );
-
-  const replaceSelectionWithText = useCallback(
-    (text: string) => {
-      const normalized = normalizeEditorInput(text);
-      if (normalized.length === 0) return;
-      const start = selectedPositions[0] ?? activeCell;
-      if (!start) return;
-
-      setGridState((prev) => {
-        const source =
-          prev.signature === patternSignature
-            ? prev.grid
-            : createEmptyEditorGrid(pattern);
-        pushHistory(source);
-        const cleared = clearSelectionInGrid(source);
-        const result = pasteEditorTextAt(
-          cleared,
-          pattern,
-          start.line,
-          start.col,
-          text,
-        );
-        if (result.completed) pendingCompleteRef.current = result.grid;
-        return { signature: patternSignature, grid: result.grid };
-      });
-
-      const result = pasteEditorTextAt(
-        clearSelectionInGrid(grid),
-        pattern,
-        start.line,
-        start.col,
-        text,
-      );
-      setDraft('');
-      clearSelection();
-      setActiveCell(result.nextPosition);
-    },
-    [
-      activeCell,
-      clearSelection,
-      clearSelectionInGrid,
-      grid,
-      pattern,
-      patternSignature,
-      pushHistory,
-      selectedPositions,
-      setActiveCell,
-    ],
-  );
-
-  const copySelectionToClipboard = useCallback(
-    (event?: ClipboardEvent<HTMLInputElement>) => {
-      const text =
-        selectedPositions.length > 0
-          ? selectedText()
-          : activeCell
-            ? gridRef.current[activeCell.line]?.[activeCell.col] ?? ''
-            : '';
-      if (!text) return;
-      event?.preventDefault();
-      if (event?.clipboardData) {
-        event.clipboardData.setData('text/plain', text);
-        return;
-      }
-      void navigator.clipboard?.writeText(text);
-    },
-    [activeCell, selectedPositions.length, selectedText],
-  );
+  const {
+    clearSelectionInGrid,
+    copySelectionToClipboard,
+    pasteAt,
+    replaceSelectionWithText,
+  } = useEditorClipboard({
+    activeCell,
+    clearSelection,
+    grid,
+    gridRef,
+    pattern,
+    patternSignature,
+    pendingCompleteRef,
+    pushHistory,
+    selectedPositions,
+    selectedText,
+    setActiveCell,
+    setDraft,
+    setGridState,
+  });
 
   const handleCellMouseDown = useCallback(
     (
