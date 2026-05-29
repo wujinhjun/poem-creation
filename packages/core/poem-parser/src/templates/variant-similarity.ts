@@ -71,9 +71,9 @@ function computeStructuralSimilarity(
   // 段数差异惩罚
   const secPenalty = secLen / maxSec;
 
-  // 逐段比较行数和字数
-  let lineSimSum = 0;
-  let lineCount = 0;
+  // 逐段比较行数和字数。每个 section 独立累计、独立乘行数惩罚
+  let totalWeightedSim = 0;
+  let totalLineCount = 0;
 
   for (let si = 0; si < secLen; si++) {
     const la = a.sections[si].lines;
@@ -81,26 +81,26 @@ function computeStructuralSimilarity(
     const minLines = Math.min(la.length, lb.length);
     const maxLines = Math.max(la.length, lb.length);
 
+    let secSimSum = 0;
     for (let li = 0; li < minLines; li++) {
       const ca = la[li].charCount;
       const cb = lb[li].charCount;
       if (ca === 0 && cb === 0) {
-        lineSimSum += 1;
+        secSimSum += 1;
       } else {
-        lineSimSum += 1 - Math.abs(ca - cb) / Math.max(ca, cb);
+        secSimSum += 1 - Math.abs(ca - cb) / Math.max(ca, cb);
       }
-      lineCount++;
     }
 
-    // 惩罚多余行：minLines/maxLines 越小，该 section 的行数差异越大
-    if (maxLines > 0) {
-      lineSimSum *= minLines / maxLines;
-    }
+    // 该 section 的行数惩罚：只影响当前 section
+    const linePenalty = maxLines > 0 ? minLines / maxLines : 1;
+    totalWeightedSim += secSimSum * linePenalty;
+    totalLineCount += minLines;
   }
 
-  if (lineCount === 0) return secPenalty;
+  if (totalLineCount === 0) return secPenalty;
 
-  const avgLineSim = lineSimSum / lineCount;
+  const avgLineSim = totalWeightedSim / totalLineCount;
   return clamp01(secPenalty * avgLineSim);
 }
 
