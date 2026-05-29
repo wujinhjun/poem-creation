@@ -25,6 +25,7 @@ import {
   variantOptions,
   variantSummary,
 } from "./utils/templates";
+import type { CiPatternForEditor } from "./utils/templates";
 import {
   defaultSettings,
   loadUserSettings,
@@ -33,6 +34,11 @@ import {
 } from "./utils/settings";
 
 const draftStore = new AsyncStorageDraftStore();
+const EMPTY_PATTERN: CiPatternForEditor = {
+  lines: [],
+  rhymeGroups: [],
+  sectionBreaks: [],
+};
 
 export default function App() {
   const [view, setView] = useState<AppView>("home");
@@ -47,17 +53,11 @@ export default function App() {
   );
   const [draft, setDraft] = useState<PoemCreationDraft>(() => createEmptyDraft());
   const [analyzeResult, setAnalyzeResult] = useState("");
+  const [patternState, setPatternState] =
+    useState<CiPatternForEditor>(EMPTY_PATTERN);
+  const [templateMessage, setTemplateMessage] = useState("");
   const hydratedRef = useRef(false);
 
-  const patternState = useMemo(
-    () =>
-      patternForSelection(
-        draft.genre,
-        draft.selectedTune,
-        draft.selectedVariant,
-      ),
-    [draft.genre, draft.selectedTune, draft.selectedVariant],
-  );
   const dict = useMemo(() => createAppDict(draft.rhymeType), [draft.rhymeType]);
   const expectedRhymeTone = useMemo(
     () =>
@@ -85,6 +85,43 @@ export default function App() {
   const refreshDrafts = useCallback(async () => {
     setDrafts(await draftStore.listDrafts());
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    if (!draft.selectedVariant) {
+      setPatternState(EMPTY_PATTERN);
+      setTemplateMessage("");
+      return () => {
+        alive = false;
+      };
+    }
+
+    setTemplateMessage("正在准备格律...");
+    setPatternState(EMPTY_PATTERN);
+    void patternForSelection(
+      draft.genre,
+      draft.selectedTune,
+      draft.selectedVariant,
+    )
+      .then((nextPattern) => {
+        if (!alive) return;
+        setPatternState(nextPattern);
+        setTemplateMessage("");
+      })
+      .catch((error: unknown) => {
+        if (!alive) return;
+        setPatternState(EMPTY_PATTERN);
+        setTemplateMessage(
+          error instanceof Error
+            ? error.message
+            : `格律准备失败：${String(error)}`,
+        );
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [draft.genre, draft.selectedTune, draft.selectedVariant]);
 
   const applyDraft = useCallback((source: PoemCreationDraft) => {
     const next = normalizeDraft(source, getAllTemplates());
@@ -200,10 +237,10 @@ export default function App() {
   );
 
   const runAnalyze = useCallback(
-    (sourceChars = draft.chars) => {
+    async (sourceChars = draft.chars) => {
       try {
         setAnalyzeResult(
-          analyzeGrid({
+          await analyzeGrid({
             genre: draft.genre,
             selectedTune: draft.selectedTune,
             selectedVariant: draft.selectedVariant,
@@ -294,6 +331,7 @@ export default function App() {
         visualLineGroups={patternState.rhymeGroups}
         sectionBreakBeforeGroups={patternState.sectionBreaks}
         analyzeResult={analyzeResult}
+        templateMessage={templateMessage}
         onBack={() => void returnHome()}
         onTitleChange={(title) => updateDraft({ title })}
         onDescriptionChange={(description) => updateDraft({ description })}

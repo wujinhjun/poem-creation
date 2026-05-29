@@ -19,22 +19,55 @@ import {
 } from "@poem/poem-kit";
 import type { CiPatternForEditor } from "@poem/poem-kit";
 
-import compactCiBundleData from "../../../../core/poem-parser/data/ci-tunes-bundle-compact.json";
 import type { Genre } from "../constants/poem";
 
-const ciBundle = materializeCiBundle(compactCiBundleData as CompactBundleRaw);
+const EMPTY_CI_PATTERN: CiPatternForEditor = {
+  lines: [],
+  rhymeGroups: [],
+  sectionBreaks: [],
+};
 
-export function patternForSelection(
+type CiBundle = Record<string, CiTemplate>;
+
+let ciBundlePromise: Promise<CiBundle> | null = null;
+
+function normalizeBundleError(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error);
+  return new Error(`词谱准备失败：${message}`);
+}
+
+function compactBundleFromModule(module: { default?: unknown }): CompactBundleRaw {
+  return (module.default ?? module) as CompactBundleRaw;
+}
+
+export function loadMobileCiBundle(): Promise<CiBundle> {
+  if (!ciBundlePromise) {
+    ciBundlePromise = import(
+      "../../../../core/poem-parser/data/ci-tunes-bundle-compact.json"
+    )
+      .then((module) =>
+        materializeCiBundle(compactBundleFromModule(module)) as CiBundle,
+      )
+      .catch((error: unknown) => {
+        ciBundlePromise = null;
+        throw normalizeBundleError(error);
+      });
+  }
+  return ciBundlePromise;
+}
+
+export async function patternForSelection(
   genre: Genre,
   selectedTune: string,
   selectedVariant: string,
-): CiPatternForEditor {
-  if (!selectedVariant) return { lines: [], rhymeGroups: [], sectionBreaks: [] };
+): Promise<CiPatternForEditor> {
+  if (!selectedVariant) return EMPTY_CI_PATTERN;
   if (genre === "meter") {
     const lines = getMeterMap().get(selectedVariant)?.pattern ?? [];
     return { lines, rhymeGroups: pairLineGroups(lines), sectionBreaks: [] };
   }
 
+  const ciBundle = await loadMobileCiBundle();
   const pattern = ciPatternForEditor(ciBundle[selectedTune], selectedVariant);
   return pattern;
 }
@@ -82,14 +115,14 @@ export function expectedRhymeToneForSelection(
   return inferCiRhymeTone(`${variant.author} ${variant.sketch}`);
 }
 
-export function templateForAnalyze(
+export async function templateForAnalyze(
   genre: Genre,
   selectedTune: string,
   selectedVariant: string,
 ) {
   return genre === "meter"
     ? getMeterMap().get(selectedVariant)
-    : ciBundle[selectedTune];
+    : (await loadMobileCiBundle())[selectedTune];
 }
 
 export {
