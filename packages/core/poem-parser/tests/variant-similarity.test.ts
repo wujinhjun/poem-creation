@@ -154,6 +154,51 @@ describe("computeVariantSimilarity", () => {
     // Same tone but different xieyun → 0.5 per slot, 1 slot → rhyme=0.5
     expect(result.rhyme).toBe(0.5);
   });
+
+  it("extra lines in one variant should lower structure score", () => {
+    const a = makeVariant("a", [
+      {
+        lines: [
+          { charCount: 5, pattern: [P(), Z(), P(), Z(), P()], isRhymeLine: true, rhymeType: "ping" },
+        ],
+      },
+    ]);
+    const b = makeVariant("b", [
+      {
+        lines: [
+          { charCount: 5, pattern: [P(), Z(), P(), Z(), P()], isRhymeLine: true, rhymeType: "ping" },
+          { charCount: 5, pattern: [P(), Z(), P(), Z(), P()], isRhymeLine: true, rhymeType: "ping" },
+          { charCount: 5, pattern: [P(), Z(), P(), Z(), P()], isRhymeLine: true, rhymeType: "ping" },
+        ],
+      },
+    ]);
+    const result = computeVariantSimilarity(a, b);
+    // same first line but b has 2 extra lines → structure < 1
+    expect(result.structure).toBeLessThan(1.0);
+    expect(result.structure).toBeLessThan(0.7); // 1/3 line match ratio + section penalty
+  });
+
+  it("rhyme position shift should lower rhyme score", () => {
+    const a = makeVariant("a", [
+      {
+        lines: [
+          { charCount: 5, pattern: [P(), Z(), P(), Z(), P()], isRhymeLine: true, rhymeType: "ping" },
+          { charCount: 5, pattern: [Z(), P(), Z(), P(), Z()], isRhymeLine: false },
+        ],
+      },
+    ]);
+    const b = makeVariant("b", [
+      {
+        lines: [
+          { charCount: 5, pattern: [P(), Z(), P(), Z(), P()], isRhymeLine: false },
+          { charCount: 5, pattern: [Z(), P(), Z(), P(), Z()], isRhymeLine: true, rhymeType: "ping" },
+        ],
+      },
+    ]);
+    // rhyme moved from line 0 to line 1 → rhyme < 1
+    const result = computeVariantSimilarity(a, b);
+    expect(result.rhyme).toBeLessThan(1.0);
+  });
 });
 
 describe("findSimilarVariants", () => {

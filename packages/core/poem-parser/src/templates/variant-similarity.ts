@@ -91,6 +91,11 @@ function computeStructuralSimilarity(
       }
       lineCount++;
     }
+
+    // 惩罚多余行：minLines/maxLines 越小，该 section 的行数差异越大
+    if (maxLines > 0) {
+      lineSimSum *= minLines / maxLines;
+    }
   }
 
   if (lineCount === 0) return secPenalty;
@@ -180,6 +185,9 @@ function toneSubstitutionCost(a: ToneClass, b: ToneClass): number {
 
 /**
  * 比较韵脚格局：押韵行位置 + 韵调是否一致。
+ *
+ * 比较逻辑：按行位置逐一对应。若两变体中某行都是韵脚行，比较韵调和叶韵标记；
+ * 若只有一方是韵脚行，计为不匹配；多余行按 maxSlots 归一化惩罚。
  */
 function computeRhymeSimilarity(
   a: CiTemplateVariant,
@@ -190,33 +198,59 @@ function computeRhymeSimilarity(
 
   if (ra.length === 0 && rb.length === 0) return 1;
 
-  let matches = 0;
   const maxLen = Math.max(ra.length, rb.length);
   if (maxLen === 0) return 1;
 
-  const minLen = Math.min(ra.length, rb.length);
-  for (let i = 0; i < minLen; i++) {
-    if (ra[i].tone === rb[i].tone && ra[i].xieyun === rb[i].xieyun) {
-      matches++;
-    } else if (ra[i].tone === rb[i].tone) {
-      matches += 0.5; // 同韵调但叶韵标记不同
-    }
+  // 按位置比较：相同 (section, line) 位置的韵脚 slot
+  const posA = new Map<string, RhymeSlot>();
+  for (const s of ra) {
+    posA.set(`${s.section}:${s.line}`, s);
+  }
+  const posB = new Map<string, RhymeSlot>();
+  for (const s of rb) {
+    posB.set(`${s.section}:${s.line}`, s);
   }
 
-  return clamp01(matches / maxLen);
+  let matches = 0;
+  let totalSlots = 0;
+
+  // 比较所有出现过的位置
+  const allKeys = new Set([...posA.keys(), ...posB.keys()]);
+  for (const key of allKeys) {
+    totalSlots++;
+    const sa = posA.get(key);
+    const sb = posB.get(key);
+    if (sa && sb) {
+      if (sa.tone === sb.tone && sa.xieyun === sb.xieyun) {
+        matches++;
+      } else if (sa.tone === sb.tone) {
+        matches += 0.5; // 同韵调但叶韵标记不同
+      }
+      // 韵调不同 0 分
+    }
+    // 一方缺失 = 0 分
+  }
+
+  return clamp01(matches / totalSlots);
 }
 
 interface RhymeSlot {
+  section: number;
+  line: number;
   tone: string;
   xieyun: boolean;
 }
 
 function extractRhymeSignature(v: CiTemplateVariant): RhymeSlot[] {
   const slots: RhymeSlot[] = [];
-  for (const sec of v.sections) {
-    for (const line of sec.lines) {
+  for (let si = 0; si < v.sections.length; si++) {
+    const sec = v.sections[si];
+    for (let li = 0; li < sec.lines.length; li++) {
+      const line = sec.lines[li];
       if (line.isRhymeLine) {
         slots.push({
+          section: si,
+          line: li,
           tone: line.rhymeType ?? "unknown",
           xieyun: line.isXieyun ?? false,
         });
