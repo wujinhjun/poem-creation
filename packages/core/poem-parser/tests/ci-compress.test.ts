@@ -233,6 +233,60 @@ describe("applyEdits", () => {
     expect(result[0].lines).toHaveLength(1);
     expect(result[0].lines[0]).toBe("FPFZZPp");
   });
+
+  it("同一 section 两个 splitLine 应正确应用（降序防漂移）", () => {
+    const sections: CiSectionStored[] = [
+      { lines: ["FPFZZPp", "ZFPPFZp", "FZFPPZZ"] },
+    ];
+    // split line 0 at col 3, split line 2 at col 4
+    // 降序：先处理 line 2 的 split，再处理 line 0 的 split
+    const edits: EditOp[] = [
+      { op: "splitLine", at: [0, 0], col: 3 },
+      { op: "splitLine", at: [0, 2], col: 4 },
+    ];
+    const result = applyEdits(sections, edits);
+    expect(result[0].lines).toHaveLength(5);
+    expect(result[0].lines[0]).toBe("FPF");
+    expect(result[0].lines[1]).toBe("ZZPp");
+    expect(result[0].lines[2]).toBe("ZFPPFZp");
+    expect(result[0].lines[3]).toBe("FZFP");
+    expect(result[0].lines[4]).toBe("PZZ");
+  });
+
+  it("同一 section 两个 mergeLines 应正确应用（降序防漂移）", () => {
+    const sections: CiSectionStored[] = [
+      { lines: ["FPF", "ZZPp", "ZFP", "PFZp"] },
+    ];
+    // merge lines 0+1, merge lines 2+3
+    // 降序：先处理 line 2+3，再处理 line 0+1
+    const edits: EditOp[] = [
+      { op: "mergeLines", at: [0, 0] },
+      { op: "mergeLines", at: [0, 2] },
+    ];
+    const result = applyEdits(sections, edits);
+    expect(result[0].lines).toHaveLength(2);
+    expect(result[0].lines[0]).toBe("FPFZZPp");
+    expect(result[0].lines[1]).toBe("ZFPPFZp");
+  });
+
+  it("同一 section split + merge 混合应正确应用（降序：先 merge 后 split）", () => {
+    // 模拟：split + merge 在同一 section，所有地址引用原始 base 坐标
+    // 降序排序后：mergeLines [0,1] 先于 splitLine [0,0] 执行
+    const base: CiSectionStored[] = [
+      { lines: ["FPFZZPp", "ZFPPFZp", "FZFPPZZ"] },
+    ];
+    const edits: EditOp[] = [
+      { op: "splitLine", at: [0, 0], col: 3 },
+      { op: "mergeLines", at: [0, 1] },
+    ];
+    const result = applyEdits(base, edits);
+    // 降序: merge [0,1] 先 → ["FPFZZPp", "ZFPPFZpFZFPPZZ"]
+    // 然后 split [0,0] at 3 → ["FPF", "ZZPp", "ZFPPFZpFZFPPZZ"]
+    expect(result[0].lines).toHaveLength(3);
+    expect(result[0].lines[0]).toBe("FPF");
+    expect(result[0].lines[1]).toBe("ZZPp");
+    expect(result[0].lines[2]).toBe("ZFPPFZpFZFPPZZ");
+  });
 });
 
 // ---- materializeVariant 测试 ----

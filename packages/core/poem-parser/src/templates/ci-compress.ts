@@ -182,8 +182,14 @@ export function applyEdits(
     applyRegularEdit(result, edit);
   }
 
-  // 再应用结构性编辑
-  for (const edit of structural) {
+  // 结构性编辑也按位置降序，避免前面的 split/merge 影响后续地址
+  const sortedStructural = [...structural].sort((a, b) => {
+    const secCmp = b.at[0] - a.at[0];
+    if (secCmp !== 0) return secCmp;
+    return b.at[1] - a.at[1];
+  });
+
+  for (const edit of sortedStructural) {
     applyStructuralEdit(result, edit);
   }
 
