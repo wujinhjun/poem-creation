@@ -95,17 +95,17 @@ export function SettingsPage({
                 <p className='section-kicker'>保存</p>
                 <h3>作品保存方式</h3>
               </div>
-              <div className='storage-mode-toggle' aria-label='选择作品保存方式'>
-                <button
-                  type='button'
-                  className={
-                    settings.persistence.mode === 'local' ? 'is-active' : ''
-                  }
-                  onClick={() => setPersistenceMode('local')}
-                >
-                  当前设备
-                </button>
-                {SUPABASE_BYOK_ENABLED && (
+              {SUPABASE_BYOK_ENABLED ? (
+                <div className='storage-mode-toggle' aria-label='选择作品保存方式'>
+                  <button
+                    type='button'
+                    className={
+                      settings.persistence.mode === 'local' ? 'is-active' : ''
+                    }
+                    onClick={() => setPersistenceMode('local')}
+                  >
+                    当前设备
+                  </button>
                   <button
                     type='button'
                     className={
@@ -115,8 +115,12 @@ export function SettingsPage({
                   >
                     云端保存
                   </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className='storage-status-badge' aria-label='当前作品保存方式'>
+                  当前设备
+                </div>
+              )}
             </div>
 
             {!isSupabaseMode && (
