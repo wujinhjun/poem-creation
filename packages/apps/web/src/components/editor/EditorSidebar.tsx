@@ -11,10 +11,11 @@ type EditorSidebarProps = {
   exportStatus: string;
   onOpenExportPreview: () => void;
   onCopyExportText: () => void;
-  onReturn: () => void;
 };
 
-export function EditorSidebar({
+type EditorInfoContentProps = Omit<EditorSidebarProps, 'onReturn'>;
+
+export function EditorInfoContent({
   genre,
   selectedTune,
   selectedVariant,
@@ -23,23 +24,9 @@ export function EditorSidebar({
   exportStatus,
   onOpenExportPreview,
   onCopyExportText,
-  onReturn,
-}: EditorSidebarProps) {
+}: EditorInfoContentProps) {
   return (
-    <aside className='panel editor-aside'>
-      <div className='panel-heading'>
-        <div>
-          <p className='section-kicker'>工具</p>
-          <h2>作品信息</h2>
-        </div>
-        <button
-          type='button'
-          className='ghost-button'
-          onClick={onReturn}
-        >
-          返回
-        </button>
-      </div>
+    <>
       <div className='aside-section'>
         <h3>导出</h3>
         <div className='button-stack'>
@@ -88,6 +75,38 @@ export function EditorSidebar({
           待填
         </span>
       </div>
+    </>
+  );
+}
+
+export function EditorSidebar({
+  genre,
+  selectedTune,
+  selectedVariant,
+  selectedVariantLabel,
+  rhymeType,
+  exportStatus,
+  onOpenExportPreview,
+  onCopyExportText,
+}: EditorSidebarProps) {
+  return (
+    <aside className='panel editor-aside'>
+      <div className='panel-heading'>
+        <div>
+          <p className='section-kicker'>工具</p>
+          <h2>作品信息</h2>
+        </div>
+      </div>
+      <EditorInfoContent
+        genre={genre}
+        selectedTune={selectedTune}
+        selectedVariant={selectedVariant}
+        selectedVariantLabel={selectedVariantLabel}
+        rhymeType={rhymeType}
+        exportStatus={exportStatus}
+        onOpenExportPreview={onOpenExportPreview}
+        onCopyExportText={onCopyExportText}
+      />
     </aside>
   );
 }

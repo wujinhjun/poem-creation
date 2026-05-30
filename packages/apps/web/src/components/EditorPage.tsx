@@ -6,6 +6,7 @@ import type { StrictCharIssue } from '../utils/strictGridValidation';
 import Composer from '../Composer';
 import { ExportPreviewModal } from './ExportPreviewModal';
 import { ComposerEmptyState } from './editor/ComposerEmptyState';
+import { EditorInfoModal } from './editor/EditorInfoModal';
 import { EditorSidebar } from './editor/EditorSidebar';
 import { WorkMetadataFields } from './editor/WorkMetadataFields';
 
@@ -84,8 +85,13 @@ export function EditorPage({
     col: number;
     requestId: number;
   } | null>(null);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
   const issueCount = analysisIssues.length;
   const needsAttentionCount = issueCount > 0 ? issueCount : liveFailCount;
+  const openExportFromInfo = () => {
+    setInfoModalOpen(false);
+    onOpenExportPreview();
+  };
 
   return (
     <main className='page page-editor'>
@@ -182,8 +188,8 @@ export function EditorPage({
           <button type='button' className='ghost-button' onClick={onOpenExportPreview}>
             导出
           </button>
-          <button type='button' className='ghost-button' onClick={onCopyExportText}>
-            复制
+          <button type='button' className='ghost-button' onClick={() => setInfoModalOpen(true)}>
+            信息
           </button>
           <button type='button' className='ghost-button' onClick={onReturn}>
             返回
@@ -198,8 +204,20 @@ export function EditorPage({
           exportStatus={exportStatus}
           onOpenExportPreview={onOpenExportPreview}
           onCopyExportText={onCopyExportText}
-          onReturn={onReturn}
         />
+        {infoModalOpen && (
+          <EditorInfoModal
+            genre={genre}
+            selectedTune={selectedTune}
+            selectedVariant={selectedVariant}
+            selectedVariantLabel={selectedVariantLabel}
+            rhymeType={rhymeType}
+            exportStatus={exportStatus}
+            onOpenExportPreview={openExportFromInfo}
+            onCopyExportText={onCopyExportText}
+            onClose={() => setInfoModalOpen(false)}
+          />
+        )}
       </section>
     </main>
   );
