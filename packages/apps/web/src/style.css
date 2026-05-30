@@ -818,12 +818,12 @@ h3 {
 .pattern-preview-line div {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 6px 8px;
 }
 
 .pattern-preview-line i {
   display: grid;
-  width: 24px;
+  width: 22px;
   min-height: 30px;
   place-items: center;
   border: 0;
@@ -831,9 +831,12 @@ h3 {
   color: var(--ink);
   font-style: normal;
   font-size: 18px;
+  white-space: nowrap;
 }
 
 .pattern-preview-line i.is-rhyme {
+  width: auto;
+  min-width: 38px;
   border-color: #d7b8b3;
   color: var(--cinnabar);
 }
@@ -1761,6 +1764,15 @@ h3 {
   outline: none;
 }
 
+.editor-info-modal-panel {
+  width: min(520px, 100%);
+}
+
+.editor-info-modal-panel .aside-section:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
 .export-modal-panel:focus-visible {
   box-shadow: 0 24px 60px rgba(32, 22, 16, 0.28), 0 0 0 3px rgba(168, 50, 40, 0.18);
 }
@@ -2112,7 +2124,7 @@ h3 {
   }
 
   .editor-aside {
-    position: static;
+    display: none;
   }
 
   .editor-mobile-actions {

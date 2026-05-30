@@ -57,7 +57,8 @@ export function formatRhymeToneLabel(
   xieyun = false,
 ): string {
   if (!tone) return "韵";
-  return `${xieyun ? "叶" : ""}${tone}韵`;
+  if (xieyun) return "叶韵";
+  return `${tone}韵`;
 }
 
 /**
