@@ -2006,10 +2006,6 @@ h3 {
     padding: 0 16px;
   }
 
-  .brand-subtitle {
-    display: none;
-  }
-
   .app-body {
     grid-template-columns: 1fr;
   }
@@ -2185,7 +2181,7 @@ h3 {
   }
 
   .topbar {
-    height: 56px;
+    height: 64px;
     padding: 0 14px;
   }
 
@@ -2204,8 +2200,13 @@ h3 {
     line-height: 1;
   }
 
+  .brand-subtitle {
+    font-size: 11px;
+    line-height: 1;
+  }
+
   .side-rail {
-    top: 56px;
+    top: 64px;
   }
 
   .rail-item {
