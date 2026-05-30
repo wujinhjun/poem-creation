@@ -81,6 +81,9 @@ function makeMockDict(): RhymeDict {
       const gb = charToGroup.get(b);
       return ga != null && ga === gb;
     },
+    yunjieFamilyOf(_char: string): string | null {
+      return null;
+    },
   };
 }
 
