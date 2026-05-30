@@ -1940,6 +1940,20 @@ h3 {
   color: #fffaf5;
 }
 
+.storage-status-badge {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--cinnabar);
+  color: #fffaf5;
+  padding: 0 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .settings-help {
   margin: 0;
   max-width: 720px;
