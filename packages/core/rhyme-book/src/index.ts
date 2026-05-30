@@ -23,6 +23,8 @@ type RawRhymeItem = {
 };
 type RhymeIndex = Record<string, RawRhymeItem[]>;
 type ToneLookup = Record<string, "平" | "仄" | "多" | "未知">;
+type YunFamilyEntry = { family: string; tone: string };
+type YunFamilyIndex = Record<string, YunFamilyEntry>;
 
 const TONE_MAP: Record<string, Tone> = { 平: Tone.Ping, 仄: Tone.Ze };
 
@@ -39,11 +41,18 @@ class JsonRhymeDict implements RhymeDict {
   public readonly type: RhymeDictType;
   private readonly index: RhymeIndex;
   private readonly toneLookup: ToneLookup;
+  private readonly yunFamily: YunFamilyIndex;
 
-  public constructor(type: RhymeDictType, index: RhymeIndex, toneLookup: ToneLookup) {
+  public constructor(
+    type: RhymeDictType,
+    index: RhymeIndex,
+    toneLookup: ToneLookup,
+    yunFamily: YunFamilyIndex,
+  ) {
     this.type = type;
     this.index = index;
     this.toneLookup = toneLookup;
+    this.yunFamily = yunFamily;
   }
 
   public lookup(char: string): RhymeEntry[] {
@@ -100,12 +109,18 @@ class JsonRhymeDict implements RhymeDict {
     const aSet = new Set(this.getRhymeGroup(a));
     return this.getRhymeGroup(b).some((group) => aSet.has(group));
   }
+
+  public yunjieFamilyOf(char: string): string | null {
+    const entry = this.yunFamily[char];
+    return entry?.family ?? null;
+  }
 }
 
 // ---- 加载函数 ----
 
 let _rhymeIndexCache: RhymeIndex | null = null;
 let _toneLookupCache: ToneLookup | null = null;
+let _yunFamilyCache: YunFamilyIndex | null = null;
 
 async function loadJson<T>(dataDir: string, filename: string): Promise<T> {
   const file = resolve(dataDir, filename);
@@ -128,11 +143,15 @@ export async function createRhymeDict(
   if (!_toneLookupCache) {
     _toneLookupCache = await loadJson<ToneLookup>(dataDir, "tone-lookup.json");
   }
-  return new JsonRhymeDict(type, _rhymeIndexCache, _toneLookupCache);
+  if (!_yunFamilyCache) {
+    _yunFamilyCache = await loadJson<YunFamilyIndex>(dataDir, "yun-family-index.json");
+  }
+  return new JsonRhymeDict(type, _rhymeIndexCache, _toneLookupCache, _yunFamilyCache);
 }
 
 /** 清空缓存（测试隔离用） */
 export function clearRhymeCache(): void {
   _rhymeIndexCache = null;
   _toneLookupCache = null;
+  _yunFamilyCache = null;
 }

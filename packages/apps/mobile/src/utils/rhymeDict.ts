@@ -3,6 +3,7 @@ import type { RhymeDict, RhymeEntry } from "@poem/parser/kernel";
 
 import rhymeIndexData from "../../../../core/rhyme-book/data/rhyme-char-index.json";
 import toneLookupData from "../../../../core/rhyme-book/data/tone-lookup.json";
+import yunFamilyData from "../../../../core/rhyme-book/data/yun-family-index.json";
 
 type RhymeIndexEntry = {
   dictType: string;
@@ -21,12 +22,15 @@ function toneLookupToTones(info: ToneLookup[string] | undefined): Tone[] {
   return [];
 }
 
+type YunFamilyIndex = Record<string, { family: string; tone: string }>;
+
 class AppRhymeDict implements RhymeDict {
   type: RhymeDictType;
 
   constructor(
     private index: RhymeCharIndex,
     private toneLookup: ToneLookup,
+    private yunFamily: YunFamilyIndex,
     type: RhymeDictType,
   ) {
     this.type = type;
@@ -63,12 +67,18 @@ class AppRhymeDict implements RhymeDict {
     const aGroups = new Set(this.getRhymeGroup(a));
     return this.getRhymeGroup(b).some((group) => aGroups.has(group));
   }
+
+  yunjieFamilyOf(char: string): string | null {
+    const entry = this.yunFamily[char];
+    return entry?.family ?? null;
+  }
 }
 
 export function createAppDict(type: RhymeDictType): RhymeDict {
   return new AppRhymeDict(
     rhymeIndexData as RhymeCharIndex,
     toneLookupData as ToneLookup,
+    yunFamilyData as YunFamilyIndex,
     type,
   );
 }

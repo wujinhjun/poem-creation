@@ -91,4 +91,6 @@ export interface RhymeDict {
   lookup(char: string): RhymeEntry[];
   getRhymeGroup(char: string): string[];
   isSameRhyme(a: string, b: string): boolean;
+  /** 查询字的叶韵 family ID（来自词林正韵 19 部）。无数据返回 null。 */
+  yunjieFamilyOf(char: string): string | null;
 }

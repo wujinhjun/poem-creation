@@ -24,6 +24,10 @@ const dataAssets = [
     from: "../../core/rhyme-book/data/tone-lookup.json",
     to: "data/tone-lookup.json",
   },
+  {
+    from: "../../core/rhyme-book/data/yun-family-index.json",
+    to: "data/yun-family-index.json",
+  },
 ];
 
 function copyPublicDataAssets() {

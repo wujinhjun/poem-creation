@@ -17,9 +17,11 @@ type RhymeIndexEntry = {
 
 type RhymeCharIndex = Record<string, RhymeIndexEntry[]>;
 type ToneLookup = Record<string, "平" | "仄" | "多" | "未知">;
+type YunFamilyIndex = Record<string, { family: string; tone: string }>;
 
 let _cache: RhymeCharIndex | null = null;
 let _toneCache: ToneLookup | null = null;
+let _yunFamilyCache: YunFamilyIndex | null = null;
 
 /** 从 JSON 加载完整韵字索引（dev server /data 已可访问） */
 async function loadRhymeIndex(): Promise<RhymeCharIndex> {
@@ -36,6 +38,13 @@ async function loadToneLookup(): Promise<ToneLookup> {
   return _toneCache!;
 }
 
+async function loadYunFamily(): Promise<YunFamilyIndex> {
+  if (_yunFamilyCache) return _yunFamilyCache;
+  const res = await fetch(publicAssetPath("data/yun-family-index.json"));
+  _yunFamilyCache = (await res.json()) as YunFamilyIndex;
+  return _yunFamilyCache!;
+}
+
 function toneLookupToTones(info: ToneLookup[string] | undefined): Tone[] {
   if (info === "平") return [Tone.Ping];
   if (info === "仄") return [Tone.Ze];
@@ -47,10 +56,12 @@ class BrowserRhymeDict implements RhymeDict {
   type: RhymeDictType;
   private index: RhymeCharIndex;
   private toneLookup: ToneLookup;
+  private yunFamily: YunFamilyIndex;
 
-  constructor(index: RhymeCharIndex, toneLookup: ToneLookup, type: RhymeDictType) {
+  constructor(index: RhymeCharIndex, toneLookup: ToneLookup, yunFamily: YunFamilyIndex, type: RhymeDictType) {
     this.index = index;
     this.toneLookup = toneLookup;
+    this.yunFamily = yunFamily;
     this.type = type;
   }
 
@@ -87,12 +98,21 @@ class BrowserRhymeDict implements RhymeDict {
     const aGroups = new Set(this.getRhymeGroup(a));
     return this.getRhymeGroup(b).some((group) => aGroups.has(group));
   }
+
+  yunjieFamilyOf(char: string): string | null {
+    const entry = this.yunFamily[char];
+    return entry?.family ?? null;
+  }
 }
 
 /** 创建浏览器韵书实例 */
 export async function createBrowserDict(
   type: RhymeDictType = DictType.Pingshui,
 ): Promise<RhymeDict> {
-  const [index, toneLookup] = await Promise.all([loadRhymeIndex(), loadToneLookup()]);
-  return new BrowserRhymeDict(index, toneLookup, type);
+  const [index, toneLookup, yunFamily] = await Promise.all([
+    loadRhymeIndex(),
+    loadToneLookup(),
+    loadYunFamily(),
+  ]);
+  return new BrowserRhymeDict(index, toneLookup, yunFamily, type);
 }
