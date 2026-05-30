@@ -12,7 +12,9 @@ import { listAllTemplates } from "@poem/parser/catalog";
 import { loadMeterTemplates } from "@poem/parser/kernel";
 import type {
   CiTemplate,
+  CiTemplateLine,
   MeterTemplate,
+  RhymeTone,
   ToneConstraint,
 } from "@poem/parser/kernel";
 import type { TemplateEntry } from "@poem/parser/catalog";
@@ -54,6 +56,26 @@ export function pairLineGroups(pattern: ToneConstraint[][]): number[][] {
   return groups;
 }
 
+function rhymeToneToTone(tone: RhymeTone | undefined): Tone | undefined {
+  if (tone === "ping") return Tone.Ping;
+  if (tone === "ze") return Tone.Ze;
+  return undefined;
+}
+
+function linePatternForEditor(line: CiTemplateLine): ToneConstraint[] {
+  const rhymeTone = rhymeToneToTone(line.rhymeType);
+  return line.pattern.map((constraint) => {
+    // DSL-loaded templates already carry per-slot p/z/+z metadata. This
+    // fallback covers non-DSL/custom sources that only expose line-level rhyme.
+    if (!line.isRhymeLine || constraint.type !== "rhyme") return constraint;
+    return {
+      ...constraint,
+      tone: constraint.tone ?? rhymeTone,
+      xieyun: constraint.xieyun ?? line.isXieyun,
+    };
+  });
+}
+
 export function ciPatternForEditor(
   tune: CiTemplate | undefined,
   variantId: string,
@@ -80,7 +102,7 @@ export function ciPatternForEditor(
     }
 
     section.lines.forEach((line) => {
-      lines.push(line.pattern);
+      lines.push(linePatternForEditor(line));
       groupBuffer.push(lineOffset);
       lineOffset += 1;
       if (line.isRhymeLine) flushGroup();

@@ -35,7 +35,11 @@ export function parseLineDSL(dsl: string): ToneConstraint[] {
     if (ch === "+") {
       const next = chars[i + 1];
       if (next === "p" || next === "z") {
-        result.push({ type: "rhyme" });
+        result.push({
+          type: "rhyme",
+          tone: next === "p" ? Tone.Ping : Tone.Ze,
+          xieyun: true,
+        });
         i += 2;
         continue;
       }
@@ -56,7 +60,10 @@ export function parseLineDSL(dsl: string): ToneConstraint[] {
         break;
       case "p":
       case "z":
-        result.push({ type: "rhyme" });
+        result.push({
+          type: "rhyme",
+          tone: ch === "p" ? Tone.Ping : Tone.Ze,
+        });
         break;
       default:
         // 未知字符，宽松处理为 flexible

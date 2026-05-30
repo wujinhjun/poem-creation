@@ -12,6 +12,7 @@ export {
   RhymeTone,
   CharValidationStatus,
   HANZI_RE,
+  formatRhymeToneLabel,
 } from "./types/parser-base.js";
 export type {
   ToneConstraint,

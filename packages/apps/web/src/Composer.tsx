@@ -408,9 +408,14 @@ export default function Composer({
       return row.map((constraint, ci): SlotEvaluation => {
         const value = grid[li]?.[ci] ?? '';
         const expectedTone =
-          constraint.type === 'rhyme' ? expectedRhymeTone : null;
+          constraint.type === 'rhyme'
+            ? (constraint.tone ?? expectedRhymeTone)
+            : null;
         const baseLabel = expectedTone
-          ? rhymeToneLabel(expectedTone)
+          ? rhymeToneLabel(
+              expectedTone,
+              constraint.type === 'rhyme' ? constraint.xieyun : false,
+            )
           : constraintLabel(constraint);
         if (!value || !dict) {
           return {

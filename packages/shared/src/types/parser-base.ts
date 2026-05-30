@@ -50,7 +50,15 @@ export type RhymeDictType = (typeof RhymeDictType)[keyof typeof RhymeDictType];
 export type ToneConstraint =
   | { type: "fixed"; tone: Tone }
   | { type: "flexible" }
-  | { type: "rhyme"; group?: string };
+  | { type: "rhyme"; group?: string; tone?: Tone; xieyun?: boolean };
+
+export function formatRhymeToneLabel(
+  tone: Tone | string | null | undefined,
+  xieyun = false,
+): string {
+  if (!tone) return "韵";
+  return `${xieyun ? "叶" : ""}${tone}韵`;
+}
 
 /**
  * 字符校验状态

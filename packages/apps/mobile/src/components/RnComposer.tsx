@@ -17,6 +17,7 @@ import {
 } from "@poem/editor-core";
 import { Tone } from "@poem/parser/kernel";
 import type { RhymeDict } from "@poem/parser/kernel";
+import { formatRhymeToneLabel } from "@poem/shared";
 
 import { appColors } from "../theme/colors";
 import {
@@ -121,11 +122,14 @@ export function RnComposer({
       line.map((constraint, colIndex): SlotEvaluation => {
         const value = grid[lineIndex]?.[colIndex] ?? "";
         const expectedTone =
-          constraint.type === "rhyme" ? expectedRhymeTone : null;
+          constraint.type === "rhyme"
+            ? (constraint.tone ?? expectedRhymeTone)
+            : null;
         const baseLabel = expectedTone
-          ? expectedTone === Tone.Ping
-            ? "平韵"
-            : "仄韵"
+          ? formatRhymeToneLabel(
+              expectedTone,
+              constraint.type === "rhyme" ? constraint.xieyun : false,
+            )
           : constraintLabel(constraint);
 
         if (!value || !dict) return { status: "empty", label: baseLabel };
