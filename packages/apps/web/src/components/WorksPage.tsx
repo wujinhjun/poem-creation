@@ -7,6 +7,7 @@ type WorksPageProps = {
   drafts: PoemCreationDraftSummary[];
   persistenceMode: 'local' | 'supabase';
   onCreateDraft: () => void;
+  onOpenQuickFill: () => void;
   onOpenDraft: (id: string) => void;
   onDeleteDraft: (id: string) => void;
   onExportDrafts: () => void;
@@ -17,6 +18,7 @@ export function WorksPage({
   drafts,
   persistenceMode,
   onCreateDraft,
+  onOpenQuickFill,
   onOpenDraft,
   onDeleteDraft,
   onExportDrafts,
@@ -69,6 +71,8 @@ export function WorksPage({
           onDeleteDraft={onDeleteDraft}
           onExportDrafts={onExportDrafts}
           onImportDrafts={onImportDrafts}
+          onCreateDraft={onCreateDraft}
+          onOpenQuickFill={onOpenQuickFill}
         />
       </section>
     </main>

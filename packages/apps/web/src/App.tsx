@@ -645,6 +645,7 @@ export default function App() {
         drafts={drafts}
         persistenceMode={framePersistenceMode}
         onCreateDraft={handleOpenEntry}
+        onOpenQuickFill={() => void handleOpenQuickFill()}
         onOpenDraft={(id) => void handleOpenDraft(id)}
         onDeleteDraft={(id) => void handleDeleteDraft(id)}
         onExportDrafts={() => void handleExportDrafts()}

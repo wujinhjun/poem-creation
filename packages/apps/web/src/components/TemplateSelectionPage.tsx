@@ -234,7 +234,7 @@ export function TemplateSelectionPage({
             </div>
           </section>
         </div>
-        <aside className='template-preview'>
+        <aside className={`template-preview${pattern.length === 0 ? ' is-empty' : ''}`}>
           <PatternPreview
             title={patternTitle}
             subtitle={patternSubtitle}

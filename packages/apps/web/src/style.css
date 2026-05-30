@@ -435,6 +435,12 @@ h3 {
   border-top: 1px solid var(--line);
 }
 
+.recent-list > .empty-copy {
+  border: 1px dashed var(--line);
+  background: #fffbf5;
+  margin-top: 14px;
+}
+
 .recent-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -769,6 +775,10 @@ h3 {
   border: 1px solid var(--line);
   background: #fffbf5;
   padding: 20px 24px;
+}
+
+.template-preview.is-empty .pattern-preview-block {
+  min-height: auto;
 }
 
 .pattern-preview-heading {
@@ -1309,6 +1319,20 @@ h3 {
   overflow: auto;
   border: 1px solid var(--line);
   background: #fffbf5;
+}
+
+.draft-empty-state {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  padding: 24px;
+  color: var(--muted);
+}
+
+.draft-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .draft-row {
@@ -2099,6 +2123,10 @@ h3 {
 
   .template-preview {
     position: static;
+  }
+
+  .template-preview.is-empty {
+    display: none;
   }
 
   .quickfill-sheet {

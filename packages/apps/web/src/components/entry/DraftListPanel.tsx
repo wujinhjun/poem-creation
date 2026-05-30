@@ -16,6 +16,8 @@ type DraftListPanelProps = {
   onDeleteDraft: (id: string) => void;
   onExportDrafts: () => void;
   onImportDrafts: (file: File) => void;
+  onCreateDraft: () => void;
+  onOpenQuickFill: () => void;
 };
 
 export function DraftListPanel({
@@ -27,6 +29,8 @@ export function DraftListPanel({
   onDeleteDraft,
   onExportDrafts,
   onImportDrafts,
+  onCreateDraft,
+  onOpenQuickFill,
 }: DraftListPanelProps) {
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -73,8 +77,24 @@ export function DraftListPanel({
       />
       <div className='draft-list-scroll'>
         {drafts.length === 0 && (
-          <div className='empty-copy'>
-            暂无旧作
+          <div className='draft-empty-state'>
+            <p>还没有作品。</p>
+            <div className='draft-empty-actions'>
+              <button
+                type='button'
+                className='primary-button'
+                onClick={onCreateDraft}
+              >
+                按格律起笔
+              </button>
+              <button
+                type='button'
+                className='ghost-button'
+                onClick={onOpenQuickFill}
+              >
+                进入快填
+              </button>
+            </div>
           </div>
         )}
         {drafts.length > 0 && filteredDrafts.length === 0 && (
