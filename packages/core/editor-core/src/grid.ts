@@ -7,6 +7,11 @@ export function createEmptyEditorGrid(
   return pattern.map((row) => row.map(() => ""));
 }
 
+/** 克隆编辑器网格，避免直接修改已有状态 */
+export function cloneEditorGrid(grid: readonly string[][]): string[][] {
+  return grid.map((row) => [...row]);
+}
+
 /** 生成 pattern 的摘要字符串（用于检测模板变化） */
 export function createEditorPatternSignature(
   pattern: readonly EditorConstraint[][],

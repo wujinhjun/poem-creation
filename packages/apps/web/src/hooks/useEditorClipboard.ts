@@ -1,14 +1,13 @@
 import { useCallback } from 'react';
 import type { ClipboardEvent, RefObject } from 'react';
 import {
-  createEmptyEditorGrid,
+  cloneEditorGrid,
   normalizeEditorInput,
   pasteEditorTextAt,
 } from '@poem/editor-core';
 import type { ToneConstraint } from '@poem/parser/kernel';
-import { cloneEditorGrid } from './useEditorHistory';
 import type { CellPosition } from './useEditorSelection';
-import type { EditorGridState } from './useEditorHistory';
+import type { EditorGridState } from './editorGridState';
 import type { Dispatch, SetStateAction } from 'react';
 
 export function useEditorClipboard({
@@ -56,24 +55,10 @@ export function useEditorClipboard({
     (lineIdx: number, colIdx: number, text: string) => {
       const normalized = normalizeEditorInput(text);
       if (normalized.length === 0) return;
-      setGridState((prev) => {
-        const source =
-          prev.signature === patternSignature
-            ? prev.grid
-            : createEmptyEditorGrid(pattern);
-        pushHistory(source);
-        const result = pasteEditorTextAt(
-          source,
-          pattern,
-          lineIdx,
-          colIdx,
-          text,
-        );
-        if (result.completed) pendingCompleteRef.current = result.grid;
-        return { signature: patternSignature, grid: result.grid };
-      });
-
       const result = pasteEditorTextAt(grid, pattern, lineIdx, colIdx, text);
+      pushHistory(grid);
+      if (result.completed) pendingCompleteRef.current = result.grid;
+      setGridState({ signature: patternSignature, grid: result.grid });
       clearSelection();
       setActiveCell(result.nextPosition);
     },
@@ -96,24 +81,7 @@ export function useEditorClipboard({
       const start = selectedPositions[0] ?? activeCell;
       if (!start) return;
 
-      setGridState((prev) => {
-        const source =
-          prev.signature === patternSignature
-            ? prev.grid
-            : createEmptyEditorGrid(pattern);
-        pushHistory(source);
-        const cleared = clearSelectionInGrid(source);
-        const result = pasteEditorTextAt(
-          cleared,
-          pattern,
-          start.line,
-          start.col,
-          text,
-        );
-        if (result.completed) pendingCompleteRef.current = result.grid;
-        return { signature: patternSignature, grid: result.grid };
-      });
-
+      pushHistory(grid);
       const result = pasteEditorTextAt(
         clearSelectionInGrid(grid),
         pattern,
@@ -121,6 +89,8 @@ export function useEditorClipboard({
         start.col,
         text,
       );
+      if (result.completed) pendingCompleteRef.current = result.grid;
+      setGridState({ signature: patternSignature, grid: result.grid });
       setDraft('');
       clearSelection();
       setActiveCell(result.nextPosition);

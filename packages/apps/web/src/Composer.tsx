@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import {
+  cloneEditorGrid,
   createEditorPatternSignature,
   createEmptyEditorGrid,
   normalizeEditorInput,
@@ -21,11 +22,8 @@ import {
   useEditorSelection,
 } from './hooks/useEditorSelection';
 import type { CellPosition } from './hooks/useEditorSelection';
-import {
-  cloneEditorGrid,
-  useEditorHistory,
-} from './hooks/useEditorHistory';
-import type { EditorGridState } from './hooks/useEditorHistory';
+import { useEditorHistory } from './hooks/useEditorHistory';
+import type { EditorGridState } from './hooks/editorGridState';
 import { useEditorClipboard } from './hooks/useEditorClipboard';
 
 function createInitialGrid(

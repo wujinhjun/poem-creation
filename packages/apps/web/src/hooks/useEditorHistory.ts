@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-
-export type EditorGridState = {
-  signature: string;
-  grid: string[][];
-};
-
-export function cloneEditorGrid(grid: string[][]): string[][] {
-  return grid.map((row) => [...row]);
-}
+import { cloneEditorGrid } from '@poem/editor-core';
+import type { EditorGridState } from './editorGridState';
 
 export function useEditorHistory({
   patternSignature,
