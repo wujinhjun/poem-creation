@@ -1509,7 +1509,8 @@ h3 {
   background: #f2ecdf;
 }
 
-.title-input::placeholder {
+.title-input::placeholder,
+.quickfill-meta input:first-of-type::placeholder {
   color: #b3aa9d;
 }
 
