@@ -204,6 +204,7 @@ export function EditorPage({
           exportStatus={exportStatus}
           onOpenExportPreview={onOpenExportPreview}
           onCopyExportText={onCopyExportText}
+          onReturn={onReturn}
         />
         {infoModalOpen && (
           <EditorInfoModal

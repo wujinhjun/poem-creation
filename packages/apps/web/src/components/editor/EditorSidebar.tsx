@@ -11,6 +11,7 @@ type EditorSidebarProps = {
   exportStatus: string;
   onOpenExportPreview: () => void;
   onCopyExportText: () => void;
+  onReturn: () => void;
 };
 
 type EditorInfoContentProps = Omit<EditorSidebarProps, 'onReturn'>;
@@ -88,6 +89,7 @@ export function EditorSidebar({
   exportStatus,
   onOpenExportPreview,
   onCopyExportText,
+  onReturn,
 }: EditorSidebarProps) {
   return (
     <aside className='panel editor-aside'>
@@ -96,6 +98,13 @@ export function EditorSidebar({
           <p className='section-kicker'>工具</p>
           <h2>作品信息</h2>
         </div>
+        <button
+          type='button'
+          className='ghost-button'
+          onClick={onReturn}
+        >
+          返回
+        </button>
       </div>
       <EditorInfoContent
         genre={genre}
