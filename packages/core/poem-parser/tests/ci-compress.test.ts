@@ -26,7 +26,6 @@ function makeCanonical(): CiVariantFull {
     id: "test-zhengti",
     author: "测试",
     sketch: "测试正体",
-    rhymeType: "ping",
     sections: [
       { lines: ["FPFZZPp", "ZFPPFZp", "FZFPPZZ", "FPFZZPp"] },
       { lines: ["FPFZPPZ", "ZFPPFZp", "FZFPPZZ", "FPFZZPp"] },

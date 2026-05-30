@@ -32,7 +32,6 @@ export interface CiVariantFull {
   id: string;
   author?: string;
   sketch?: string;
-  rhymeType?: "ping" | "ze" | "mixed";
   sections: CiSectionStored[];
 }
 
@@ -74,8 +73,12 @@ export function materializeVariant(
   stored: CiVariantStored,
   canonicalMap: ReadonlyMap<string, CiVariantFull>,
   expanded?: CiVariantFull,
+  rhymeType?: "ping" | "ze" | "mixed",
 ): CiTemplateVariant {
-  return sectionsToVariant(expanded ?? expandStoredVariant(stored, canonicalMap));
+  return sectionsToVariant(
+    expanded ?? expandStoredVariant(stored, canonicalMap),
+    rhymeType,
+  );
 }
 
 /**
@@ -98,7 +101,6 @@ export function expandStoredVariant(
     id: stored.id,
     author: stored.author,
     sketch: stored.sketch,
-    rhymeType: base.rhymeType,
     sections: applyEdits(base.sections, stored.edits),
   };
 }
@@ -106,7 +108,10 @@ export function expandStoredVariant(
 /**
  * 将 CiVariantFull 的 sections 转换为运行时 CiTemplateVariant。
  */
-function sectionsToVariant(full: CiVariantFull): CiTemplateVariant {
+function sectionsToVariant(
+  full: CiVariantFull,
+  rhymeType?: "ping" | "ze" | "mixed",
+): CiTemplateVariant {
   const sections: CiTemplateSection[] = full.sections.map((sec, si) => {
     const lines: CiTemplateLine[] = sec.lines.map((dsl) => {
       const pattern = parseLineDSL(dsl);
@@ -131,7 +136,7 @@ function sectionsToVariant(full: CiVariantFull): CiTemplateVariant {
     name: "",
     author: full.author,
     sketch: full.sketch,
-    rhymeType: full.rhymeType,
+    rhymeType,
     sections,
   };
 }

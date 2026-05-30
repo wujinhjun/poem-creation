@@ -32,6 +32,7 @@ export interface CompactTuneRaw {
   id: string;
   name: string;
   aliases?: string[];
+  rhymeType?: "ping" | "ze" | "mixed";
   variants: Array<CiVariantStored>;
 }
 
@@ -114,7 +115,8 @@ export function loadCiBundle(
       expandStoredVariant(stored, canonicalMap),
     );
     const materializedVariants: CiTemplateVariant[] = storedVariants.map(
-      (stored, index) => materializeVariant(stored, canonicalMap, expandedVariants[index]),
+      (stored, index) =>
+        materializeVariant(stored, canonicalMap, expandedVariants[index], rawTune.rhymeType),
     );
 
     const template: CiTemplate = {
