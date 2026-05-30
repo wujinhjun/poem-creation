@@ -94,22 +94,24 @@ export function CustomSelect<T extends string>({
             </div>
           )}
           <div className='select-options'>
-            <button
-              type='button'
-              className='select-option is-placeholder'
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                onChange('');
-                setQuery('');
-                setOpen(false);
-              }}
-            >
-              {placeholder}
-            </button>
+            {value && (
+              <button
+                type='button'
+                className='select-option is-placeholder'
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  onChange('');
+                  setQuery('');
+                  setOpen(false);
+                }}
+              >
+                （清空选择）
+              </button>
+            )}
             {filteredOptions.map((option) => (
               <button
-              key={option.value}
-              type='button'
+                key={option.value}
+                type='button'
                 className={`select-option${option.value === value ? ' is-selected' : ''}`}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {

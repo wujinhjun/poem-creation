@@ -75,7 +75,7 @@ export function QuickFillPage({ onRecognize, onReturn }: QuickFillPageProps) {
             <span>题目（可空）</span>
             <input
               value={title}
-              placeholder='无题'
+              placeholder='点击命名'
               onChange={(event) => setTitle(event.currentTarget.value)}
             />
             <input
