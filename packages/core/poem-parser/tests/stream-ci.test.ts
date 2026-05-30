@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { analyzeStream } from "./_helpers.js";
 import { analyze } from "./_helpers.js";
+import { getTemplateById } from "./_helpers.js";
 
 // 基于苏轼《水调歌头》
 const SHUIDIAOGETOU_TEXT = [
@@ -142,6 +143,38 @@ describe("流式解析 analyzeStream", () => {
     // 最后一字 "久" 是韵脚
     const lastSeg = result.segments[result.segments.length - 1];
     expect(lastSeg.text).toBe("久");
+  });
+});
+
+describe("西江月词牌解析", () => {
+  it("应保留前后段各四句和叶仄韵", () => {
+    const template = getTemplateById("西江月") as any;
+    const variant = template.variants.find((v: any) => v.id === "西江月-柳永体1");
+    const lines = variant.sections.flatMap((section: any) => section.lines);
+
+    expect(lines.map((line: any) => line.charCount)).toEqual([6, 6, 7, 6, 6, 6, 7, 6]);
+    expect(lines.map((line: any) => line.rhymeType ?? null)).toEqual([
+      null,
+      "ping",
+      "ping",
+      "ze",
+      null,
+      "ping",
+      "ping",
+      "ze",
+    ]);
+    expect(lines[3].isXieyun).toBe(true);
+    expect(lines[7].isXieyun).toBe(true);
+  });
+
+  it("流式解析西江月时应按八句计数", async () => {
+    const result = await analyzeStream("", "西江月", {
+      variantId: "西江月-柳永体1",
+      rhymeDictType: "cilin",
+    });
+
+    expect(result.totalSentences).toBe(8);
+    expect(result.sentenceCharCounts).toEqual([6, 6, 7, 6, 6, 6, 7, 6]);
   });
 });
 
