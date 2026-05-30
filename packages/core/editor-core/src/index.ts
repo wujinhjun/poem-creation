@@ -3,7 +3,12 @@ export type {
   EditorPosition,
   EditorWriteResult,
 } from "./types.js";
-export { createEmptyEditorGrid, createEditorPatternSignature, lineEndsWithRhyme } from "./grid.js";
+export {
+  cloneEditorGrid,
+  createEmptyEditorGrid,
+  createEditorPatternSignature,
+  lineEndsWithRhyme,
+} from "./grid.js";
 export {
   normalizeEditorInput,
   writeEditorCharsAt,
