@@ -45,7 +45,7 @@ export function EntryPage({
           </div>
           <div className='recent-list'>
             {recentDrafts.length === 0 && (
-              <p className='empty-copy'>暂无旧作，先从左侧新建一首。</p>
+              <p className='empty-copy'>还没有作品，按起笔卡片开始。</p>
             )}
             {recentDrafts.map((draft) => (
               <div key={draft.id} className='recent-row'>
