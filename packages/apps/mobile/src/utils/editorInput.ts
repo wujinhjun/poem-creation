@@ -1,4 +1,5 @@
 import type { EditorConstraint } from "@poem/editor-core";
+import { formatRhymeToneLabel } from "@poem/shared";
 
 const HAN_CHAR_PATTERN = /[\u3400-\u9fff\uf900-\ufaff]/u;
 
@@ -9,7 +10,9 @@ export function normalizeHanInput(text: string): string[] {
 
 export function constraintLabel(constraint: EditorConstraint): string {
   if (constraint.type === "flexible") return "中";
-  if (constraint.type === "rhyme") return "韵";
+  if (constraint.type === "rhyme") {
+    return formatRhymeToneLabel(constraint.tone, constraint.xieyun);
+  }
   return constraint.tone ?? "";
 }
 

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { RhymeDictType, ToneConstraint } from '@poem/parser/kernel';
+import { formatRhymeToneLabel } from '@poem/shared';
 import type { Genre } from '../constants/poem';
 import { RHYME_OPTIONS } from '../constants/poem';
 import { loadCiBundle } from '../utils/ciTemplate';
-import { getMeterMap } from '@poem/poem-kit';
+import { ciPatternForEditor, getMeterMap } from '@poem/poem-kit';
 import type { SelectOption } from './CustomSelect';
 import { CustomSelect } from './CustomSelect';
 
@@ -24,7 +25,9 @@ type TemplateSelectionPageProps = {
 
 function toneMark(cell: ToneConstraint): string {
   if (cell.type === 'fixed') return cell.tone;
-  if (cell.type === 'rhyme') return '韵';
+  if (cell.type === 'rhyme') {
+    return formatRhymeToneLabel(cell.tone, cell.xieyun);
+  }
   return '中';
 }
 
@@ -121,9 +124,7 @@ export function TemplateSelectionPage({
           (item) => item.id === selectedVariant,
         );
         const nextPattern = variant
-          ? variant.sections.flatMap((section) =>
-              section.lines.map((line) => line.pattern),
-            )
+          ? ciPatternForEditor(bundle[selectedTune], variant.id).lines
           : [];
         if (alive) setCiPattern(nextPattern);
       })

@@ -74,6 +74,7 @@ export {
 } from "./templates/index.js";
 export type {
   CiTemplate,
+  CiTemplateLine,
   CiTemplateVariant,
   AnyTemplate,
   CompactBundleRaw,

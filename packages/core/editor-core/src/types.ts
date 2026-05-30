@@ -1,6 +1,7 @@
 export type EditorConstraint = {
   type: string;
   tone?: string;
+  xieyun?: boolean;
 };
 
 export type EditorPosition = {

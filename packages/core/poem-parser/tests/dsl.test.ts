@@ -28,23 +28,31 @@ describe("parseLineDSL", () => {
   it("应正确解析平韵韵脚 p", () => {
     const result = parseLineDSL("FPFZZPp");
     expect(result).toHaveLength(7);
-    expect(result[6]).toEqual({ type: "rhyme" });
+    expect(result[6]).toEqual({ type: "rhyme", tone: Tone.Ping });
   });
 
   it("应正确解析仄韵韵脚 z", () => {
     const result = parseLineDSL("ZFPPFZz");
     expect(result).toHaveLength(7);
-    expect(result[6]).toEqual({ type: "rhyme" });
+    expect(result[6]).toEqual({ type: "rhyme", tone: Tone.Ze });
   });
 
   it("应正确解析叶韵 +p / +z（双字符 token）", () => {
     const result = parseLineDSL("FPFZFP+p");
     expect(result).toHaveLength(7);
-    expect(result[6]).toEqual({ type: "rhyme" });
+    expect(result[6]).toEqual({
+      type: "rhyme",
+      tone: Tone.Ping,
+      xieyun: true,
+    });
 
     const result2 = parseLineDSL("FZFPFF+z");
     expect(result2).toHaveLength(7);
-    expect(result2[6]).toEqual({ type: "rhyme" });
+    expect(result2[6]).toEqual({
+      type: "rhyme",
+      tone: Tone.Ze,
+      xieyun: true,
+    });
   });
 
   it("孤立 + 应被跳过（宽松处理）", () => {

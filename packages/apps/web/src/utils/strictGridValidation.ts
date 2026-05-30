@@ -1,5 +1,6 @@
 import { Tone } from '@poem/parser/kernel';
 import type { RhymeDict, ToneConstraint } from '@poem/parser/kernel';
+import { formatRhymeToneLabel } from '@poem/shared';
 
 export type StrictCharIssue = {
   lineIndex: number;
@@ -44,6 +45,17 @@ export function validateGridStrictly({
     line.forEach((constraint, col) => {
       const char = chars[lineIndex]?.[col] ?? '';
       if (!char || constraint.type === 'flexible') return;
+      const expectedTone =
+        constraint.type === 'rhyme'
+          ? (constraint.tone ?? expectedRhymeTone)
+          : null;
+      const expectedLabel =
+        constraint.type === 'fixed'
+          ? toneLabel(constraint.tone)
+          : formatRhymeToneLabel(
+              expectedTone,
+              constraint.type === 'rhyme' ? constraint.xieyun : false,
+            );
 
       checkableCount += 1;
       const entries = dict.lookup(char);
@@ -53,11 +65,7 @@ export function validateGridStrictly({
           col,
           char,
           lineText,
-          expected: constraint.type === 'fixed'
-            ? toneLabel(constraint.tone)
-            : expectedRhymeTone
-              ? `${toneLabel(expectedRhymeTone)}韵`
-              : '韵',
+          expected: expectedLabel,
           actual: '未知',
           reason: '韵书未收此字',
         });
@@ -86,7 +94,7 @@ export function validateGridStrictly({
       const rhymeEntries = entries.filter(
         (entry) =>
           entry.rhymeGroup &&
-          (!expectedRhymeTone || entry.tone === expectedRhymeTone),
+          (!expectedTone || entry.tone === expectedTone),
       );
       const matchingEntry = rhymeEntries.find((entry) => {
         const anchor = rhymeAnchors.get(entry.tone);
@@ -106,7 +114,7 @@ export function validateGridStrictly({
         col,
         char,
         lineText,
-        expected: expectedRhymeTone ? `${toneLabel(expectedRhymeTone)}韵` : '韵',
+        expected: expectedLabel,
         actual: [...new Set(entries.map((entry) => {
           const tone = toneLabel(entry.tone);
           return entry.rhymeGroup ? `${tone}${entry.rhymeGroup}` : tone;
