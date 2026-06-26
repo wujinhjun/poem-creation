@@ -1,8 +1,10 @@
-import type { ClipboardEvent, KeyboardEvent, MouseEvent } from 'react';
+import type { ClipboardEvent, KeyboardEvent, PointerEvent } from 'react';
 import type { ToneConstraint } from '@poem/parser/kernel';
 import type { SlotEvaluation } from './types';
 
 export function CharSlot({
+  line,
+  col,
   constraint,
   value,
   evaluation,
@@ -15,11 +17,14 @@ export function CharSlot({
   onCompositionEnd,
   onKeyDown,
   onCopy,
+  onCut,
   onPaste,
   onSelect,
   onSelectStart,
   onSelectExtend,
 }: {
+  line: number;
+  col: number;
   constraint: ToneConstraint;
   value: string;
   evaluation: SlotEvaluation;
@@ -32,26 +37,35 @@ export function CharSlot({
   onCompositionEnd: (value: string) => void;
   onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
   onCopy: (event: ClipboardEvent<HTMLInputElement>) => void;
+  onCut: (event: ClipboardEvent<HTMLInputElement>) => void;
   onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
   onSelect: () => void;
-  onSelectStart: (event: MouseEvent<HTMLButtonElement>) => void;
-  onSelectExtend: (event: MouseEvent<HTMLButtonElement>) => void;
+  onSelectStart: (event: PointerEvent<HTMLButtonElement>) => void;
+  onSelectExtend: (event: PointerEvent<HTMLButtonElement>) => void;
 }) {
   return (
-    <span className='char-slot'>
+    <span
+      className='char-slot'
+      data-editor-cell='true'
+      data-line={line}
+      data-col={col}
+    >
       <span className={`slot-label slot-label-${constraint.type}`}>
         {evaluation.label}
       </span>
       <button
         type='button'
         aria-label={evaluation.title}
+        data-editor-cell='true'
+        data-line={line}
+        data-col={col}
         className={`char-input status-${evaluation.status}${active ? ' is-active' : ''}${selected ? ' is-selected' : ''}`}
         title={evaluation.title}
         onClick={(event) => {
           if (event.detail === 0) onSelect();
         }}
-        onMouseDown={onSelectStart}
-        onMouseEnter={onSelectExtend}
+        onPointerDown={onSelectStart}
+        onPointerEnter={onSelectExtend}
       >
         {value}
       </button>
@@ -67,6 +81,7 @@ export function CharSlot({
           }
           onKeyDown={onKeyDown}
           onCopy={onCopy}
+          onCut={onCut}
           onPaste={onPaste}
         />
       )}

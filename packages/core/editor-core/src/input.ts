@@ -16,29 +16,41 @@ export function writeEditorCharsAt(
   chars: readonly string[],
 ): EditorWriteResult {
   const next = grid.map((row) => [...row]);
-  const rowLength = pattern[lineIdx]?.length ?? 0;
+  let line = lineIdx;
+  let col = colIdx;
+  let wroteAny = false;
 
-  for (
-    let offset = 0;
-    offset < chars.length && colIdx + offset < rowLength;
-    offset++
-  ) {
-    next[lineIdx][colIdx + offset] = chars[offset];
+  for (const char of chars) {
+    while (line < pattern.length && col >= (pattern[line]?.length ?? 0)) {
+      line += 1;
+      col = 0;
+    }
+    if (line >= pattern.length) break;
+    next[line][col] = char;
+    wroteAny = true;
+    col += 1;
   }
 
-  const wrotePastLineEnd = colIdx + chars.length >= rowLength;
-  const isLastLine = lineIdx === pattern.length - 1;
-  const nextPosition = wrotePastLineEnd
-    ? {
-        line: isLastLine ? lineIdx : lineIdx + 1,
-        col: isLastLine ? Math.max(rowLength - 1, 0) : 0,
-      }
-    : { line: lineIdx, col: colIdx + chars.length };
+  while (line < pattern.length && col >= (pattern[line]?.length ?? 0)) {
+    line += 1;
+    col = 0;
+  }
+
+  const completed = wroteAny && line >= pattern.length;
+  if (line >= pattern.length) {
+    const lastLine = Math.max(pattern.length - 1, 0);
+    const lastCol = Math.max((pattern[lastLine]?.length ?? 1) - 1, 0);
+    return {
+      grid: next,
+      nextPosition: { line: lastLine, col: lastCol },
+      completed,
+    };
+  }
 
   return {
     grid: next,
-    nextPosition,
-    completed: wrotePastLineEnd && isLastLine,
+    nextPosition: { line, col },
+    completed,
   };
 }
 
@@ -50,44 +62,11 @@ export function pasteEditorTextAt(
   colIdx: number,
   text: string,
 ): EditorWriteResult {
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => normalizeEditorInput(line).join(""))
-    .filter(Boolean);
-  const next = grid.map((row) => [...row]);
-  let lastPosition = { line: lineIdx, col: colIdx };
-  let completed = false;
-
-  if (lines.length > 1) {
-    for (
-      let offset = 0;
-      offset < lines.length && lineIdx + offset < pattern.length;
-      offset++
-    ) {
-      const targetLine = lineIdx + offset;
-      const startCol = offset === 0 ? colIdx : 0;
-      const result = writeEditorCharsAt(
-        next,
-        pattern,
-        targetLine,
-        startCol,
-        normalizeEditorInput(lines[offset]),
-      );
-      result.grid.forEach((row, i) => {
-        next[i] = row;
-      });
-      lastPosition = result.nextPosition;
-      completed = result.completed;
-    }
-  } else {
-    return writeEditorCharsAt(
-      next,
-      pattern,
-      lineIdx,
-      colIdx,
-      normalizeEditorInput(text),
-    );
-  }
-
-  return { grid: next, nextPosition: lastPosition, completed };
+  return writeEditorCharsAt(
+    grid,
+    pattern,
+    lineIdx,
+    colIdx,
+    normalizeEditorInput(text),
+  );
 }

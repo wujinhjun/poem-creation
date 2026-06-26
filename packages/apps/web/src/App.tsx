@@ -189,6 +189,7 @@ export default function App() {
     await persistIfEditing();
     const nextDraft = {
       ...createEmptyDraft(),
+      title: entrySelectedTune,
       author: userSettings.defaultAuthor,
       genre: entryGenre,
       selectedTune: entrySelectedTune,
@@ -502,7 +503,7 @@ export default function App() {
 
       const nextDraft: PoemCreationDraft = {
         ...createEmptyDraft(),
-        title: input.title.trim(),
+        title: input.title.trim() || best.tuneName,
         author: input.author.trim() || userSettings.defaultAuthor,
         genre: best.genre,
         selectedTune: best.tuneName,

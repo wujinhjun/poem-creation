@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent, MouseEvent } from 'react';
+import type { KeyboardEvent, PointerEvent } from 'react';
 import {
   cloneEditorGrid,
   createEditorPatternSignature,
@@ -75,6 +75,7 @@ export default function Composer({
   const gridRef = useRef(grid);
   const activeInputRef = useRef<HTMLInputElement | null>(null);
   const composingRef = useRef(false);
+  const dragSelectingRef = useRef(false);
   const pendingCompleteRef = useRef<string[][] | null>(null);
   const [draft, setDraft] = useState('');
   const {
@@ -87,7 +88,13 @@ export default function Composer({
     beginSelection,
     extendSelection,
     selectCell,
-  } = useEditorSelection({ pattern, gridRef, focusTarget });
+  } = useEditorSelection({
+    pattern,
+    gridRef,
+    visualLineGroups,
+    sectionBreakBeforeGroups,
+    focusTarget,
+  });
   const { pushHistory, undo } = useEditorHistory({
     patternSignature,
     setDraft,
@@ -233,6 +240,7 @@ export default function Composer({
   const {
     clearSelectionInGrid,
     copySelectionToClipboard,
+    cutSelectionToClipboard,
     pasteAt,
     replaceSelectionWithText,
   } = useEditorClipboard({
@@ -251,30 +259,113 @@ export default function Composer({
     setGridState,
   });
 
-  const handleCellMouseDown = useCallback(
+  useEffect(() => {
+    const handleWindowKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (!(event.metaKey || event.ctrlKey)) return;
+      if (event.altKey || event.shiftKey) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      if (key !== 'z' && key !== 'x') return;
+
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tagName = target.tagName.toLowerCase();
+        const isGridEditor = target.classList.contains('active-cell-editor');
+        const isEditable =
+          target.isContentEditable ||
+          tagName === 'textarea' ||
+          tagName === 'select' ||
+          (tagName === 'input' && !isGridEditor);
+        if (isEditable) return;
+      }
+
+      event.preventDefault();
+      if (key === 'z') {
+        undo();
+      } else {
+        cutSelectionToClipboard();
+      }
+    };
+
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [cutSelectionToClipboard, undo]);
+
+  useEffect(() => {
+    const positionFromPointer = (event: globalThis.PointerEvent) => {
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      const cell = target?.closest?.('[data-editor-cell="true"]');
+      if (!(cell instanceof HTMLElement)) return null;
+      const line = Number(cell.dataset.line);
+      const col = Number(cell.dataset.col);
+      if (!Number.isInteger(line) || !Number.isInteger(col)) return null;
+      if (!pattern[line]?.[col]) return null;
+      return { line, col };
+    };
+
+    const handlePointerMove = (event: globalThis.PointerEvent) => {
+      if (!dragSelectingRef.current) return;
+      if (event.buttons !== 1) return;
+      const position = positionFromPointer(event);
+      if (!position) return;
+      extendSelection(position);
+    };
+
+    const handlePointerUp = () => {
+      dragSelectingRef.current = false;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [extendSelection, pattern]);
+
+  const handleCellPointerDown = useCallback(
     (
       position: CellPosition,
-      event: MouseEvent<HTMLButtonElement>,
+      event: PointerEvent<HTMLButtonElement>,
     ) => {
+      if (event.button !== 0) return;
       event.preventDefault();
       setDraft('');
+      dragSelectingRef.current = true;
       beginSelection(position, event.shiftKey);
     },
     [beginSelection],
   );
 
-  const handleCellMouseEnter = useCallback(
+  const handleCellPointerEnter = useCallback(
     (
       position: CellPosition,
-      event: MouseEvent<HTMLButtonElement>,
+      event: PointerEvent<HTMLButtonElement>,
     ) => {
       if (event.buttons !== 1) return;
+      dragSelectingRef.current = true;
       extendSelection(position);
     },
     [extendSelection],
   );
 
+  const handleComposerPointerDown = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.closest('[data-editor-cell="true"]')) return;
+      dragSelectingRef.current = false;
+      clearSelection();
+      setDraft('');
+      setActiveCell(null);
+    },
+    [clearSelection, setActiveCell],
+  );
+
   const handleCellSelect = useCallback((position: CellPosition) => {
+    dragSelectingRef.current = false;
     setDraft('');
     selectCell(position);
   }, [selectCell]);
@@ -292,6 +383,11 @@ export default function Composer({
       }
       if (shortcut && event.key.toLowerCase() === 'c') {
         copySelectionToClipboard();
+        event.preventDefault();
+        return;
+      }
+      if (shortcut && event.key.toLowerCase() === 'x') {
+        cutSelectionToClipboard();
         event.preventDefault();
         return;
       }
@@ -365,6 +461,7 @@ export default function Composer({
       clearSelectionInGrid,
       clearSelection,
       copySelectionToClipboard,
+      cutSelectionToClipboard,
       draft,
       grid,
       moveActiveCellHorizontal,
@@ -500,7 +597,7 @@ export default function Composer({
   }, [grid, onComplete]);
 
   return (
-    <div className='composer-grid'>
+    <div className='composer-grid' onPointerDown={handleComposerPointerDown}>
       {groups.map((group, groupIdx) => (
         <div
           key={group.join('-')}
@@ -511,6 +608,8 @@ export default function Composer({
               {pattern[li]?.map((constraint, ci) => (
                 <CharSlot
                   key={`${li}-${ci}`}
+                  line={li}
+                  col={ci}
                   constraint={constraint}
                   value={grid[li]?.[ci] ?? ''}
                   evaluation={
@@ -547,6 +646,7 @@ export default function Composer({
                     handleEditorKeyDown(event, { line: li, col: ci })
                   }
                   onCopy={copySelectionToClipboard}
+                  onCut={cutSelectionToClipboard}
                   onPaste={(event) => {
                     event.preventDefault();
                     if (selectedPositions.length > 0) {
@@ -558,10 +658,10 @@ export default function Composer({
                   }}
                   onSelect={() => handleCellSelect({ line: li, col: ci })}
                   onSelectStart={(event) =>
-                    handleCellMouseDown({ line: li, col: ci }, event)
+                    handleCellPointerDown({ line: li, col: ci }, event)
                   }
                   onSelectExtend={(event) =>
-                    handleCellMouseEnter({ line: li, col: ci }, event)
+                    handleCellPointerEnter({ line: li, col: ci }, event)
                   }
                 />
               ))}
