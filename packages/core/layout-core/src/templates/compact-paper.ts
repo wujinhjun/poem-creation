@@ -6,9 +6,8 @@ import type {
   PoemExportTextBlockConfig,
 } from "../schema.js";
 
-// Resolved renderer config for the compact paper template.
-// This template keeps a centered, classical composition with only paper texture
-// and a thin border as ornamentation.
+// 素笺居中模板的渲染器配置类型。
+// 这个模板保持居中的古典构图，只使用纸纹和细边框作为装饰。
 export type CompactPaperImageConfig = PoemExportBaseImageConfig & {
   kind: "compact-paper";
   paper: PoemExportRectConfig & {
@@ -29,7 +28,7 @@ export const COMPACT_PAPER_TEMPLATE_META: PoemExportTemplate = {
   description: "居中排版、细框纸纹，适合经典词作导出。",
 };
 
-// Compact paper: centered classic composition with the least ornamentation.
+// 素笺居中：居中经典构图，装饰最少。
 export const COMPACT_PAPER_TEMPLATE_CONFIG = {
   kind: "compact-paper",
   background: { from: "#fff9eb", to: "#fff9eb" },

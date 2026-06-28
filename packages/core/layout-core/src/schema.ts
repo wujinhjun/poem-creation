@@ -39,6 +39,7 @@ export type PoemExportTemplate = {
 
 export type PoemExportRatioId = "4:3" | "16:9" | "9:16" | "3:4" | "1:1";
 
+// 比例 id 使用“高:宽”的产品语义，width/height 则是渲染画布的实际像素尺寸。
 export type PoemExportRatio = {
   id: PoemExportRatioId;
   label: string;

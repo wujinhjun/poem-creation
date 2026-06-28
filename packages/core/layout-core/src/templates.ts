@@ -11,8 +11,8 @@ export { POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS, POEM_EXPORT_TEMPLATES };
 
 export const DEFAULT_POEM_EXPORT_TEMPLATE_ID = "modern-whitespace";
 
-// Legacy mock size. Runtime export uses the selected ratio, so templates should
-// prefer relative expressions instead of depending on this fixed canvas.
+// 早期样张使用的基准尺寸。实际导出会使用用户选择的比例，
+// 因此模板应优先使用相对表达式，不要依赖这个固定画布。
 export const POEM_EXPORT_IMAGE_CANVAS = {
   width: 760,
   height: 1050,
@@ -20,12 +20,12 @@ export const POEM_EXPORT_IMAGE_CANVAS = {
 
 export const DEFAULT_POEM_EXPORT_RATIO_ID = "3:4";
 
-// Shared output ratios for Web and future native renderers.
+// 网页端和未来原生端渲染器共享的导出比例。
 export const POEM_EXPORT_RATIOS: PoemExportRatio[] = [
-  { id: "4:3", label: "4:3", width: 1200, height: 900 },
-  { id: "16:9", label: "16:9", width: 1600, height: 900 },
-  { id: "9:16", label: "9:16", width: 900, height: 1600 },
-  { id: "3:4", label: "3:4", width: 900, height: 1200 },
+  { id: "4:3", label: "4:3", width: 900, height: 1200 },
+  { id: "16:9", label: "16:9", width: 900, height: 1600 },
+  { id: "9:16", label: "9:16", width: 1600, height: 900 },
+  { id: "3:4", label: "3:4", width: 1200, height: 900 },
   { id: "1:1", label: "1:1", width: 1200, height: 1200 },
 ];
 
@@ -46,8 +46,8 @@ function roundLayout(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-// Percentages are axis-aware: horizontal values use canvas width, vertical
-// values use canvas height, and size values use the shorter edge.
+// 百分比会感知当前轴向：横向值基于画布宽度，纵向值基于画布高度，
+// 字号、线宽等尺寸值基于画布短边。
 function percentBase(axis: LayoutAxis, canvas: PoemExportRatio): number {
   if (axis === "x") return canvas.width;
   if (axis === "y") return canvas.height;
@@ -73,8 +73,8 @@ function slotValue(context: LayoutContext, token: string): number {
   return slot[property];
 }
 
-// Tiny arithmetic parser for coordinates such as "panel.left + 8%". It is kept
-// deliberately narrower than JavaScript so template files stay declarative.
+// 一个很小的坐标表达式解析器，支持类似 "panel.left + 8%" 的写法。
+// 它刻意比 JavaScript 窄，避免模板配置变成可执行脚本。
 function evaluateLayoutExpression(
   expression: string,
   context: LayoutContext,
@@ -128,7 +128,7 @@ function evaluateLayoutExpression(
   return roundLayout(result);
 }
 
-// Template values may be absolute numbers, percentages, or slot expressions.
+// 模板值可以是绝对数值、百分比，或引用其他区域的表达式。
 function resolveValue(
   value: PoemExportLayoutValue | undefined,
   context: LayoutContext,
@@ -141,8 +141,8 @@ function resolveValue(
     : evaluateLayoutExpression(value, context, axis);
 }
 
-// Slots are the dependency graph between regions. A template can reference
-// "title.bottom" only after the title slot has been resolved.
+// 槽位是区域之间的依赖图。只有在 title 区域解析完成之后，
+// 模板才能引用 "title.bottom" 这样的值。
 function updateRectSlot(
   context: LayoutContext,
   name: string,
@@ -160,8 +160,8 @@ function updateRectSlot(
   };
 }
 
-// Text slots expose estimated bounds and typography metrics for later regions;
-// final font fitting still belongs to the renderer.
+// 文本槽位暴露估算边界和排版指标，供后续区域引用；
+// 最终的字体收缩与适配仍由具体渲染器负责。
 function updateTextSlot(
   context: LayoutContext,
   name: string,
@@ -309,8 +309,8 @@ function resolveTemplateConfig(
   }
 }
 
-// Public parser entry. Apps select a template and ratio, then render from the
-// resolved numeric config without parsing expressions themselves.
+// 公共解析入口。App 只需要选择模板与比例，拿到的配置已经是纯数值，
+// 不需要在渲染器里再次理解表达式。
 export function parsePoemExportTemplate({
   templateId,
   ratioId = DEFAULT_POEM_EXPORT_RATIO_ID,

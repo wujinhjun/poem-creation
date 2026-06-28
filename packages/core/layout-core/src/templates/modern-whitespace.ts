@@ -6,9 +6,9 @@ import type {
   PoemExportTextBlockConfig,
 } from "../schema.js";
 
-// Resolved renderer config for the modern whitespace template.
-// This template is intentionally sparse: one paper panel, one accent line,
-// left-aligned text, and a small brand mark at the bottom.
+// 现代留白模板的渲染器配置类型。
+// 这个模板刻意保持克制：一个纸面区域、一条强调线、左对齐文本，
+// 以及底部的小型品牌署名。
 export type ModernWhitespaceImageConfig = PoemExportBaseImageConfig & {
   kind: "modern-whitespace";
   panel: PoemExportRectConfig & {
@@ -33,8 +33,7 @@ export const MODERN_WHITESPACE_TEMPLATE_META: PoemExportTemplate = {
   description: "低饱和背景、左对齐标题与底部品牌署名。",
 };
 
-// Modern whitespace: quiet editorial layout with left-aligned content and a
-// small brand mark anchored near the paper footer.
+// 现代留白：安静的编辑型排版，正文左对齐，品牌信息固定在纸面底部附近。
 export const MODERN_WHITESPACE_TEMPLATE_CONFIG = {
   kind: "modern-whitespace",
   background: { from: "#fffdf8", to: "#fffdf8" },

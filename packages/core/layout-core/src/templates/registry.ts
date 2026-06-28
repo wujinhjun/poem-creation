@@ -26,8 +26,8 @@ export const POEM_EXPORT_TEMPLATES: PoemExportTemplate[] = [
   COMPACT_PAPER_TEMPLATE_META,
 ];
 
-// Source template configs may use lightweight layout expressions. The parser in
-// ../templates.ts resolves them before app-level renderers receive the config.
+// 源模板配置可以使用轻量版式表达式。../templates.ts 中的解析器会先把它们
+// 转成纯数值，再交给应用层渲染器。
 export const POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS: Record<
   PoemExportTemplateId,
   unknown

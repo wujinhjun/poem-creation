@@ -1,0 +1,232 @@
+.entry-grid,
+.home-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 28px;
+  align-items: start;
+}
+
+.home-primary {
+  min-width: 0;
+}
+
+.home-aside {
+  display: grid;
+  gap: 20px;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  background: var(--paper-strong);
+}
+
+.draft-list-panel,
+.editor-aside,
+.settings-panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.entry-compose-panel {
+  display: grid;
+  gap: 26px;
+}
+
+.home-compose {
+  min-height: calc(100vh - 190px);
+  align-content: center;
+}
+
+.home-copy {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 34px 24px 12px;
+  text-align: center;
+}
+
+.home-copy h1 {
+  font-size: clamp(42px, 5.1vw, 64px);
+}
+
+.home-copy p {
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.home-divider {
+  display: grid;
+  width: min(360px, 70%);
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  color: var(--cinnabar);
+}
+
+.home-divider span {
+  height: 1px;
+  background: var(--line);
+}
+
+.home-divider i {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid currentColor;
+  font-style: normal;
+  font-size: 13px;
+}
+
+.start-method-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.start-method {
+  display: grid;
+  min-height: 236px;
+  grid-template-rows: 1fr auto;
+  align-content: stretch;
+  justify-items: center;
+  gap: 18px;
+  border: 1px solid var(--line);
+  background: var(--paper-strong);
+  padding: 32px 30px 28px;
+  text-align: center;
+}
+
+.start-method-copy {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+}
+
+.start-method-action {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-method:hover {
+  border-color: var(--cinnabar);
+  background: #fbf6ee;
+}
+
+.method-mark {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper-muted);
+  color: var(--ink-soft);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.start-method-template .method-mark {
+  border-color: #d7b8b3;
+  background: #f3ddd9;
+  color: var(--cinnabar);
+}
+
+.start-method p {
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.entry-form-panel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.home-card {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.recent-list {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.recent-list > .empty-copy {
+  border: 1px dashed var(--line);
+  background: #fffbf5;
+  margin-top: 14px;
+}
+
+.recent-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+
+.recent-row > button:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.recent-row strong,
+.recent-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-row span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.quick-template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quick-template {
+  display: grid;
+  min-height: 92px;
+  place-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  text-align: center;
+}
+
+.quick-template:hover,
+.quick-template.is-active {
+  border-color: var(--cinnabar);
+  color: var(--cinnabar);
+  background: #f6eee6;
+}
+
+.quick-template span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hint-line {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}

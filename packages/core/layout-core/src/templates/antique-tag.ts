@@ -8,9 +8,9 @@ import type {
   PoemExportTextBlockConfig,
 } from "../schema.js";
 
-// Resolved renderer config for the antique tag template.
-// The visual identity comes from the vertical red tag, warm backing, paper
-// rules, and seal; the paper surface itself stays a unified color.
+// 题签笺模板的渲染器配置类型。
+// 视觉识别来自竖向红色题签、暖色底、纸面横线和印章；
+// 纸面本身保持统一颜色。
 export type AntiqueTagImageConfig = PoemExportBaseImageConfig & {
   kind: "antique-tag";
   outerPanel: PoemExportRectConfig & {
@@ -51,8 +51,8 @@ export const ANTIQUE_TAG_TEMPLATE_META: PoemExportTemplate = {
   description: "竖向题签、暖色笺纸与落款印章。",
 };
 
-// Antique tag: warm backing plus one unified paper layer. The paper and panel
-// intentionally share the same fill; rules, tag, and seal provide the depth.
+// 题签笺：暖色底加一层统一纸面。纸面和面板刻意使用同一填充色，
+// 层次主要由横线、题签和印章提供。
 export const ANTIQUE_TAG_TEMPLATE_CONFIG = {
   kind: "antique-tag",
   background: { from: "#f0d091", to: "#c99553" },
