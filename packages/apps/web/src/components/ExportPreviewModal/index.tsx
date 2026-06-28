@@ -8,7 +8,7 @@ import {
   type PoemExportTemplateId,
   type PoemLayoutDocument,
 } from '@poem/layout-core';
-import { createTextImageDataUrl, downloadImageDataUrl } from '../utils/exportText';
+import { createTextImageDataUrl, downloadImageDataUrl } from '../../utils/exportText';
 
 type ExportPreviewModalProps = {
   layoutDocument: PoemLayoutDocument;
