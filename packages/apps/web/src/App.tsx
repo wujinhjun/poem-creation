@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { analyzeSync, RhymeDictType } from '@poem/parser/kernel';
+import { createPoemLayoutDocument } from '@poem/layout-core';
 import { identifyQuickFill } from '@poem/poem-kit';
 import type { QuickFillCandidate } from '@poem/poem-kit';
 import { createDraftStore } from './persist';
@@ -585,6 +586,28 @@ export default function App() {
     ],
   );
 
+  const exportPreviewDocument = useMemo(
+    () =>
+      createPoemLayoutDocument({
+        title,
+        author,
+        description,
+        chars,
+        pattern,
+        visualLineGroups,
+        sectionBreakBeforeGroups,
+      }),
+    [
+      author,
+      chars,
+      description,
+      pattern,
+      sectionBreakBeforeGroups,
+      title,
+      visualLineGroups,
+    ],
+  );
+
   const handleExportText = useCallback(async () => {
     await copyText(exportPreviewText);
     setExportStatus('文字已复制');
@@ -712,7 +735,7 @@ export default function App() {
         analysisIssues={analysisIssues}
         errorMessage={errorMessage}
         exportStatus={exportStatus}
-        exportPreviewText={exportPreviewText}
+        exportPreviewDocument={exportPreviewDocument}
         exportPreviewOpen={exportPreviewOpen}
         persistReady={persistReady}
         onTitleChange={setTitle}

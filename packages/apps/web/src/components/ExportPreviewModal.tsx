@@ -1,26 +1,35 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  DEFAULT_POEM_EXPORT_TEMPLATE_ID,
+  POEM_EXPORT_TEMPLATES,
+  type PoemExportTemplateId,
+  type PoemLayoutDocument,
+} from '@poem/layout-core';
 import { createTextImageDataUrl, downloadImageDataUrl } from '../utils/exportText';
 
 type ExportPreviewModalProps = {
-  text: string;
+  layoutDocument: PoemLayoutDocument;
   onCopy: () => void;
   onClose: () => void;
 };
 
 export function ExportPreviewModal({
-  text,
+  layoutDocument,
   onCopy,
   onClose,
 }: ExportPreviewModalProps) {
   const [imageUrl, setImageUrl] = useState('');
   const [imageError, setImageError] = useState('');
+  const [templateId, setTemplateId] = useState<PoemExportTemplateId>(
+    DEFAULT_POEM_EXPORT_TEMPLATE_ID,
+  );
   const dialogRef = useRef<HTMLElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     requestAnimationFrame(() => {
       try {
-        setImageUrl(createTextImageDataUrl(text));
+        setImageUrl(createTextImageDataUrl(layoutDocument, templateId));
         setImageError('');
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
@@ -28,7 +37,7 @@ export function ExportPreviewModal({
         setImageError(`图片预览生成失败：${message}`);
       }
     });
-  }, [text]);
+  }, [layoutDocument, templateId]);
 
   useEffect(() => {
     previouslyFocusedRef.current =
@@ -109,7 +118,7 @@ export function ExportPreviewModal({
               type='button'
               className='export-modal-button'
               disabled={!imageUrl}
-              onClick={() => downloadImageDataUrl(imageUrl)}
+              onClick={() => downloadImageDataUrl(imageUrl, layoutDocument.title)}
             >
               下载图片
             </button>
@@ -121,6 +130,22 @@ export function ExportPreviewModal({
               关闭
             </button>
           </div>
+        </div>
+        <div className='export-template-tabs' aria-label='图片模板'>
+          {POEM_EXPORT_TEMPLATES.map((template) => (
+            <button
+              key={template.id}
+              type='button'
+              className={`export-template-button${
+                template.id === templateId ? ' is-active' : ''
+              }`}
+              title={template.description}
+              aria-pressed={template.id === templateId}
+              onClick={() => setTemplateId(template.id)}
+            >
+              {template.name}
+            </button>
+          ))}
         </div>
         {imageError && (
           <div className='export-modal-error'>{imageError}</div>

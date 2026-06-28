@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { PoemLayoutDocument } from '@poem/layout-core';
 import type { Tone, ToneConstraint, RhymeDictType } from '@poem/parser/kernel';
 import type { RhymeDict } from '@poem/parser/kernel';
 import type { Genre } from '../constants/poem';
@@ -31,7 +32,7 @@ type EditorPageProps = {
   analysisIssues: StrictCharIssue[];
   errorMessage: string;
   exportStatus: string;
-  exportPreviewText: string;
+  exportPreviewDocument: PoemLayoutDocument;
   exportPreviewOpen: boolean;
   persistReady: boolean;
   onTitleChange: (value: string) => void;
@@ -66,7 +67,7 @@ export function EditorPage({
   analysisIssues,
   errorMessage,
   exportStatus,
-  exportPreviewText,
+  exportPreviewDocument,
   exportPreviewOpen,
   persistReady,
   onTitleChange,
@@ -175,7 +176,7 @@ export function EditorPage({
           )}
           {exportPreviewOpen && (
             <ExportPreviewModal
-              text={exportPreviewText}
+              layoutDocument={exportPreviewDocument}
               onCopy={onCopyExportText}
               onClose={onCloseExportPreview}
             />

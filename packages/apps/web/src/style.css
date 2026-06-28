@@ -1840,6 +1840,32 @@ h3 {
   gap: 8px;
 }
 
+.export-template-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.export-template-button {
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  padding: 6px 12px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.export-template-button:hover,
+.export-template-button.is-active {
+  border-color: var(--cinnabar);
+  background: rgba(168, 50, 40, 0.08);
+  color: var(--cinnabar-dark);
+}
+
 .export-modal-button {
   border: 1px solid var(--line-strong);
   background: transparent;

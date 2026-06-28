@@ -1,0 +1,20 @@
+{
+  "name": "@poem/layout-core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "诗词排版核心 —— 导出与跨端渲染共享的排版语义、正文分组和文本生成规则",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@poem/editor-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  }
+}
