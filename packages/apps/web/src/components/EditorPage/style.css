@@ -92,7 +92,6 @@
 
 .composer-grid {
   display: grid;
-  gap: 4px;
   user-select: none;
 }
 
@@ -107,7 +106,7 @@
 }
 
 .composer-line.is-section-break {
-  margin-top: 28px;
+  margin-top: 20px;
 }
 
 .composer-logical-line {
