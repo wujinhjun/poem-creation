@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { analyzeSync, RhymeDictType } from '@poem/parser/kernel';
+import { createPoemLayoutDocument } from '@poem/layout-core';
 import { identifyQuickFill } from '@poem/poem-kit';
 import type { QuickFillCandidate } from '@poem/poem-kit';
 import { createDraftStore } from './persist';
@@ -189,6 +190,7 @@ export default function App() {
     await persistIfEditing();
     const nextDraft = {
       ...createEmptyDraft(),
+      title: entrySelectedTune,
       author: userSettings.defaultAuthor,
       genre: entryGenre,
       selectedTune: entrySelectedTune,
@@ -502,7 +504,7 @@ export default function App() {
 
       const nextDraft: PoemCreationDraft = {
         ...createEmptyDraft(),
-        title: input.title.trim(),
+        title: input.title.trim() || best.tuneName,
         author: input.author.trim() || userSettings.defaultAuthor,
         genre: best.genre,
         selectedTune: best.tuneName,
@@ -565,6 +567,28 @@ export default function App() {
   const exportPreviewText = useMemo(
     () =>
       formatPoemText({
+        title,
+        author,
+        description,
+        chars,
+        pattern,
+        visualLineGroups,
+        sectionBreakBeforeGroups,
+      }),
+    [
+      author,
+      chars,
+      description,
+      pattern,
+      sectionBreakBeforeGroups,
+      title,
+      visualLineGroups,
+    ],
+  );
+
+  const exportPreviewDocument = useMemo(
+    () =>
+      createPoemLayoutDocument({
         title,
         author,
         description,
@@ -711,7 +735,7 @@ export default function App() {
         analysisIssues={analysisIssues}
         errorMessage={errorMessage}
         exportStatus={exportStatus}
-        exportPreviewText={exportPreviewText}
+        exportPreviewDocument={exportPreviewDocument}
         exportPreviewOpen={exportPreviewOpen}
         persistReady={persistReady}
         onTitleChange={setTitle}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { testSupabaseConnection } from '../persist/supabaseDraftStore';
-import { SUPABASE_BYOK_ENABLED } from '../utils/settings';
-import type { UserSettings } from '../utils/settings';
+import { testSupabaseConnection } from '../../persist/supabaseDraftStore';
+import { SUPABASE_BYOK_ENABLED } from '../../utils/settings';
+import type { UserSettings } from '../../utils/settings';
 
 type SettingsPageProps = {
   settings: UserSettings;

@@ -56,6 +56,9 @@ importers:
       '@poem/editor-core':
         specifier: workspace:*
         version: link:../../core/editor-core
+      '@poem/layout-core':
+        specifier: workspace:*
+        version: link:../../core/layout-core
       '@poem/parser':
         specifier: workspace:*
         version: link:../../core/poem-parser
@@ -122,6 +125,16 @@ importers:
         version: 5.9.3
 
   packages/core/editor-core:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
+  packages/core/layout-core:
+    dependencies:
+      '@poem/editor-core':
+        specifier: workspace:*
+        version: link:../editor-core
     devDependencies:
       typescript:
         specifier: ^5.9.0

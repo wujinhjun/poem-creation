@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { RhymeDictType, ToneConstraint } from '@poem/parser/kernel';
 import { formatRhymeToneLabel } from '@poem/shared';
-import type { Genre } from '../constants/poem';
-import { RHYME_OPTIONS } from '../constants/poem';
-import { loadCiBundle } from '../utils/ciTemplate';
+import type { Genre } from '../../constants/poem';
+import { RHYME_OPTIONS } from '../../constants/poem';
+import { loadCiBundle } from '../../utils/ciTemplate';
 import { ciPatternForEditor, getMeterMap } from '@poem/poem-kit';
-import type { SelectOption } from './CustomSelect';
-import { CustomSelect } from './CustomSelect';
+import type { SelectOption } from '../CustomSelect';
+import { CustomSelect } from '../CustomSelect';
 
 type TemplateSelectionPageProps = {
   genre: Genre;

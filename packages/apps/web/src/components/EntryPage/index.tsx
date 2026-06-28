@@ -1,10 +1,10 @@
-import type { PoemCreationDraftSummary } from '../persist';
+import type { PoemCreationDraftSummary } from '../../persist';
 import {
   draftAuthorLabel,
   draftDisplayTitle,
   draftGenreLabel,
-} from '../utils/draftDisplay';
-import { EntryEditorPanel } from './entry/EntryEditorPanel';
+} from '../../utils/draftDisplay';
+import { EntryEditorPanel } from '../entry/EntryEditorPanel';
 
 type EntryPageProps = {
   drafts: PoemCreationDraftSummary[];

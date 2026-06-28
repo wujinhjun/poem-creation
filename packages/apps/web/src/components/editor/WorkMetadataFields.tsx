@@ -28,7 +28,6 @@ export function WorkMetadataFields({
 
   return (
     <div className='work-meta'>
-      <span className='meta-rule'>题目</span>
       <input
         value={title}
         placeholder='点击命名'

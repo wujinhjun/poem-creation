@@ -39,6 +39,20 @@ export function useEditorClipboard({
   setDraft: (value: string) => void;
   setGridState: Dispatch<SetStateAction<EditorGridState>>;
 }) {
+  const writeClipboardText = useCallback(
+    (text: string, event?: ClipboardEvent<HTMLInputElement>) => {
+      if (!text) return false;
+      event?.preventDefault();
+      if (event?.clipboardData) {
+        event.clipboardData.setData('text/plain', text);
+        return true;
+      }
+      void navigator.clipboard?.writeText(text);
+      return true;
+    },
+    [],
+  );
+
   const clearSelectionInGrid = useCallback(
     (source: string[][]) => {
       if (selectedPositions.length === 0) return source;
@@ -119,20 +133,50 @@ export function useEditorClipboard({
           : activeCell
             ? gridRef.current[activeCell.line]?.[activeCell.col] ?? ''
             : '';
-      if (!text) return;
-      event?.preventDefault();
-      if (event?.clipboardData) {
-        event.clipboardData.setData('text/plain', text);
-        return;
-      }
-      void navigator.clipboard?.writeText(text);
+      writeClipboardText(text, event);
     },
-    [activeCell, gridRef, selectedPositions.length, selectedText],
+    [
+      activeCell,
+      gridRef,
+      selectedPositions.length,
+      selectedText,
+      writeClipboardText,
+    ],
+  );
+
+  const cutSelectionToClipboard = useCallback(
+    (event?: ClipboardEvent<HTMLInputElement>) => {
+      if (selectedPositions.length === 0) return;
+      const text = selectedText();
+      if (!writeClipboardText(text, event)) return;
+      pushHistory(grid);
+      setGridState({
+        signature: patternSignature,
+        grid: clearSelectionInGrid(grid),
+      });
+      setDraft('');
+      clearSelection();
+      setActiveCell(selectedPositions[0] ?? null);
+    },
+    [
+      clearSelection,
+      clearSelectionInGrid,
+      grid,
+      patternSignature,
+      pushHistory,
+      selectedPositions,
+      selectedText,
+      setActiveCell,
+      setDraft,
+      setGridState,
+      writeClipboardText,
+    ],
   );
 
   return {
     clearSelectionInGrid,
     copySelectionToClipboard,
+    cutSelectionToClipboard,
     pasteAt,
     replaceSelectionWithText,
   };

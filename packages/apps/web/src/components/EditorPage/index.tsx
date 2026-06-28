@@ -1,14 +1,15 @@
 import { useState } from 'react';
+import type { PoemLayoutDocument } from '@poem/layout-core';
 import type { Tone, ToneConstraint, RhymeDictType } from '@poem/parser/kernel';
 import type { RhymeDict } from '@poem/parser/kernel';
-import type { Genre } from '../constants/poem';
-import type { StrictCharIssue } from '../utils/strictGridValidation';
-import Composer from '../Composer';
-import { ExportPreviewModal } from './ExportPreviewModal';
-import { ComposerEmptyState } from './editor/ComposerEmptyState';
-import { EditorInfoModal } from './editor/EditorInfoModal';
-import { EditorSidebar } from './editor/EditorSidebar';
-import { WorkMetadataFields } from './editor/WorkMetadataFields';
+import type { Genre } from '../../constants/poem';
+import type { StrictCharIssue } from '../../utils/strictGridValidation';
+import Composer from '../../Composer';
+import { ExportPreviewModal } from '../ExportPreviewModal';
+import { ComposerEmptyState } from '../editor/ComposerEmptyState';
+import { EditorInfoModal } from '../editor/EditorInfoModal';
+import { EditorSidebar } from '../editor/EditorSidebar';
+import { WorkMetadataFields } from '../editor/WorkMetadataFields';
 
 type EditorPageProps = {
   activeDraftId: string;
@@ -31,7 +32,7 @@ type EditorPageProps = {
   analysisIssues: StrictCharIssue[];
   errorMessage: string;
   exportStatus: string;
-  exportPreviewText: string;
+  exportPreviewDocument: PoemLayoutDocument;
   exportPreviewOpen: boolean;
   persistReady: boolean;
   onTitleChange: (value: string) => void;
@@ -66,7 +67,7 @@ export function EditorPage({
   analysisIssues,
   errorMessage,
   exportStatus,
-  exportPreviewText,
+  exportPreviewDocument,
   exportPreviewOpen,
   persistReady,
   onTitleChange,
@@ -175,7 +176,7 @@ export function EditorPage({
           )}
           {exportPreviewOpen && (
             <ExportPreviewModal
-              text={exportPreviewText}
+              layoutDocument={exportPreviewDocument}
               onCopy={onCopyExportText}
               onClose={onCloseExportPreview}
             />

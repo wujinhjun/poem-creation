@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import type { PoemCreationDraftSummary } from '../persist';
-import { draftSearchText } from '../utils/draftDisplay';
-import { DraftListPanel } from './entry/DraftListPanel';
+import type { PoemCreationDraftSummary } from '../../persist';
+import { draftSearchText } from '../../utils/draftDisplay';
+import { DraftListPanel } from '../entry/DraftListPanel';
 
 type WorksPageProps = {
   drafts: PoemCreationDraftSummary[];

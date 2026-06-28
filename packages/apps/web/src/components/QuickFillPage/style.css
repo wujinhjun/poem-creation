@@ -1,0 +1,175 @@
+.page-quickfill {
+  width: min(1320px, calc(100% - 40px));
+}
+
+.quickfill-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 28px;
+  align-items: start;
+}
+
+.quickfill-sheet {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 590px;
+  gap: 22px;
+  align-content: start;
+  border: 1px solid var(--line);
+  background: var(--paper-strong);
+  padding: 34px 42px;
+}
+
+.quickfill-meta {
+  display: grid;
+  max-width: 620px;
+  justify-self: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.quickfill-meta span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.quickfill-meta input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+  text-align: center;
+}
+
+.quickfill-meta input:first-of-type {
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.quickfill-meta input:last-of-type {
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.quickfill-lines {
+  display: grid;
+  max-width: 760px;
+  width: 100%;
+  justify-self: center;
+  gap: 4px;
+}
+
+.quickfill-line-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 20px;
+}
+
+.quickfill-line-row > span {
+  color: var(--muted);
+  text-align: right;
+}
+
+.quickfill-line-row input {
+  min-height: 44px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+  padding: 0 8px;
+  font-size: 23px;
+  letter-spacing: 0.12em;
+}
+
+.quickfill-line-row input:focus-visible {
+  background: #f3ece1;
+}
+
+.quickfill-remove-line {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  opacity: 0;
+  transition: border-color 140ms ease, color 140ms ease, opacity 140ms ease;
+}
+
+.quickfill-line-row:hover .quickfill-remove-line,
+.quickfill-line-row:focus-within .quickfill-remove-line {
+  opacity: 1;
+}
+
+.quickfill-remove-line:hover:not(:disabled) {
+  border-color: var(--cinnabar);
+  color: var(--cinnabar);
+}
+
+.quickfill-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.quickfill-toolbar .ghost-button {
+  height: 44px;
+  min-height: 44px;
+  align-self: center;
+}
+
+.quickfill-aside {
+  position: sticky;
+  top: 100px;
+  display: grid;
+  gap: 24px;
+  padding: 28px;
+}
+
+.quickfill-note {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  background: #fffbf5;
+  padding: 18px;
+  color: var(--ink-soft);
+  line-height: 1.8;
+}
+
+.quickfill-flow {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  border-top: 1px solid var(--line);
+  padding: 22px 0 0;
+  list-style: none;
+}
+
+.quickfill-flow li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-soft);
+}
+
+.quickfill-flow span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper-muted);
+  color: var(--ink);
+}
+
+.quickfill-aside .primary-button {
+  justify-self: stretch;
+}
+

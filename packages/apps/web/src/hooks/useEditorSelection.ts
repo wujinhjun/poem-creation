@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { ToneConstraint } from '@poem/parser/kernel';
+import { lineEndsWithRhyme } from '@poem/editor-core';
 
 export type CellPosition = {
   line: number;
@@ -19,10 +20,14 @@ export function positionKey(position: CellPosition): string {
 export function useEditorSelection({
   pattern,
   gridRef,
+  visualLineGroups,
+  sectionBreakBeforeGroups = [],
   focusTarget,
 }: {
   pattern: ToneConstraint[][];
   gridRef: RefObject<string[][]>;
+  visualLineGroups?: number[][];
+  sectionBreakBeforeGroups?: number[];
   focusTarget?: { lineIndex: number; col: number } | null;
 }) {
   const [activeCell, setActiveCell] = useState<CellPosition | null>(
@@ -34,7 +39,7 @@ export function useEditorSelection({
       : null,
   );
   const [selection, setSelection] = useState<CellSelection | null>(null);
-  const [selecting, setSelecting] = useState(false);
+  const selectingRef = useRef(false);
 
   const flatPositions = useMemo(
     () =>
@@ -53,7 +58,9 @@ export function useEditorSelection({
   }, [flatPositions]);
 
   useEffect(() => {
-    const handlePointerUp = () => setSelecting(false);
+    const handlePointerUp = () => {
+      selectingRef.current = false;
+    };
     window.addEventListener('pointerup', handlePointerUp);
     return () => window.removeEventListener('pointerup', handlePointerUp);
   }, []);
@@ -79,50 +86,88 @@ export function useEditorSelection({
     [selectedPositions],
   );
 
+  const selectedLineGroups = useMemo(
+    () =>
+      visualLineGroups && visualLineGroups.length > 0
+        ? visualLineGroups
+        : pattern.map((_, index) => [index]),
+    [pattern, visualLineGroups],
+  );
+
   const selectedText = useCallback(() => {
     if (selectedPositions.length === 0) return '';
-    const lineMap = new Map<number, string[]>();
-    selectedPositions.forEach((position) => {
-      const cells = lineMap.get(position.line) ?? [];
-      cells.push(gridRef.current[position.line]?.[position.col] ?? '');
-      lineMap.set(position.line, cells);
+    const selectedKeys = new Set(selectedPositions.map(positionKey));
+    const copiedLines: string[] = [];
+
+    selectedLineGroups.forEach((group, groupIndex) => {
+      let text = '';
+      group.forEach((lineIndex) => {
+        const selectedChars = pattern[lineIndex]
+          ?.map((_, col): CellPosition => ({ line: lineIndex, col }))
+          .filter((position) => selectedKeys.has(positionKey(position)))
+          .map(({ line, col }) => gridRef.current[line]?.[col] ?? '')
+          .join('');
+        if (!selectedChars) return;
+        text += `${selectedChars}${lineEndsWithRhyme(pattern[lineIndex]) ? '。' : '，'}`;
+      });
+      if (!text) return;
+      if (
+        copiedLines.length > 0 &&
+        sectionBreakBeforeGroups.includes(groupIndex)
+      ) {
+        copiedLines.push('');
+      }
+      copiedLines.push(text);
     });
-    return [...lineMap.entries()]
-      .sort(([a], [b]) => a - b)
-      .map(([, cells]) => cells.join(''))
-      .join('\n');
-  }, [gridRef, selectedPositions]);
+
+    return copiedLines.join('\n');
+  }, [
+    gridRef,
+    pattern,
+    sectionBreakBeforeGroups,
+    selectedLineGroups,
+    selectedPositions,
+  ]);
 
   const clearSelection = useCallback(() => {
+    selectingRef.current = false;
     setSelection(null);
   }, []);
 
   const beginSelection = useCallback(
     (position: CellPosition, extendExisting: boolean) => {
       setActiveCell(position);
-      setSelecting(true);
-      setSelection((current) =>
-        extendExisting && current
-          ? { anchor: current.anchor, focus: position }
-          : { anchor: position, focus: position },
-      );
+      selectingRef.current = true;
+      setSelection((current) => {
+        if (!extendExisting) {
+          return { anchor: position, focus: position };
+        }
+        if (current) {
+          return { anchor: current.anchor, focus: position };
+        }
+        return {
+          anchor: activeCell ?? position,
+          focus: position,
+        };
+      });
     },
-    [],
+    [activeCell],
   );
 
   const extendSelection = useCallback(
     (position: CellPosition) => {
-      if (!selecting) return false;
+      if (!selectingRef.current) return false;
       setSelection((current) =>
         current ? { anchor: current.anchor, focus: position } : current,
       );
       setActiveCell(position);
       return true;
     },
-    [selecting],
+    [],
   );
 
   const selectCell = useCallback((position: CellPosition) => {
+    selectingRef.current = false;
     setSelection(null);
     setActiveCell(position);
   }, []);

@@ -12,6 +12,7 @@
   "dependencies": {
     "@poem/poem-kit": "workspace:*",
     "@poem/editor-core": "workspace:*",
+    "@poem/layout-core": "workspace:*",
     "@poem/parser": "workspace:*",
     "@poem/shared": "workspace:*",
     "react": "^19.2.5",
