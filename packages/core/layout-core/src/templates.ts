@@ -1,198 +1,333 @@
 import type {
-  PoemExportImageTemplateConfig,
-  PoemExportTemplate,
+  PoemExportLayoutValue,
+  PoemExportRatio,
+  PoemExportRatioId,
   PoemExportTemplateId,
 } from "./schema.js";
+import type { PoemExportImageTemplateConfig } from "./templates/registry.js";
+import { POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS, POEM_EXPORT_TEMPLATES } from "./templates/registry.js";
+
+export { POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS, POEM_EXPORT_TEMPLATES };
 
 export const DEFAULT_POEM_EXPORT_TEMPLATE_ID = "modern-whitespace";
 
+// Legacy mock size. Runtime export uses the selected ratio, so templates should
+// prefer relative expressions instead of depending on this fixed canvas.
 export const POEM_EXPORT_IMAGE_CANVAS = {
   width: 760,
   height: 1050,
 };
 
-export const POEM_EXPORT_TEMPLATES: PoemExportTemplate[] = [
-  {
-    id: "modern-whitespace",
-    name: "现代留白",
-    description: "低饱和背景、左对齐标题与底部品牌署名。",
-  },
-  {
-    id: "antique-tag",
-    name: "题签笺",
-    description: "竖向题签、暖色笺纸与落款印章。",
-  },
-  {
-    id: "compact-paper",
-    name: "素笺居中",
-    description: "居中排版、细框纸纹，适合经典词作导出。",
-  },
+export const DEFAULT_POEM_EXPORT_RATIO_ID = "3:4";
+
+// Shared output ratios for Web and future native renderers.
+export const POEM_EXPORT_RATIOS: PoemExportRatio[] = [
+  { id: "4:3", label: "4:3", width: 1200, height: 900 },
+  { id: "16:9", label: "16:9", width: 1600, height: 900 },
+  { id: "9:16", label: "9:16", width: 900, height: 1600 },
+  { id: "3:4", label: "3:4", width: 900, height: 1200 },
+  { id: "1:1", label: "1:1", width: 1200, height: 1200 },
 ];
 
-export const POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS: Record<
-  PoemExportTemplateId,
-  PoemExportImageTemplateConfig
-> = {
-  "modern-whitespace": {
-    kind: "modern-whitespace",
-    background: { from: "#e8f1ee", to: "#f7f1e3" },
-    speckles: { count: 40, color: "#c8b17c" },
-    panel: {
-      x: 50,
-      y: 50,
-      width: 660,
-      height: 950,
-      fill: "#fffdf8",
-      stroke: "#d5ded9",
-      lineWidth: 2,
-    },
-    accentBar: {
-      x: 108,
-      y: 124,
-      width: 72,
-      height: 4,
-      fill: "#d24b43",
-    },
-    title: {
-      x: 108,
-      y: 150,
-      color: "#27312f",
-      fontSize: 38,
-      minFontSize: 26,
-      maxWidth: 530,
-      weight: "700",
-    },
-    author: {
-      x: 108,
-      y: 202,
-      color: "#6c817a",
-      fontSize: 22,
-    },
-    body: {
-      x: 108,
-      y: 292,
-      color: "#27312f",
-      fontSize: 28,
-      lineHeight: 54,
-      sectionGap: 34,
-    },
-    brand: {
-      x: 108,
-      y: 910,
-      color: "#94a9a2",
-      fontSize: 13,
-      text: "Poem Creation",
-    },
-  },
-  "antique-tag": {
-    kind: "antique-tag",
-    background: { from: "#e6c57e", to: "#bd8144" },
-    speckles: { count: 58, color: "#9d7744" },
-    outerPanel: {
-      x: 38,
-      y: 34,
-      width: 684,
-      height: 982,
-      fill: "#ffefca",
-    },
-    paper: {
-      x: 80,
-      y: 84,
-      width: 600,
-      height: 878,
-      gradient: { from: "#fff3d6", to: "#f8dfaa" },
-      speckles: { count: 46, color: "#b99258" },
-    },
-    horizontalRules: [
-      { fromX: 160, toX: 680, y: 86, color: "#c9aa72", lineWidth: 1.5 },
-      { fromX: 80, toX: 680, y: 963, color: "#c9aa72", lineWidth: 1.5 },
-    ],
-    tag: {
-      x: 74,
-      y: 82,
-      width: 74,
-      height: 132,
-      fill: "#bd473e",
-      textColor: "#fff6e8",
-      textX: 111,
-      textY: 104,
-      fontSize: 24,
-      charGap: 30,
-    },
-    title: {
-      x: 160,
-      y: 104,
-      color: "#2b2019",
-      fontSize: 29,
-      minFontSize: 21,
-      maxWidth: 490,
-      weight: "700",
-    },
-    author: {
-      x: 160,
-      y: 149,
-      color: "#7a5b41",
-      fontSize: 21,
-    },
-    body: {
-      x: POEM_EXPORT_IMAGE_CANVAS.width / 2,
-      y: 260,
-      color: "#2b2019",
-      fontSize: 28,
-      lineHeight: 52,
-      sectionGap: 36,
-      align: "center",
-    },
-    seal: {
-      x: 606,
-      y: 776,
-      size: 46,
-    },
-  },
-  "compact-paper": {
-    kind: "compact-paper",
-    background: { from: "#f6ead5", to: "#f3e0bc" },
-    speckles: { count: 52, color: "#bd955e" },
-    paper: {
-      x: 28,
-      y: 28,
-      width: 704,
-      height: 994,
-      fill: "#fff9eb",
-    },
-    border: {
-      x: 40,
-      y: 40,
-      width: 680,
-      height: 972,
-      stroke: "#cfa965",
-      lineWidth: 1,
-    },
-    title: {
-      x: POEM_EXPORT_IMAGE_CANVAS.width / 2,
-      y: 74,
-      color: "#2a2019",
-      fontSize: 34,
-      minFontSize: 24,
-      maxWidth: 520,
-      weight: "700",
-      align: "center",
-    },
-    author: {
-      x: POEM_EXPORT_IMAGE_CANVAS.width / 2,
-      y: 130,
-      color: "#735f4a",
-      fontSize: 20,
-      align: "center",
-    },
-    body: {
-      x: POEM_EXPORT_IMAGE_CANVAS.width / 2,
-      y: 216,
-      color: "#2a2019",
-      fontSize: 27,
-      lineHeight: 50,
-      sectionGap: 34,
-      align: "center",
-    },
-  },
+type LayoutAxis = "x" | "y" | "size";
+
+type LayoutSlot = Record<string, number>;
+
+type LayoutContext = {
+  canvas: PoemExportRatio;
+  slots: Record<string, LayoutSlot>;
 };
+
+function cloneConfig<T>(config: T): T {
+  return JSON.parse(JSON.stringify(config)) as T;
+}
+
+function roundLayout(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+// Percentages are axis-aware: horizontal values use canvas width, vertical
+// values use canvas height, and size values use the shorter edge.
+function percentBase(axis: LayoutAxis, canvas: PoemExportRatio): number {
+  if (axis === "x") return canvas.width;
+  if (axis === "y") return canvas.height;
+  return Math.min(canvas.width, canvas.height);
+}
+
+function tokenizeExpression(expression: string): string[] {
+  const tokens: string[] = [];
+  const matcher = /\s*([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?|\d+(?:\.\d+)?%?|\+|-|\*|\/|\(|\))/g;
+  let match: RegExpExecArray | null;
+  while ((match = matcher.exec(expression)) !== null) {
+    tokens.push(match[1]);
+  }
+  return tokens;
+}
+
+function slotValue(context: LayoutContext, token: string): number {
+  const [slotName, property] = token.split(".");
+  const slot = context.slots[slotName];
+  if (!slot || !property || slot[property] === undefined) {
+    throw new Error(`未知导出版式引用：${token}`);
+  }
+  return slot[property];
+}
+
+// Tiny arithmetic parser for coordinates such as "panel.left + 8%". It is kept
+// deliberately narrower than JavaScript so template files stay declarative.
+function evaluateLayoutExpression(
+  expression: string,
+  context: LayoutContext,
+  axis: LayoutAxis,
+): number {
+  const tokens = tokenizeExpression(expression);
+  let index = 0;
+
+  const parseFactor = (): number => {
+    const token = tokens[index++];
+    if (!token) throw new Error(`导出版式表达式不完整：${expression}`);
+    if (token === "(") {
+      const value = parseExpression();
+      if (tokens[index++] !== ")") {
+        throw new Error(`导出版式表达式缺少右括号：${expression}`);
+      }
+      return value;
+    }
+    if (token === "-") return -parseFactor();
+    if (/^\d+(?:\.\d+)?%$/.test(token)) {
+      return (Number(token.slice(0, -1)) / 100) * percentBase(axis, context.canvas);
+    }
+    if (/^\d+(?:\.\d+)?$/.test(token)) return Number(token);
+    return slotValue(context, token);
+  };
+
+  const parseTerm = (): number => {
+    let value = parseFactor();
+    while (tokens[index] === "*" || tokens[index] === "/") {
+      const operator = tokens[index++];
+      const right = parseFactor();
+      value = operator === "*" ? value * right : value / right;
+    }
+    return value;
+  };
+
+  function parseExpression(): number {
+    let value = parseTerm();
+    while (tokens[index] === "+" || tokens[index] === "-") {
+      const operator = tokens[index++];
+      const right = parseTerm();
+      value = operator === "+" ? value + right : value - right;
+    }
+    return value;
+  }
+
+  const result = parseExpression();
+  if (index !== tokens.length) {
+    throw new Error(`无法解析导出版式表达式：${expression}`);
+  }
+  return roundLayout(result);
+}
+
+// Template values may be absolute numbers, percentages, or slot expressions.
+function resolveValue(
+  value: PoemExportLayoutValue | undefined,
+  context: LayoutContext,
+  axis: LayoutAxis,
+  fallback = 0,
+): number {
+  if (value === undefined) return fallback;
+  return typeof value === "number"
+    ? value
+    : evaluateLayoutExpression(value, context, axis);
+}
+
+// Slots are the dependency graph between regions. A template can reference
+// "title.bottom" only after the title slot has been resolved.
+function updateRectSlot(
+  context: LayoutContext,
+  name: string,
+  rect: { x: number; y: number; width: number; height: number },
+): void {
+  context.slots[name] = {
+    x: rect.x,
+    y: rect.y,
+    left: rect.x,
+    top: rect.y,
+    width: rect.width,
+    height: rect.height,
+    right: rect.x + rect.width,
+    bottom: rect.y + rect.height,
+  };
+}
+
+// Text slots expose estimated bounds and typography metrics for later regions;
+// final font fitting still belongs to the renderer.
+function updateTextSlot(
+  context: LayoutContext,
+  name: string,
+  block: { x: number; y: number; fontSize: number; maxWidth?: number; lineHeight?: number; sectionGap?: number },
+): void {
+  const height = block.lineHeight ?? block.fontSize * 1.2;
+  const width = block.maxWidth ?? 0;
+  context.slots[name] = {
+    x: block.x,
+    y: block.y,
+    left: block.x,
+    top: block.y,
+    width,
+    height,
+    right: block.x + width,
+    bottom: block.y + height,
+    fontSize: block.fontSize,
+    maxWidth: width,
+    lineHeight: block.lineHeight ?? height,
+    sectionGap: block.sectionGap ?? 0,
+  };
+}
+
+function resolveRect<T extends Record<string, unknown>>(
+  context: LayoutContext,
+  name: string,
+  rect: T,
+): T {
+  const resolved = rect as T & { x: number; y: number; width: number; height: number; lineWidth?: number };
+  resolved.x = resolveValue(rect.x as PoemExportLayoutValue, context, "x");
+  resolved.y = resolveValue(rect.y as PoemExportLayoutValue, context, "y");
+  resolved.width = resolveValue(rect.width as PoemExportLayoutValue, context, "x");
+  resolved.height = resolveValue(rect.height as PoemExportLayoutValue, context, "y");
+  if (rect.lineWidth !== undefined) {
+    resolved.lineWidth = resolveValue(rect.lineWidth as PoemExportLayoutValue, context, "size");
+  }
+  updateRectSlot(context, name, resolved);
+  return resolved;
+}
+
+function resolveTextBlock<T extends Record<string, unknown>>(
+  context: LayoutContext,
+  name: string,
+  block: T,
+): T {
+  const resolved = block as T & {
+    x: number;
+    y: number;
+    fontSize: number;
+    minFontSize?: number;
+    maxWidth?: number;
+    lineHeight?: number;
+    sectionGap?: number;
+  };
+  resolved.x = resolveValue(block.x as PoemExportLayoutValue, context, "x");
+  resolved.y = resolveValue(block.y as PoemExportLayoutValue, context, "y");
+  resolved.fontSize = resolveValue(block.fontSize as PoemExportLayoutValue, context, "size");
+  updateTextSlot(context, name, resolved);
+  if (block.minFontSize !== undefined) {
+    resolved.minFontSize = resolveValue(block.minFontSize as PoemExportLayoutValue, context, "size");
+  }
+  if (block.maxWidth !== undefined) {
+    resolved.maxWidth = resolveValue(block.maxWidth as PoemExportLayoutValue, context, "x");
+  }
+  if (block.lineHeight !== undefined) {
+    resolved.lineHeight = resolveValue(block.lineHeight as PoemExportLayoutValue, context, "size");
+    updateTextSlot(context, name, resolved);
+  }
+  if (block.sectionGap !== undefined) {
+    resolved.sectionGap = resolveValue(block.sectionGap as PoemExportLayoutValue, context, "size");
+  }
+  updateTextSlot(context, name, resolved);
+  return resolved;
+}
+
+function createLayoutContext(canvas: PoemExportRatio): LayoutContext {
+  return {
+    canvas,
+    slots: {
+      canvas: {
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        width: canvas.width,
+        height: canvas.height,
+        right: canvas.width,
+        bottom: canvas.height,
+        short: Math.min(canvas.width, canvas.height),
+        long: Math.max(canvas.width, canvas.height),
+      },
+    },
+  };
+}
+
+function resolveTemplateConfig(
+  canvas: PoemExportRatio,
+  config: unknown,
+): PoemExportImageTemplateConfig {
+  const context = createLayoutContext(canvas);
+  const resolved = cloneConfig(config) as Record<string, any>;
+
+  switch (resolved.kind) {
+    case "modern-whitespace":
+      resolveRect(context, "panel", resolved.panel);
+      resolveRect(context, "accentBar", resolved.accentBar);
+      resolveTextBlock(context, "title", resolved.title);
+      resolveTextBlock(context, "author", resolved.author);
+      resolveTextBlock(context, "body", resolved.body);
+      resolveTextBlock(context, "brand", resolved.brand);
+      return resolved as PoemExportImageTemplateConfig;
+    case "antique-tag":
+      resolveRect(context, "outerPanel", resolved.outerPanel);
+      resolveRect(context, "paper", resolved.paper);
+      resolveRect(context, "tag", resolved.tag);
+      resolved.tag.textX = resolveValue(resolved.tag.textX, context, "x");
+      resolved.tag.textY = resolveValue(resolved.tag.textY, context, "y");
+      resolved.tag.fontSize = resolveValue(resolved.tag.fontSize, context, "size");
+      context.slots.tag.fontSize = resolved.tag.fontSize;
+      resolved.tag.charGap = resolveValue(resolved.tag.charGap, context, "size");
+      context.slots.tag.charGap = resolved.tag.charGap;
+      resolved.horizontalRules = resolved.horizontalRules.map((rule: Record<string, unknown>) => ({
+        ...rule,
+        fromX: resolveValue(rule.fromX as PoemExportLayoutValue, context, "x"),
+        toX: resolveValue(rule.toX as PoemExportLayoutValue, context, "x"),
+        y: resolveValue(rule.y as PoemExportLayoutValue, context, "y"),
+        lineWidth: resolveValue(rule.lineWidth as PoemExportLayoutValue, context, "size"),
+      }));
+      resolveTextBlock(context, "title", resolved.title);
+      resolveTextBlock(context, "author", resolved.author);
+      resolveTextBlock(context, "body", resolved.body);
+      resolved.seal.x = resolveValue(resolved.seal.x, context, "x");
+      resolved.seal.y = resolveValue(resolved.seal.y, context, "y");
+      resolved.seal.size = resolveValue(resolved.seal.size, context, "size");
+      return resolved as PoemExportImageTemplateConfig;
+    case "compact-paper":
+      resolveRect(context, "paper", resolved.paper);
+      resolveRect(context, "border", resolved.border);
+      resolveTextBlock(context, "title", resolved.title);
+      resolveTextBlock(context, "author", resolved.author);
+      resolveTextBlock(context, "body", resolved.body);
+      return resolved as PoemExportImageTemplateConfig;
+    default:
+      throw new Error(`未知导出模板类型：${String(resolved.kind)}`);
+  }
+}
+
+// Public parser entry. Apps select a template and ratio, then render from the
+// resolved numeric config without parsing expressions themselves.
+export function parsePoemExportTemplate({
+  templateId,
+  ratioId = DEFAULT_POEM_EXPORT_RATIO_ID,
+}: {
+  templateId: PoemExportTemplateId;
+  ratioId?: PoemExportRatioId;
+}): {
+  canvas: PoemExportRatio;
+  config: PoemExportImageTemplateConfig;
+} {
+  const canvas =
+    POEM_EXPORT_RATIOS.find((ratio) => ratio.id === ratioId) ??
+    POEM_EXPORT_RATIOS.find((ratio) => ratio.id === DEFAULT_POEM_EXPORT_RATIO_ID) ??
+    POEM_EXPORT_RATIOS[0];
+
+  return {
+    canvas,
+    config: resolveTemplateConfig(canvas, POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS[templateId]),
+  };
+}

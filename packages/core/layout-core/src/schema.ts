@@ -37,7 +37,18 @@ export type PoemExportTemplate = {
   description: string;
 };
 
+export type PoemExportRatioId = "4:3" | "16:9" | "9:16" | "3:4" | "1:1";
+
+export type PoemExportRatio = {
+  id: PoemExportRatioId;
+  label: string;
+  width: number;
+  height: number;
+};
+
 export type PoemExportTextAlign = "left" | "center" | "right";
+
+export type PoemExportLayoutValue = number | string;
 
 export type PoemExportGradientConfig = {
   from: string;
@@ -76,74 +87,3 @@ export type PoemExportBaseImageConfig = {
   background: PoemExportGradientConfig;
   speckles: PoemExportSpeckleConfig;
 };
-
-export type ModernWhitespaceImageConfig = PoemExportBaseImageConfig & {
-  kind: "modern-whitespace";
-  panel: PoemExportRectConfig & {
-    fill: string;
-    stroke: string;
-    lineWidth: number;
-  };
-  accentBar: PoemExportRectConfig & {
-    fill: string;
-  };
-  title: PoemExportTextBlockConfig;
-  author: PoemExportTextBlockConfig;
-  body: PoemExportBodyConfig;
-  brand: PoemExportTextBlockConfig & {
-    text: string;
-  };
-};
-
-export type AntiqueTagImageConfig = PoemExportBaseImageConfig & {
-  kind: "antique-tag";
-  outerPanel: PoemExportRectConfig & {
-    fill: string;
-  };
-  paper: PoemExportRectConfig & {
-    gradient: PoemExportGradientConfig;
-    speckles: PoemExportSpeckleConfig;
-  };
-  horizontalRules: Array<{
-    fromX: number;
-    toX: number;
-    y: number;
-    color: string;
-    lineWidth: number;
-  }>;
-  tag: PoemExportRectConfig & {
-    fill: string;
-    textColor: string;
-    textX: number;
-    textY: number;
-    fontSize: number;
-    charGap: number;
-  };
-  title: PoemExportTextBlockConfig;
-  author: PoemExportTextBlockConfig;
-  body: PoemExportBodyConfig;
-  seal: {
-    x: number;
-    y: number;
-    size: number;
-  };
-};
-
-export type CompactPaperImageConfig = PoemExportBaseImageConfig & {
-  kind: "compact-paper";
-  paper: PoemExportRectConfig & {
-    fill: string;
-  };
-  border: PoemExportRectConfig & {
-    stroke: string;
-    lineWidth: number;
-  };
-  title: PoemExportTextBlockConfig;
-  author: PoemExportTextBlockConfig;
-  body: PoemExportBodyConfig;
-};
-
-export type PoemExportImageTemplateConfig =
-  | ModernWhitespaceImageConfig
-  | AntiqueTagImageConfig
-  | CompactPaperImageConfig;

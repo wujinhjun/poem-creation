@@ -1,11 +1,11 @@
 import type { ToneConstraint } from '@poem/parser/kernel';
 import {
-  POEM_EXPORT_IMAGE_CANVAS,
-  POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS,
   formatPoemText as formatLayoutPoemText,
+  parsePoemExportTemplate,
   type AntiqueTagImageConfig,
   type CompactPaperImageConfig,
   type ModernWhitespaceImageConfig,
+  type PoemExportRatioId,
   type PoemExportTemplateId,
   type PoemLayoutDocument,
 } from '@poem/layout-core';
@@ -71,6 +71,12 @@ type TextStyle = {
   font: string;
   fillStyle: string;
   align?: CanvasTextAlign;
+};
+
+type BodyFit = {
+  fontSize: number;
+  lineHeight: number;
+  sectionGap: number;
 };
 
 function setupCanvas(width: number, height: number): CanvasSetup {
@@ -177,6 +183,40 @@ function drawSectionedBody(
   return cursorY;
 }
 
+function bodyLineCount(document: PoemLayoutDocument): number {
+  return document.sections.reduce((sum, section) => sum + section.lines.length, 0);
+}
+
+function fitBody({
+  document,
+  fontSize,
+  lineHeight,
+  sectionGap,
+  availableHeight,
+  minFontSize,
+}: {
+  document: PoemLayoutDocument;
+  fontSize: number;
+  lineHeight: number;
+  sectionGap: number;
+  availableHeight: number;
+  minFontSize: number;
+}): BodyFit {
+  const lineCount = bodyLineCount(document);
+  const gapCount = Math.max(0, document.sections.length - 1);
+  const neededHeight = lineCount * lineHeight + gapCount * sectionGap;
+  if (neededHeight <= availableHeight || neededHeight <= 0) {
+    return { fontSize, lineHeight, sectionGap };
+  }
+
+  const scale = Math.max(minFontSize / fontSize, availableHeight / neededHeight);
+  return {
+    fontSize: Math.round(fontSize * scale * 100) / 100,
+    lineHeight: Math.round(lineHeight * scale * 100) / 100,
+    sectionGap: Math.round(sectionGap * scale * 100) / 100,
+  };
+}
+
 function drawSeal(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -214,11 +254,10 @@ function mainTitle(title: string): string {
 function renderModernWhitespace(
   document: PoemLayoutDocument,
   config: ModernWhitespaceImageConfig,
+  canvasWidth: number,
+  canvasHeight: number,
 ): string {
-  const { canvas, ctx, width, height } = setupCanvas(
-    POEM_EXPORT_IMAGE_CANVAS.width,
-    POEM_EXPORT_IMAGE_CANVAS.height,
-  );
+  const { canvas, ctx, width, height } = setupCanvas(canvasWidth, canvasHeight);
   fillBackground(ctx, width, height, config.background.from, config.background.to);
   drawSpeckles(ctx, width, height, config.speckles.count, config.speckles.color);
 
@@ -255,15 +294,24 @@ function renderModernWhitespace(
     ctx.fillText(document.author, config.author.x, config.author.y);
   }
 
+  const body = fitBody({
+    document,
+    fontSize: config.body.fontSize,
+    lineHeight: config.body.lineHeight,
+    sectionGap: config.body.sectionGap,
+    availableHeight: Math.max(120, config.brand.y - config.body.y - 32),
+    minFontSize: 18,
+  });
+
   drawSectionedBody(
     ctx,
     document,
     config.body.x,
     config.body.y,
-    config.body.lineHeight,
-    config.body.sectionGap,
+    body.lineHeight,
+    body.sectionGap,
     {
-      font: `${config.body.fontSize}px ${SERIF_FONT}`,
+      font: `${body.fontSize}px ${SERIF_FONT}`,
       fillStyle: config.body.color,
       align: config.body.align,
     },
@@ -279,11 +327,10 @@ function renderModernWhitespace(
 function renderAntiqueTag(
   document: PoemLayoutDocument,
   config: AntiqueTagImageConfig,
+  canvasWidth: number,
+  canvasHeight: number,
 ): string {
-  const { canvas, ctx, width, height } = setupCanvas(
-    POEM_EXPORT_IMAGE_CANVAS.width,
-    POEM_EXPORT_IMAGE_CANVAS.height,
-  );
+  const { canvas, ctx, width, height } = setupCanvas(canvasWidth, canvasHeight);
   fillBackground(ctx, width, height, config.background.from, config.background.to);
   drawSpeckles(ctx, width, height, config.speckles.count, config.speckles.color);
 
@@ -343,15 +390,24 @@ function renderAntiqueTag(
     ctx.fillText(document.author, config.author.x, config.author.y);
   }
 
+  const body = fitBody({
+    document,
+    fontSize: config.body.fontSize,
+    lineHeight: config.body.lineHeight,
+    sectionGap: config.body.sectionGap,
+    availableHeight: Math.max(120, config.seal.y - config.body.y - 28),
+    minFontSize: 18,
+  });
+
   drawSectionedBody(
     ctx,
     document,
     config.body.x,
     config.body.y,
-    config.body.lineHeight,
-    config.body.sectionGap,
+    body.lineHeight,
+    body.sectionGap,
     {
-      font: `${config.body.fontSize}px ${SERIF_FONT}`,
+      font: `${body.fontSize}px ${SERIF_FONT}`,
       fillStyle: config.body.color,
       align: config.body.align,
     },
@@ -370,11 +426,10 @@ function renderAntiqueTag(
 function renderCompactPaper(
   document: PoemLayoutDocument,
   config: CompactPaperImageConfig,
+  canvasWidth: number,
+  canvasHeight: number,
 ): string {
-  const { canvas, ctx, width, height } = setupCanvas(
-    POEM_EXPORT_IMAGE_CANVAS.width,
-    POEM_EXPORT_IMAGE_CANVAS.height,
-  );
+  const { canvas, ctx, width, height } = setupCanvas(canvasWidth, canvasHeight);
   fillBackground(ctx, width, height, config.background.from, config.background.to);
   drawSpeckles(ctx, width, height, config.speckles.count, config.speckles.color);
 
@@ -404,15 +459,24 @@ function renderCompactPaper(
     ctx.fillText(document.author, config.author.x, config.author.y);
   }
 
+  const body = fitBody({
+    document,
+    fontSize: config.body.fontSize,
+    lineHeight: config.body.lineHeight,
+    sectionGap: config.body.sectionGap,
+    availableHeight: Math.max(120, config.border.y + config.border.height - config.body.y - 52),
+    minFontSize: 18,
+  });
+
   drawSectionedBody(
     ctx,
     document,
     config.body.x,
     config.body.y,
-    config.body.lineHeight,
-    config.body.sectionGap,
+    body.lineHeight,
+    body.sectionGap,
     {
-      font: `${config.body.fontSize}px ${SERIF_FONT}`,
+      font: `${body.fontSize}px ${SERIF_FONT}`,
       fillStyle: config.body.color,
       align: config.body.align,
     },
@@ -424,16 +488,17 @@ function renderCompactPaper(
 export function createTextImageDataUrl(
   document: PoemLayoutDocument,
   templateId: PoemExportTemplateId,
+  ratioId?: PoemExportRatioId,
 ): string {
-  const config = POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS[templateId];
+  const { canvas, config } = parsePoemExportTemplate({ templateId, ratioId });
   switch (config.kind) {
     case 'antique-tag':
-      return renderAntiqueTag(document, config);
+      return renderAntiqueTag(document, config, canvas.width, canvas.height);
     case 'compact-paper':
-      return renderCompactPaper(document, config);
+      return renderCompactPaper(document, config, canvas.width, canvas.height);
     case 'modern-whitespace':
     default:
-      return renderModernWhitespace(document, config);
+      return renderModernWhitespace(document, config, canvas.width, canvas.height);
   }
 }
 
