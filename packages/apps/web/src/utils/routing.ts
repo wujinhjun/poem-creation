@@ -3,6 +3,7 @@ export type AppRoute =
   | { mode: 'template' }
   | { mode: 'quickfill' }
   | { mode: 'works' }
+  | { mode: 'template-designer' }
   | { mode: 'settings' }
   | { mode: 'editor'; draftId: string };
 
@@ -11,6 +12,7 @@ function routePath(route: AppRoute): string {
   if (route.mode === 'template') return '/new';
   if (route.mode === 'quickfill') return '/quickfill';
   if (route.mode === 'works') return '/works';
+  if (route.mode === 'template-designer') return '/export-templates';
   if (route.mode === 'settings') return '/settings';
   return '/';
 }
@@ -22,6 +24,7 @@ export function readRoute(): AppRoute {
   if (hashPath === '/new') return { mode: 'template' };
   if (hashPath === '/quickfill') return { mode: 'quickfill' };
   if (hashPath === '/works') return { mode: 'works' };
+  if (hashPath === '/export-templates') return { mode: 'template-designer' };
   if (hashPath === '/settings') return { mode: 'settings' };
   const match = hashPath.match(/^\/edit\/([^/]+)$/);
   if (match) return { mode: 'editor', draftId: decodeURIComponent(match[1]) };

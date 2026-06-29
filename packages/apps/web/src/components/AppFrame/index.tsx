@@ -3,18 +3,20 @@ import type { ReactNode } from 'react';
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 type AppFrameProps = {
-  activeView: "entry" | "works" | "editor" | "settings";
+  activeView: "entry" | "works" | "editor" | "template-designer" | "settings";
   children: ReactNode;
   persistenceMode: 'local' | 'supabase';
   saveStatus: SaveStatus;
   onOpenEntry: () => void;
   onOpenWorks: () => void;
+  onOpenTemplateDesigner: () => void;
   onOpenSettings: () => void;
 };
 
 const navItems = [
   { key: "entry", label: "起笔" },
   { key: "works", label: "作品" },
+  { key: "template-designer", label: "版式" },
   { key: "settings", label: "设置" },
 ] as const;
 
@@ -35,6 +37,7 @@ export function AppFrame({
   saveStatus,
   onOpenEntry,
   onOpenWorks,
+  onOpenTemplateDesigner,
   onOpenSettings,
 }: AppFrameProps) {
   const handleNav = (key: (typeof navItems)[number]["key"]) => {
@@ -44,6 +47,10 @@ export function AppFrame({
     }
     if (key === "works") {
       onOpenWorks();
+      return;
+    }
+    if (key === "template-designer") {
+      onOpenTemplateDesigner();
       return;
     }
     onOpenEntry();

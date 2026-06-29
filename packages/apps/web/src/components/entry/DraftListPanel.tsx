@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import type { PointerEvent } from 'react';
 import type { PoemCreationDraftSummary } from '../../persist';
 import { formatDraftTime } from '../../utils/draft';
 import {
@@ -33,6 +34,45 @@ export function DraftListPanel({
   onOpenQuickFill,
 }: DraftListPanelProps) {
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const swipeRef = useRef<{
+    id: string;
+    startX: number;
+    startY: number;
+  } | null>(null);
+  const [swipedDraftId, setSwipedDraftId] = useState<string | null>(null);
+
+  const beginSwipe = (draftId: string, event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse') return;
+    swipeRef.current = {
+      id: draftId,
+      startX: event.clientX,
+      startY: event.clientY,
+    };
+  };
+
+  const updateSwipe = (event: PointerEvent<HTMLDivElement>) => {
+    const swipe = swipeRef.current;
+    if (!swipe) return;
+
+    const deltaX = event.clientX - swipe.startX;
+    const deltaY = event.clientY - swipe.startY;
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 12) {
+      swipeRef.current = null;
+      return;
+    }
+
+    if (deltaX < -48) {
+      setSwipedDraftId(swipe.id);
+      swipeRef.current = null;
+    } else if (deltaX > 36 && swipedDraftId === swipe.id) {
+      setSwipedDraftId(null);
+      swipeRef.current = null;
+    }
+  };
+
+  const endSwipe = () => {
+    swipeRef.current = null;
+  };
 
   return (
     <section className='panel draft-list-panel'>
@@ -105,33 +145,52 @@ export function DraftListPanel({
         {filteredDrafts.map((draft) => (
           <div
             key={draft.id}
-            className='draft-row'
+            className={`draft-swipe-row${swipedDraftId === draft.id ? ' is-swiped' : ''}`}
+            onPointerDown={(event) => beginSwipe(draft.id, event)}
+            onPointerMove={updateSwipe}
+            onPointerCancel={endSwipe}
+            onPointerUp={endSwipe}
           >
             <button
               type='button'
-              className='draft-open-button'
-              onClick={() => onOpenDraft(draft.id)}
-            >
-              <span className='draft-title'>
-                {draftDisplayTitle(draft)}
-              </span>
-              <span className='draft-meta'>
-                {draftAuthorLabel(draft)}
-              </span>
-              <span className='draft-template'>
-                体裁：{draftGenreLabel(draft)}
-              </span>
-              <span className='draft-time'>
-                {formatDraftTime(draft.updatedAt)}
-              </span>
-            </button>
-            <button
-              type='button'
-              className='danger-button'
+              className='draft-swipe-delete'
               onClick={() => onDeleteDraft(draft.id)}
             >
               删除
             </button>
+            <div className='draft-row'>
+              <button
+                type='button'
+                className='draft-open-button'
+                onClick={() => {
+                  if (swipedDraftId === draft.id) {
+                    setSwipedDraftId(null);
+                    return;
+                  }
+                  onOpenDraft(draft.id);
+                }}
+              >
+                <span className='draft-title'>
+                  {draftDisplayTitle(draft)}
+                </span>
+                <span className='draft-meta'>
+                  {draftAuthorLabel(draft)}
+                </span>
+                <span className='draft-template'>
+                  体裁：{draftGenreLabel(draft)}
+                </span>
+                <span className='draft-time'>
+                  {formatDraftTime(draft.updatedAt)}
+                </span>
+              </button>
+              <button
+                type='button'
+                className='danger-button'
+                onClick={() => onDeleteDraft(draft.id)}
+              >
+                删除
+              </button>
+            </div>
           </div>
         ))}
       </div>
