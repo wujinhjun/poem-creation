@@ -3,6 +3,7 @@ import type { PoemLayoutDocument } from '@poem/layout-core';
 import type { Tone, ToneConstraint, RhymeDictType } from '@poem/parser/kernel';
 import type { RhymeDict } from '@poem/parser/kernel';
 import type { Genre } from '../../constants/poem';
+import type { UserExportTemplate } from '../../utils/exportTemplates';
 import type { StrictCharIssue } from '../../utils/strictGridValidation';
 import Composer from '../../Composer';
 import { ExportPreviewModal } from '../ExportPreviewModal';
@@ -34,6 +35,7 @@ type EditorPageProps = {
   exportStatus: string;
   exportPreviewDocument: PoemLayoutDocument;
   exportPreviewOpen: boolean;
+  userExportTemplates: UserExportTemplate[];
   persistReady: boolean;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
@@ -69,6 +71,7 @@ export function EditorPage({
   exportStatus,
   exportPreviewDocument,
   exportPreviewOpen,
+  userExportTemplates,
   persistReady,
   onTitleChange,
   onDescriptionChange,
@@ -177,6 +180,7 @@ export function EditorPage({
           {exportPreviewOpen && (
             <ExportPreviewModal
               layoutDocument={exportPreviewDocument}
+              userTemplates={userExportTemplates}
               onCopy={onCopyExportText}
               onClose={onCloseExportPreview}
             />

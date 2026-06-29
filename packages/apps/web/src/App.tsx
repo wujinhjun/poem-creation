@@ -3,7 +3,7 @@ import { analyzeSync, RhymeDictType } from '@poem/parser/kernel';
 import { createPoemLayoutDocument } from '@poem/layout-core';
 import { identifyQuickFill } from '@poem/poem-kit';
 import type { QuickFillCandidate } from '@poem/poem-kit';
-import { createDraftStore } from './persist';
+import { createDraftStore, createExportTemplateStore } from './persist';
 import type { PoemCreationDraft, PoemCreationDraftSummary } from './persist';
 import type { Genre } from './constants/poem';
 import { AppFrame } from './components/AppFrame';
@@ -13,6 +13,7 @@ import { EntryPage } from './components/EntryPage';
 import { EditorPage } from './components/EditorPage';
 import { QuickFillPage } from './components/QuickFillPage';
 import { SettingsPage } from './components/SettingsPage';
+import { TemplateDesignerPage } from './components/TemplateDesignerPage';
 import { TemplateSelectionPage } from './components/TemplateSelectionPage';
 import { WorksPage } from './components/WorksPage';
 import { useBrowserDict } from './hooks/useBrowserDict';
@@ -23,6 +24,7 @@ import { createEmptyDraft, normalizeDraft } from './utils/draft';
 import { downloadDraftArchive, readDraftArchive } from './utils/draftArchive';
 import { draftDisplayTitle } from './utils/draftDisplay';
 import { copyText, formatPoemText } from './utils/exportText';
+import type { UserExportTemplate } from './utils/exportTemplates';
 import { validateGridStrictly } from './utils/strictGridValidation';
 import type { StrictCharIssue } from './utils/strictGridValidation';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
@@ -38,7 +40,7 @@ import type { UserSettings } from './utils/settings';
 import './style.css';
 
 type ViewMode = AppRoute['mode'];
-type FrameActiveView = 'entry' | 'works' | 'editor' | 'settings';
+type FrameActiveView = 'entry' | 'works' | 'editor' | 'template-designer' | 'settings';
 
 const QUICKFILL_MIN_CONFIDENCE = 0.55;
 
@@ -76,6 +78,7 @@ export default function App() {
   const [userSettings, setUserSettings] = useState<UserSettings>(
     () => loadUserSettings(),
   );
+  const [userExportTemplates, setUserExportTemplates] = useState<UserExportTemplate[]>([]);
   const [activeDraftId, setActiveDraftId] = useState('');
   const [draftRevision, setDraftRevision] = useState(0);
   const [drafts, setDrafts] = useState<PoemCreationDraftSummary[]>([]);
@@ -91,6 +94,7 @@ export default function App() {
     () => createDraftStore(userSettings.persistence),
     [userSettings.persistence],
   );
+  const exportTemplateStore = useMemo(() => createExportTemplateStore(), []);
   const { dict, dictError } = useBrowserDict(rhymeType);
   const {
     pattern,
@@ -185,6 +189,43 @@ export default function App() {
     setViewMode(route.mode);
     pushRoute(route);
   }, []);
+
+  const handleUserExportTemplatesChange = useCallback(
+    (templates: UserExportTemplate[]) => {
+      setUserExportTemplates(templates);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (userExportTemplates.length === 0) return;
+    const timer = window.setTimeout(() => {
+      void exportTemplateStore.saveTemplates(userExportTemplates).catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        setAppError(`导出版式保存失败：${message}`);
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [exportTemplateStore, userExportTemplates]);
+
+  useEffect(() => {
+    let alive = true;
+    void exportTemplateStore
+      .listTemplates()
+      .then((templates) => {
+        if (alive) setUserExportTemplates(templates);
+      })
+      .catch((error: unknown) => {
+        if (!alive) return;
+        const message = error instanceof Error ? error.message : String(error);
+        setAppError(`导出版式加载失败：${message}`);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [exportTemplateStore]);
 
   const handleNewDraft = useCallback(async () => {
     await persistIfEditing();
@@ -295,6 +336,11 @@ export default function App() {
           setPersistReady(true);
           return;
         }
+        if (route.mode === 'template-designer') {
+          setViewMode('template-designer');
+          setPersistReady(true);
+          return;
+        }
         if (route.mode === 'template') {
           setViewMode('template');
           setPersistReady(true);
@@ -365,6 +411,10 @@ export default function App() {
       }
       if (route.mode === 'settings') {
         setViewMode('settings');
+        return;
+      }
+      if (route.mode === 'template-designer') {
+        setViewMode('template-designer');
         return;
       }
       if (route.mode === 'template') {
@@ -458,6 +508,11 @@ export default function App() {
   const handleOpenSettings = useCallback(async () => {
     await persistIfEditing();
     navigateTo({ mode: 'settings' });
+  }, [navigateTo, persistIfEditing]);
+
+  const handleOpenTemplateDesigner = useCallback(async () => {
+    await persistIfEditing();
+    navigateTo({ mode: 'template-designer' });
   }, [navigateTo, persistIfEditing]);
 
   const handleOpenWorks = useCallback(async () => {
@@ -650,7 +705,10 @@ export default function App() {
   }, [handleReturnToEntry, navigateTo, viewMode]);
 
   const activeFrameView: FrameActiveView =
-    viewMode === 'works' || viewMode === 'settings' || viewMode === 'editor'
+    viewMode === 'works' ||
+    viewMode === 'settings' ||
+    viewMode === 'template-designer' ||
+    viewMode === 'editor'
       ? viewMode
       : 'entry';
 
@@ -660,6 +718,14 @@ export default function App() {
       <SettingsPage
         settings={userSettings}
         onSettingsChange={handleSettingsChange}
+        onReturn={() => void handleReturnToEntry()}
+      />
+    );
+  } else if (viewMode === 'template-designer') {
+    pageContent = (
+      <TemplateDesignerPage
+        templates={userExportTemplates}
+        onTemplatesChange={handleUserExportTemplatesChange}
         onReturn={() => void handleReturnToEntry()}
       />
     );
@@ -737,6 +803,7 @@ export default function App() {
         exportStatus={exportStatus}
         exportPreviewDocument={exportPreviewDocument}
         exportPreviewOpen={exportPreviewOpen}
+        userExportTemplates={userExportTemplates}
         persistReady={persistReady}
         onTitleChange={setTitle}
         onDescriptionChange={setDescription}
@@ -758,6 +825,7 @@ export default function App() {
       saveStatus={saveStatus}
       onOpenEntry={handleOpenEntry}
       onOpenWorks={() => void handleOpenWorks()}
+      onOpenTemplateDesigner={() => void handleOpenTemplateDesigner()}
       onOpenSettings={() => void handleOpenSettings()}
     >
       <AppNotice message={errorMessage} />

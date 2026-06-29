@@ -12,7 +12,7 @@
     position: sticky;
     top: 64px;
     z-index: 20;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--line);
@@ -42,8 +42,20 @@
   .editor-layout,
   .template-layout,
   .quickfill-layout,
-  .works-grid {
+  .works-grid,
+  .template-designer-layout {
     grid-template-columns: 1fr;
+  }
+
+  .template-designer-header,
+  .template-preview-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .template-preview-frame {
+    min-height: 460px;
+    padding: 18px;
   }
 
   .home-compose {

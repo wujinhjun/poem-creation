@@ -1,6 +1,6 @@
 import type { CompactPaperImageConfig, PoemLayoutDocument } from '@poem/layout-core';
 import {
-  drawSectionedBody,
+  drawCenteredSectionedBody,
   drawSpeckles,
   fillBackground,
   fitBody,
@@ -8,6 +8,8 @@ import {
   KAI_FONT,
   SERIF_FONT,
   setupCanvas,
+  textAnchorX,
+  textLeftX,
 } from '../canvas';
 
 // 素笺居中：背景纸纹 -> 纸面 -> 细边框 -> 居中标题/作者 -> 居中正文。
@@ -31,39 +33,63 @@ export function renderCompactPaper(
   // 标题和正文都使用居中坐标；具体居中与否由模板配置的 align 决定。
   ctx.fillStyle = config.title.color;
   ctx.textAlign = config.title.align ?? 'left';
+  const titleRegionWidth = config.title.maxWidth ?? width;
+  const titleRegionLeft = config.title.x - titleRegionWidth / 2;
   ctx.font = fitFont(
     ctx,
     document.title,
     config.title.fontSize,
     config.title.minFontSize ?? config.title.fontSize,
-    config.title.maxWidth ?? width,
+    titleRegionWidth,
     SERIF_FONT,
     config.title.weight,
   );
-  ctx.fillText(document.title, config.title.x, config.title.y);
+  const titleAnchor = textAnchorX(
+    titleRegionLeft,
+    titleRegionWidth,
+    config.title.align,
+  );
+  const titleTextWidth = ctx.measureText(document.title).width;
+  const titleTextLeft = textLeftX(titleAnchor, titleTextWidth, config.title.align);
+  ctx.fillText(
+    document.title,
+    titleAnchor,
+    config.title.y,
+  );
 
   if (document.author) {
     ctx.fillStyle = config.author.color;
     ctx.font = `${config.author.fontSize}px ${KAI_FONT}`;
     ctx.textAlign = config.author.align ?? 'left';
-    ctx.fillText(document.author, config.author.x, config.author.y);
+    ctx.fillText(
+      document.author,
+      textAnchorX(titleTextLeft, titleTextWidth, config.author.align),
+      config.author.y,
+    );
   }
 
   // 细边框底部是正文的下边界，留出 52px 防止末行贴边。
+  const bodyAvailableHeight = Math.max(
+    120,
+    config.border.y + config.border.height - config.body.y - 52,
+  );
   const body = fitBody({
     document,
     fontSize: config.body.fontSize,
     lineHeight: config.body.lineHeight,
     sectionGap: config.body.sectionGap,
-    availableHeight: Math.max(120, config.border.y + config.border.height - config.body.y - 52),
+    availableHeight: bodyAvailableHeight,
     minFontSize: 18,
   });
+  const bodyWidth = config.body.maxWidth ?? width;
+  const bodyLeft = config.body.x - bodyWidth / 2;
 
-  drawSectionedBody(
+  drawCenteredSectionedBody(
     ctx,
     document,
-    config.body.x,
+    textAnchorX(bodyLeft, bodyWidth, config.body.align),
     config.body.y,
+    bodyAvailableHeight,
     body.lineHeight,
     body.sectionGap,
     {

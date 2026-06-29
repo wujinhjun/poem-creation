@@ -1,33 +1,44 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
   DEFAULT_POEM_EXPORT_TEMPLATE_ID,
   DEFAULT_POEM_EXPORT_RATIO_ID,
   POEM_EXPORT_RATIOS,
-  POEM_EXPORT_TEMPLATES,
   type PoemExportRatioId,
   type PoemExportTemplateId,
   type PoemLayoutDocument,
 } from '@poem/layout-core';
 import { createTextImageDataUrl, downloadImageDataUrl } from '../../utils/exportImage';
+import { exportTemplateOptions, type UserExportTemplate } from '../../utils/exportTemplates';
 
 type ExportPreviewModalProps = {
   layoutDocument: PoemLayoutDocument;
+  userTemplates: UserExportTemplate[];
   onCopy: () => void;
   onClose: () => void;
 };
 
 export function ExportPreviewModal({
   layoutDocument,
+  userTemplates,
   onCopy,
   onClose,
 }: ExportPreviewModalProps) {
   const [imageUrl, setImageUrl] = useState('');
   const [imageError, setImageError] = useState('');
-  const [templateId, setTemplateId] = useState<PoemExportTemplateId>(
-    DEFAULT_POEM_EXPORT_TEMPLATE_ID,
-  );
+  const [templateKey, setTemplateKey] = useState(DEFAULT_POEM_EXPORT_TEMPLATE_ID);
   const [ratioId, setRatioId] = useState<PoemExportRatioId>(
     DEFAULT_POEM_EXPORT_RATIO_ID,
+  );
+  const templateOptions = useMemo(
+    () => exportTemplateOptions(userTemplates),
+    [userTemplates],
+  );
+  const selectedTemplate = useMemo(
+    () =>
+      templateOptions.find((template) => template.id === templateKey) ??
+      templateOptions.find((template) => template.id === DEFAULT_POEM_EXPORT_TEMPLATE_ID) ??
+      templateOptions[0],
+    [templateKey, templateOptions],
   );
   const dialogRef = useRef<HTMLElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -35,7 +46,11 @@ export function ExportPreviewModal({
   useEffect(() => {
     requestAnimationFrame(() => {
       try {
-        setImageUrl(createTextImageDataUrl(layoutDocument, templateId, ratioId));
+        const templateInput =
+          selectedTemplate.source === 'user'
+            ? selectedTemplate.template
+            : selectedTemplate.id as PoemExportTemplateId;
+        setImageUrl(createTextImageDataUrl(layoutDocument, templateInput, ratioId));
         setImageError('');
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
@@ -43,7 +58,7 @@ export function ExportPreviewModal({
         setImageError(`图片预览生成失败：${message}`);
       }
     });
-  }, [layoutDocument, templateId, ratioId]);
+  }, [layoutDocument, ratioId, selectedTemplate]);
 
   useEffect(() => {
     previouslyFocusedRef.current =
@@ -142,16 +157,16 @@ export function ExportPreviewModal({
             <div className='export-control-group'>
               <span className='export-control-label'>模板</span>
               <div className='export-segmented-control' aria-label='图片模板'>
-                {POEM_EXPORT_TEMPLATES.map((template) => (
+                {templateOptions.map((template) => (
                   <button
                     key={template.id}
                     type='button'
                     className={`export-segmented-button${
-                      template.id === templateId ? ' is-active' : ''
+                      template.id === selectedTemplate.id ? ' is-active' : ''
                     }`}
                     title={template.description}
-                    aria-pressed={template.id === templateId}
-                    onClick={() => setTemplateId(template.id)}
+                    aria-pressed={template.id === selectedTemplate.id}
+                    onClick={() => setTemplateKey(template.id)}
                   >
                     {template.name}
                   </button>

@@ -1,4 +1,4 @@
-import type { PoemLayoutDocument } from '@poem/layout-core';
+import type { PoemExportTextAlign, PoemLayoutDocument } from '@poem/layout-core';
 
 // Canvas 不能像 DOM 一样依赖 CSS 字体栈继承，因此导出图片的字体栈
 // 集中放在这里，保证各模板的宋体、楷体、无衬线选择一致。
@@ -135,8 +135,59 @@ export function drawSectionedBody(
   return cursorY;
 }
 
+function sectionedBodyHeight(
+  document: PoemLayoutDocument,
+  lineHeight: number,
+  sectionGap: number,
+): number {
+  const lineCount = bodyLineCount(document);
+  const gapCount = Math.max(0, document.sections.length - 1);
+  return lineCount * lineHeight + gapCount * sectionGap;
+}
+
+export function drawCenteredSectionedBody(
+  ctx: CanvasRenderingContext2D,
+  document: PoemLayoutDocument,
+  x: number,
+  y: number,
+  availableHeight: number,
+  lineHeight: number,
+  sectionGap: number,
+  style: TextStyle,
+): number {
+  // 长词不能把上下阙硬塞进等高格子，否则阙间距会被挤没。
+  // 这里保留真实段距，只把整块正文放到模板预留区域的视觉中心。
+  const bodyHeight = sectionedBodyHeight(document, lineHeight, sectionGap);
+  const startY = y + Math.max(0, (availableHeight - bodyHeight) / 2);
+  return drawSectionedBody(ctx, document, x, startY, lineHeight, sectionGap, style);
+}
+
+export function textAnchorX(
+  regionLeft: number,
+  regionWidth: number,
+  align: PoemExportTextAlign | undefined,
+): number {
+  if (align === 'center') return regionLeft + regionWidth / 2;
+  if (align === 'right') return regionLeft + regionWidth;
+  return regionLeft;
+}
+
+export function textLeftX(
+  anchorX: number,
+  textWidth: number,
+  align: PoemExportTextAlign | undefined,
+): number {
+  if (align === 'center') return anchorX - textWidth / 2;
+  if (align === 'right') return anchorX - textWidth;
+  return anchorX;
+}
+
 function bodyLineCount(document: PoemLayoutDocument): number {
   return document.sections.reduce((sum, section) => sum + section.lines.length, 0);
+}
+
+function roundLayout(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 export function fitBody({
@@ -154,19 +205,21 @@ export function fitBody({
   availableHeight: number;
   minFontSize: number;
 }): BodyFit {
-  // 正文保持原始行分组，不做截断；当高度不足时整体缩小字号、
-  // 行高和段间距，让长词尽量仍能完整落在画布内。
+  // 正文保持原始行分组，不做截断。高度不足时按比例缩小字号、行距和段距，
+  // 避免只压缩 sectionGap 造成上下阙贴在一起。
   const lineCount = bodyLineCount(document);
   const gapCount = Math.max(0, document.sections.length - 1);
-  const neededHeight = lineCount * lineHeight + gapCount * sectionGap;
+  const totalHeight = (nextLineHeight: number, nextSectionGap: number) =>
+    lineCount * nextLineHeight + gapCount * nextSectionGap;
+  const neededHeight = totalHeight(lineHeight, sectionGap);
   if (neededHeight <= availableHeight || neededHeight <= 0) {
     return { fontSize, lineHeight, sectionGap };
   }
 
   const scale = Math.max(minFontSize / fontSize, availableHeight / neededHeight);
   return {
-    fontSize: Math.round(fontSize * scale * 100) / 100,
-    lineHeight: Math.round(lineHeight * scale * 100) / 100,
-    sectionGap: Math.round(sectionGap * scale * 100) / 100,
+    fontSize: roundLayout(fontSize * scale),
+    lineHeight: roundLayout(lineHeight * scale),
+    sectionGap: roundLayout(sectionGap * scale),
   };
 }

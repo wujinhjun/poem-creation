@@ -1,6 +1,6 @@
 import type { ModernWhitespaceImageConfig, PoemLayoutDocument } from '@poem/layout-core';
 import {
-  drawSectionedBody,
+  drawCenteredSectionedBody,
   drawSpeckles,
   fillBackground,
   fitBody,
@@ -9,6 +9,8 @@ import {
   SANS_FONT,
   SERIF_FONT,
   setupCanvas,
+  textAnchorX,
+  textLeftX,
 } from '../canvas';
 
 // 现代留白：背景纸纹 -> 纸面边框 -> 强调线 -> 标题/作者 -> 正文 -> 品牌。
@@ -39,38 +41,58 @@ export function renderModernWhitespace(
 
   ctx.fillStyle = config.title.color;
   ctx.textAlign = config.title.align ?? 'left';
+  const titleRegionWidth = config.title.maxWidth ?? width;
   ctx.font = fitFont(
     ctx,
     document.title,
     config.title.fontSize,
     config.title.minFontSize ?? config.title.fontSize,
-    config.title.maxWidth ?? width,
+    titleRegionWidth,
     SERIF_FONT,
     config.title.weight,
   );
-  ctx.fillText(document.title, config.title.x, config.title.y);
+  const titleAnchor = textAnchorX(
+    config.title.x,
+    titleRegionWidth,
+    config.title.align,
+  );
+  const titleTextWidth = ctx.measureText(document.title).width;
+  const titleTextLeft = textLeftX(titleAnchor, titleTextWidth, config.title.align);
+  ctx.fillText(
+    document.title,
+    titleAnchor,
+    config.title.y,
+  );
 
   if (document.author) {
     ctx.fillStyle = config.author.color;
     ctx.font = `${config.author.fontSize}px ${KAI_FONT}`;
-    ctx.fillText(document.author, config.author.x, config.author.y);
+    ctx.textAlign = config.author.align ?? 'left';
+    ctx.fillText(
+      document.author,
+      textAnchorX(titleTextLeft, titleTextWidth, config.author.align),
+      config.author.y,
+    );
   }
 
   // 品牌位固定在纸面底部，正文的可用高度以它为下边界。
+  const bodyAvailableHeight = Math.max(120, config.brand.y - config.body.y - 32);
   const body = fitBody({
     document,
     fontSize: config.body.fontSize,
     lineHeight: config.body.lineHeight,
     sectionGap: config.body.sectionGap,
-    availableHeight: Math.max(120, config.brand.y - config.body.y - 32),
+    availableHeight: bodyAvailableHeight,
     minFontSize: 18,
   });
+  const bodyWidth = config.body.maxWidth ?? width;
 
-  drawSectionedBody(
+  drawCenteredSectionedBody(
     ctx,
     document,
-    config.body.x,
+    textAnchorX(config.body.x, bodyWidth, config.body.align),
     config.body.y,
+    bodyAvailableHeight,
     body.lineHeight,
     body.sectionGap,
     {

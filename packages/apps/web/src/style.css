@@ -7,5 +7,6 @@
 @import "./components/WorksPage/style.css";
 @import "./components/EditorPage/style.css";
 @import "./components/ExportPreviewModal/style.css";
+@import "./components/TemplateDesignerPage/style.css";
 @import "./components/SettingsPage/style.css";
 @import "./styles/responsive.css";

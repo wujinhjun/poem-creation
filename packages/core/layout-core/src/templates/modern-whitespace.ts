@@ -73,9 +73,9 @@ export const MODERN_WHITESPACE_TEMPLATE_CONFIG = {
     x: "title.left",
     y: "author.bottom + 58",
     color: "#27312f",
-    fontSize: "canvas.short * 0.032",
-    lineHeight: "body.fontSize * 1.85",
-    sectionGap: "body.lineHeight * 0.65",
+    fontSize: "canvas.short * 0.026",
+    lineHeight: "body.fontSize * 1.9",
+    sectionGap: "body.lineHeight * 1.15",
     maxWidth: "panel.width - 16%",
   },
   brand: {

@@ -1,6 +1,6 @@
 import type { AntiqueTagImageConfig, PoemLayoutDocument } from '@poem/layout-core';
 import {
-  drawSectionedBody,
+  drawCenteredSectionedBody,
   drawSpeckles,
   fillBackground,
   fitBody,
@@ -8,6 +8,8 @@ import {
   KAI_FONT,
   SERIF_FONT,
   setupCanvas,
+  textAnchorX,
+  textLeftX,
 } from '../canvas';
 
 // 题签笺的印章是模板私有装饰，不放到公共 canvas 工具里，
@@ -99,45 +101,67 @@ export function renderAntiqueTag(
   });
 
   ctx.fillStyle = config.title.color;
-  ctx.textAlign = 'left';
+  ctx.textAlign = config.title.align ?? 'left';
+  const titleRegionWidth = config.title.maxWidth ?? width;
   ctx.font = fitFont(
     ctx,
     document.title,
     config.title.fontSize,
     config.title.minFontSize ?? config.title.fontSize,
-    config.title.maxWidth ?? width,
+    titleRegionWidth,
     SERIF_FONT,
     config.title.weight,
   );
-  ctx.fillText(document.title, config.title.x, config.title.y);
+  const titleAnchor = textAnchorX(
+    config.title.x,
+    titleRegionWidth,
+    config.title.align,
+  );
+  const titleTextWidth = ctx.measureText(document.title).width;
+  const titleTextLeft = textLeftX(titleAnchor, titleTextWidth, config.title.align);
+  ctx.fillText(
+    document.title,
+    titleAnchor,
+    config.title.y,
+  );
   if (document.author) {
     ctx.fillStyle = config.author.color;
     ctx.font = `${config.author.fontSize}px ${KAI_FONT}`;
-    ctx.fillText(document.author, config.author.x, config.author.y);
+    ctx.textAlign = config.author.align ?? 'left';
+    ctx.fillText(
+      document.author,
+      textAnchorX(titleTextLeft, titleTextWidth, config.author.align),
+      config.author.y,
+    );
   }
 
-  // 印章位于正文下方，因此正文可用高度以印章上方为下边界。
+  // 印章在右下角，不应把整个正文区截短；正文以下方横线内侧为下边界。
+  const bodyAvailableHeight = Math.max(120, config.paper.y + config.paper.height - config.body.y - 92);
   const body = fitBody({
     document,
     fontSize: config.body.fontSize,
     lineHeight: config.body.lineHeight,
     sectionGap: config.body.sectionGap,
-    availableHeight: Math.max(120, config.seal.y - config.body.y - 28),
+    availableHeight: bodyAvailableHeight,
     minFontSize: 18,
   });
+  const bodyWidth = config.body.maxWidth ?? width;
+  const bodyLeft = config.body.x - bodyWidth / 2;
+  const bodyStyle = {
+    font: `${body.fontSize}px ${SERIF_FONT}`,
+    fillStyle: config.body.color,
+    align: config.body.align,
+  };
 
-  drawSectionedBody(
+  drawCenteredSectionedBody(
     ctx,
     document,
-    config.body.x,
+    textAnchorX(bodyLeft, bodyWidth, config.body.align),
     config.body.y,
+    bodyAvailableHeight,
     body.lineHeight,
     body.sectionGap,
-    {
-      font: `${body.fontSize}px ${SERIF_FONT}`,
-      fillStyle: config.body.color,
-      align: config.body.align,
-    },
+    bodyStyle,
   );
 
   drawSeal(

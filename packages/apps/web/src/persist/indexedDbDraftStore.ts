@@ -3,52 +3,13 @@ import type {
   PoemCreationDraftStore,
   PoemCreationDraftSummary,
 } from "./types";
-
-const DB_NAME = "poem-creation-web";
-const DB_VERSION = 2;
-const STORE_NAME = "drafts";
-const META_STORE_NAME = "meta";
+import {
+  DRAFT_STORE_NAME,
+  META_STORE_NAME,
+  runDbTransaction,
+} from "./indexedDb";
 const ACTIVE_DRAFT_ID = "active";
 const ACTIVE_META_ID = "activeDraftId";
-
-function openDraftDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-      if (!db.objectStoreNames.contains(META_STORE_NAME)) {
-        db.createObjectStore(META_STORE_NAME);
-      }
-    };
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-function runDraftTransaction<T>(
-  mode: IDBTransactionMode,
-  operation: (store: IDBObjectStore) => IDBRequest<T>,
-  storeName = STORE_NAME,
-): Promise<T> {
-  return openDraftDb().then((db) => new Promise<T>((resolve, reject) => {
-    const tx = db.transaction(storeName, mode);
-    const store = tx.objectStore(storeName);
-    const request = operation(store);
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-    tx.oncomplete = () => db.close();
-    tx.onerror = () => {
-      db.close();
-      reject(tx.error);
-    };
-  }));
-}
 
 function legacyDraftToCurrent(draft: PoemCreationDraft | (Omit<PoemCreationDraft, "id"> & { id?: string })): PoemCreationDraft {
   return {
@@ -74,7 +35,8 @@ function toSummary(draft: PoemCreationDraft): PoemCreationDraftSummary {
 export class IndexedDbDraftStore implements PoemCreationDraftStore {
   async listDrafts(): Promise<PoemCreationDraftSummary[]> {
     if (!("indexedDB" in window)) return [];
-    const drafts = await runDraftTransaction<PoemCreationDraft[]>(
+    const drafts = await runDbTransaction<PoemCreationDraft[]>(
+      DRAFT_STORE_NAME,
       "readonly",
       (store) => store.getAll(),
     );
@@ -86,10 +48,10 @@ export class IndexedDbDraftStore implements PoemCreationDraftStore {
 
   async loadActiveDraftId(): Promise<string | null> {
     if (!("indexedDB" in window)) return null;
-    const activeId = await runDraftTransaction<string | undefined>(
+    const activeId = await runDbTransaction<string | undefined>(
+      META_STORE_NAME,
       "readonly",
       (store) => store.get(ACTIVE_META_ID),
-      META_STORE_NAME,
     );
     if (activeId) return activeId;
 
@@ -99,16 +61,17 @@ export class IndexedDbDraftStore implements PoemCreationDraftStore {
 
   async setActiveDraftId(id: string): Promise<void> {
     if (!("indexedDB" in window)) return;
-    await runDraftTransaction<IDBValidKey>(
+    await runDbTransaction<IDBValidKey>(
+      META_STORE_NAME,
       "readwrite",
       (store) => store.put(id, ACTIVE_META_ID),
-      META_STORE_NAME,
     );
   }
 
   async loadDraft(id: string): Promise<PoemCreationDraft | null> {
     if (!("indexedDB" in window)) return null;
-    const draft = await runDraftTransaction<PoemCreationDraft | undefined>(
+    const draft = await runDbTransaction<PoemCreationDraft | undefined>(
+      DRAFT_STORE_NAME,
       "readonly",
       (store) => store.get(id),
     );
@@ -117,7 +80,8 @@ export class IndexedDbDraftStore implements PoemCreationDraftStore {
 
   async saveDraft(draft: PoemCreationDraft): Promise<void> {
     if (!("indexedDB" in window)) return;
-    await runDraftTransaction<IDBValidKey>(
+    await runDbTransaction<IDBValidKey>(
+      DRAFT_STORE_NAME,
       "readwrite",
       (store) => store.put(draft, draft.id),
     );
@@ -126,7 +90,8 @@ export class IndexedDbDraftStore implements PoemCreationDraftStore {
 
   async deleteDraft(id: string): Promise<void> {
     if (!("indexedDB" in window)) return;
-    await runDraftTransaction<undefined>(
+    await runDbTransaction<undefined>(
+      DRAFT_STORE_NAME,
       "readwrite",
       (store) => store.delete(id),
     );
