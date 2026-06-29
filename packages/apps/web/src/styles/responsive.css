@@ -512,4 +512,49 @@
   .analysis-bar > .primary-button {
     display: none;
   }
+
+  .draft-list-scroll {
+    overflow-x: hidden;
+  }
+
+  .draft-swipe-row {
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+    touch-action: pan-y;
+  }
+
+  .draft-swipe-row:last-child {
+    border-bottom: 0;
+  }
+
+  .draft-swipe-delete {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    display: grid;
+    width: 88px;
+    place-items: center;
+    border: 0;
+    background: var(--cinnabar);
+    color: #fffaf5;
+    font-size: 15px;
+  }
+
+  .draft-row {
+    position: relative;
+    z-index: 2;
+    border-bottom: 0;
+    background: #fffbf5;
+    transition: transform 160ms ease;
+  }
+
+  .draft-swipe-row.is-swiped .draft-row {
+    transform: translateX(-88px);
+  }
+
+  .draft-row > .danger-button {
+    display: none;
+  }
 }
