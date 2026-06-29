@@ -47,7 +47,14 @@
 }
 
 .home-copy h1 {
+  width: min(100%, 11em);
+  max-width: 100%;
+  margin: 0;
   font-size: clamp(42px, 5.1vw, 64px);
+  line-height: 1.14;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-wrap: balance;
 }
 
 .home-copy p {
