@@ -123,6 +123,9 @@ importers:
       vite:
         specifier: ^8.0.10
         version: 8.0.11(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.47.1)(yaml@2.8.4)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.6(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.1)(yaml@2.8.4)
 
   packages/core/agent-client:
     devDependencies:
@@ -135,6 +138,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.6(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.1)(yaml@2.8.4)
 
   packages/core/layout-core:
     dependencies:
