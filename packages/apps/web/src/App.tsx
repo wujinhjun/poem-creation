@@ -331,28 +331,10 @@ export default function App() {
         // On a static host the URL hash is the source of truth for whether the
         // user should land in the entry screen or a specific draft editor.
         const route = readRoute();
-        if (route.mode === 'settings') {
-          setViewMode('settings');
-          setPersistReady(true);
-          return;
-        }
-        if (route.mode === 'template-designer') {
-          setViewMode('template-designer');
-          setPersistReady(true);
-          return;
-        }
-        if (route.mode === 'template') {
-          setViewMode('template');
-          setPersistReady(true);
-          return;
-        }
-        if (route.mode === 'quickfill') {
-          setViewMode('quickfill');
-          setPersistReady(true);
-          return;
-        }
-        if (route.mode === 'works') {
-          setViewMode('works');
+        // 除 editor（需异步加载草稿）外，其余无草稿视图直接落位即可。
+        // entry 例外：它会走下方 fallback 逻辑挑选/新建草稿。
+        if (route.mode !== 'entry' && route.mode !== 'editor') {
+          setViewMode(route.mode);
           setPersistReady(true);
           return;
         }
@@ -405,28 +387,9 @@ export default function App() {
   useEffect(() => {
     const handlePopState = () => {
       const route = readRoute();
-      if (route.mode === 'entry') {
-        setViewMode('entry');
-        return;
-      }
-      if (route.mode === 'settings') {
-        setViewMode('settings');
-        return;
-      }
-      if (route.mode === 'template-designer') {
-        setViewMode('template-designer');
-        return;
-      }
-      if (route.mode === 'template') {
-        setViewMode('template');
-        return;
-      }
-      if (route.mode === 'quickfill') {
-        setViewMode('quickfill');
-        return;
-      }
-      if (route.mode === 'works') {
-        setViewMode('works');
+      // 只有 editor 需要异步加载草稿，其余视图直接落位。
+      if (route.mode !== 'editor') {
+        setViewMode(route.mode);
         return;
       }
 
@@ -452,19 +415,8 @@ export default function App() {
     if (!persistReady || !activeDraftId || viewMode !== 'editor') return;
     // Debounce store writes so IME composition and rapid typing stay smooth.
     const timer = window.setTimeout(() => {
-      const draft: PoemCreationDraft = {
-        schemaVersion: 1,
-        id: activeDraftId,
-        title,
-        description,
-        author,
-        genre,
-        selectedTune,
-        selectedVariant,
-        rhymeType,
-        chars,
-        updatedAt: new Date().toISOString(),
-      };
+      const draft = buildCurrentDraft();
+      if (!draft) return;
       setSaveStatus('saving');
       void draftStore
         .saveDraft(draft)
@@ -482,16 +434,9 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [
     activeDraftId,
-    author,
-    chars,
-    description,
+    buildCurrentDraft,
     draftStore,
-    genre,
     persistReady,
-    rhymeType,
-    selectedTune,
-    selectedVariant,
-    title,
     viewMode,
     refreshDraftList,
   ]);
