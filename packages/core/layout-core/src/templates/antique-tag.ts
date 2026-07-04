@@ -2,6 +2,7 @@ import type {
   PoemExportBaseImageConfig,
   PoemExportBodyConfig,
   PoemExportGradientConfig,
+  PoemExportLayoutValue,
   PoemExportRectConfig,
   PoemExportSpeckleConfig,
   PoemExportTemplate,
@@ -11,37 +12,38 @@ import type {
 // 题签笺模板的渲染器配置类型。
 // 视觉识别来自竖向红色题签、暖色底、纸面横线和印章；
 // 纸面本身保持统一颜色。
-export type AntiqueTagImageConfig = PoemExportBaseImageConfig & {
+// V=number 为解析后配置（渲染用），V=PoemExportLayoutValue 为原始模板配置。
+export type AntiqueTagImageConfig<V = number> = PoemExportBaseImageConfig & {
   kind: "antique-tag";
-  outerPanel: PoemExportRectConfig & {
+  outerPanel: PoemExportRectConfig<V> & {
     fill: string;
   };
-  paper: PoemExportRectConfig & {
+  paper: PoemExportRectConfig<V> & {
     gradient: PoemExportGradientConfig;
     speckles: PoemExportSpeckleConfig;
   };
   horizontalRules: Array<{
-    fromX: number;
-    toX: number;
-    y: number;
+    fromX: V;
+    toX: V;
+    y: V;
     color: string;
-    lineWidth: number;
+    lineWidth: V;
   }>;
-  tag: PoemExportRectConfig & {
+  tag: PoemExportRectConfig<V> & {
     fill: string;
     textColor: string;
-    textX: number;
-    textY: number;
-    fontSize: number;
-    charGap: number;
+    textX: V;
+    textY: V;
+    fontSize: V;
+    charGap: V;
   };
-  title: PoemExportTextBlockConfig;
-  author: PoemExportTextBlockConfig;
-  body: PoemExportBodyConfig;
+  title: PoemExportTextBlockConfig<V>;
+  author: PoemExportTextBlockConfig<V>;
+  body: PoemExportBodyConfig<V>;
   seal: {
-    x: number;
-    y: number;
-    size: number;
+    x: V;
+    y: V;
+    size: V;
   };
 };
 
@@ -54,7 +56,7 @@ export const ANTIQUE_TAG_TEMPLATE_META: PoemExportTemplate = {
 // 题签笺：暖色底加一层统一纸面。纸面和面板刻意使用同一填充色，
 // 层次主要由横线、题签和印章提供。
 export const ANTIQUE_TAG_TEMPLATE_CONFIG = {
-  kind: "antique-tag",
+  kind: "antique-tag" as const,
   background: { from: "#f0d091", to: "#c99553" },
   speckles: { count: 42, color: "#9d7744" },
   outerPanel: {
@@ -130,4 +132,4 @@ export const ANTIQUE_TAG_TEMPLATE_CONFIG = {
     y: "paper.bottom - 190",
     size: "canvas.short * 0.052",
   },
-};
+} satisfies AntiqueTagImageConfig<PoemExportLayoutValue>;

@@ -4,7 +4,10 @@ import type {
   PoemExportRatioId,
   PoemExportTemplateId,
 } from "./schema.js";
-import type { PoemExportImageTemplateConfig } from "./templates/registry.js";
+import type {
+  PoemExportImageTemplateConfig,
+  RawPoemExportImageTemplateConfig,
+} from "./templates/registry.js";
 import { POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS, POEM_EXPORT_TEMPLATES } from "./templates/registry.js";
 
 export { POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS, POEM_EXPORT_TEMPLATES };
@@ -185,56 +188,78 @@ function updateTextSlot(
   };
 }
 
-function resolveRect<T extends Record<string, unknown>>(
+// 原始矩形区域：位置量可为表达式字符串，解析时就地写回为纯数值。
+type RawRectLike = {
+  x: PoemExportLayoutValue;
+  y: PoemExportLayoutValue;
+  width: PoemExportLayoutValue;
+  height: PoemExportLayoutValue;
+  lineWidth?: PoemExportLayoutValue;
+};
+
+function resolveRect(
   context: LayoutContext,
   name: string,
-  rect: T,
-): T {
-  const resolved = rect as T & { x: number; y: number; width: number; height: number; lineWidth?: number };
-  resolved.x = resolveValue(rect.x as PoemExportLayoutValue, context, "x");
-  resolved.y = resolveValue(rect.y as PoemExportLayoutValue, context, "y");
-  resolved.width = resolveValue(rect.width as PoemExportLayoutValue, context, "x");
-  resolved.height = resolveValue(rect.height as PoemExportLayoutValue, context, "y");
+  rect: RawRectLike,
+): void {
+  const x = resolveValue(rect.x, context, "x");
+  const y = resolveValue(rect.y, context, "y");
+  const width = resolveValue(rect.width, context, "x");
+  const height = resolveValue(rect.height, context, "y");
+  rect.x = x;
+  rect.y = y;
+  rect.width = width;
+  rect.height = height;
   if (rect.lineWidth !== undefined) {
-    resolved.lineWidth = resolveValue(rect.lineWidth as PoemExportLayoutValue, context, "size");
+    rect.lineWidth = resolveValue(rect.lineWidth, context, "size");
   }
-  updateRectSlot(context, name, resolved);
-  return resolved;
+  updateRectSlot(context, name, { x, y, width, height });
 }
 
-function resolveTextBlock<T extends Record<string, unknown>>(
+// 原始文本块：位置/字号等可为表达式字符串，解析时就地写回为纯数值。
+type RawTextBlockLike = {
+  x: PoemExportLayoutValue;
+  y: PoemExportLayoutValue;
+  fontSize: PoemExportLayoutValue;
+  minFontSize?: PoemExportLayoutValue;
+  maxWidth?: PoemExportLayoutValue;
+  lineHeight?: PoemExportLayoutValue;
+  sectionGap?: PoemExportLayoutValue;
+};
+
+function resolveTextBlock(
   context: LayoutContext,
   name: string,
-  block: T,
-): T {
-  const resolved = block as T & {
-    x: number;
-    y: number;
-    fontSize: number;
-    minFontSize?: number;
-    maxWidth?: number;
-    lineHeight?: number;
-    sectionGap?: number;
-  };
-  resolved.x = resolveValue(block.x as PoemExportLayoutValue, context, "x");
-  resolved.y = resolveValue(block.y as PoemExportLayoutValue, context, "y");
-  resolved.fontSize = resolveValue(block.fontSize as PoemExportLayoutValue, context, "size");
-  updateTextSlot(context, name, resolved);
+  block: RawTextBlockLike,
+): void {
+  const x = resolveValue(block.x, context, "x");
+  const y = resolveValue(block.y, context, "y");
+  const fontSize = resolveValue(block.fontSize, context, "size");
+  block.x = x;
+  block.y = y;
+  block.fontSize = fontSize;
+  updateTextSlot(context, name, { x, y, fontSize });
+
   if (block.minFontSize !== undefined) {
-    resolved.minFontSize = resolveValue(block.minFontSize as PoemExportLayoutValue, context, "size");
+    block.minFontSize = resolveValue(block.minFontSize, context, "size");
   }
+  let maxWidth: number | undefined;
   if (block.maxWidth !== undefined) {
-    resolved.maxWidth = resolveValue(block.maxWidth as PoemExportLayoutValue, context, "x");
+    maxWidth = resolveValue(block.maxWidth, context, "x");
+    block.maxWidth = maxWidth;
   }
+  let lineHeight: number | undefined;
   if (block.lineHeight !== undefined) {
-    resolved.lineHeight = resolveValue(block.lineHeight as PoemExportLayoutValue, context, "size");
-    updateTextSlot(context, name, resolved);
+    lineHeight = resolveValue(block.lineHeight, context, "size");
+    block.lineHeight = lineHeight;
+    updateTextSlot(context, name, { x, y, fontSize, maxWidth, lineHeight });
   }
+  let sectionGap: number | undefined;
   if (block.sectionGap !== undefined) {
-    resolved.sectionGap = resolveValue(block.sectionGap as PoemExportLayoutValue, context, "size");
+    sectionGap = resolveValue(block.sectionGap, context, "size");
+    block.sectionGap = sectionGap;
   }
-  updateTextSlot(context, name, resolved);
-  return resolved;
+  updateTextSlot(context, name, { x, y, fontSize, maxWidth, lineHeight, sectionGap });
 }
 
 function createLayoutContext(canvas: PoemExportRatio): LayoutContext {
@@ -257,55 +282,63 @@ function createLayoutContext(canvas: PoemExportRatio): LayoutContext {
   };
 }
 
+// 把原始模板配置（含版式表达式）解析为纯数值配置。位置量在 raw 上就地写回，
+// raw 与解析结果结构一致，只是值类型从 number|string 收敛为 number，
+// 因此在末尾一次性收窄为对应的解析后类型。
 function resolveTemplateConfig(
   canvas: PoemExportRatio,
-  config: unknown,
+  config: RawPoemExportImageTemplateConfig,
 ): PoemExportImageTemplateConfig {
   const context = createLayoutContext(canvas);
-  const resolved = cloneConfig(config) as Record<string, any>;
+  const raw = cloneConfig(config);
 
-  switch (resolved.kind) {
+  switch (raw.kind) {
     case "modern-whitespace":
-      resolveRect(context, "panel", resolved.panel);
-      resolveRect(context, "accentBar", resolved.accentBar);
-      resolveTextBlock(context, "title", resolved.title);
-      resolveTextBlock(context, "author", resolved.author);
-      resolveTextBlock(context, "body", resolved.body);
-      resolveTextBlock(context, "brand", resolved.brand);
-      return resolved as PoemExportImageTemplateConfig;
-    case "antique-tag":
-      resolveRect(context, "outerPanel", resolved.outerPanel);
-      resolveRect(context, "paper", resolved.paper);
-      resolveRect(context, "tag", resolved.tag);
-      resolved.tag.textX = resolveValue(resolved.tag.textX, context, "x");
-      resolved.tag.textY = resolveValue(resolved.tag.textY, context, "y");
-      resolved.tag.fontSize = resolveValue(resolved.tag.fontSize, context, "size");
-      context.slots.tag.fontSize = resolved.tag.fontSize;
-      resolved.tag.charGap = resolveValue(resolved.tag.charGap, context, "size");
-      context.slots.tag.charGap = resolved.tag.charGap;
-      resolved.horizontalRules = resolved.horizontalRules.map((rule: Record<string, unknown>) => ({
+      resolveRect(context, "panel", raw.panel);
+      resolveRect(context, "accentBar", raw.accentBar);
+      resolveTextBlock(context, "title", raw.title);
+      resolveTextBlock(context, "author", raw.author);
+      resolveTextBlock(context, "body", raw.body);
+      resolveTextBlock(context, "brand", raw.brand);
+      return raw as PoemExportImageTemplateConfig;
+    case "antique-tag": {
+      resolveRect(context, "outerPanel", raw.outerPanel);
+      resolveRect(context, "paper", raw.paper);
+      resolveRect(context, "tag", raw.tag);
+      const tagTextX = resolveValue(raw.tag.textX, context, "x");
+      const tagTextY = resolveValue(raw.tag.textY, context, "y");
+      const tagFontSize = resolveValue(raw.tag.fontSize, context, "size");
+      raw.tag.textX = tagTextX;
+      raw.tag.textY = tagTextY;
+      raw.tag.fontSize = tagFontSize;
+      context.slots.tag.fontSize = tagFontSize;
+      const tagCharGap = resolveValue(raw.tag.charGap, context, "size");
+      raw.tag.charGap = tagCharGap;
+      context.slots.tag.charGap = tagCharGap;
+      raw.horizontalRules = raw.horizontalRules.map((rule) => ({
         ...rule,
-        fromX: resolveValue(rule.fromX as PoemExportLayoutValue, context, "x"),
-        toX: resolveValue(rule.toX as PoemExportLayoutValue, context, "x"),
-        y: resolveValue(rule.y as PoemExportLayoutValue, context, "y"),
-        lineWidth: resolveValue(rule.lineWidth as PoemExportLayoutValue, context, "size"),
+        fromX: resolveValue(rule.fromX, context, "x"),
+        toX: resolveValue(rule.toX, context, "x"),
+        y: resolveValue(rule.y, context, "y"),
+        lineWidth: resolveValue(rule.lineWidth, context, "size"),
       }));
-      resolveTextBlock(context, "title", resolved.title);
-      resolveTextBlock(context, "author", resolved.author);
-      resolveTextBlock(context, "body", resolved.body);
-      resolved.seal.x = resolveValue(resolved.seal.x, context, "x");
-      resolved.seal.y = resolveValue(resolved.seal.y, context, "y");
-      resolved.seal.size = resolveValue(resolved.seal.size, context, "size");
-      return resolved as PoemExportImageTemplateConfig;
+      resolveTextBlock(context, "title", raw.title);
+      resolveTextBlock(context, "author", raw.author);
+      resolveTextBlock(context, "body", raw.body);
+      raw.seal.x = resolveValue(raw.seal.x, context, "x");
+      raw.seal.y = resolveValue(raw.seal.y, context, "y");
+      raw.seal.size = resolveValue(raw.seal.size, context, "size");
+      return raw as PoemExportImageTemplateConfig;
+    }
     case "compact-paper":
-      resolveRect(context, "paper", resolved.paper);
-      resolveRect(context, "border", resolved.border);
-      resolveTextBlock(context, "title", resolved.title);
-      resolveTextBlock(context, "author", resolved.author);
-      resolveTextBlock(context, "body", resolved.body);
-      return resolved as PoemExportImageTemplateConfig;
+      resolveRect(context, "paper", raw.paper);
+      resolveRect(context, "border", raw.border);
+      resolveTextBlock(context, "title", raw.title);
+      resolveTextBlock(context, "author", raw.author);
+      resolveTextBlock(context, "body", raw.body);
+      return raw as PoemExportImageTemplateConfig;
     default:
-      throw new Error(`未知导出模板类型：${String(resolved.kind)}`);
+      throw new Error(`未知导出模板类型：${String(config.kind)}`);
   }
 }
 

@@ -61,27 +61,30 @@ export type PoemExportSpeckleConfig = {
   color: string;
 };
 
-export type PoemExportRectConfig = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+// 布局配置按值类型参数化：
+// - V = number（默认）→ 解析后的配置，位置量都是纯数值，供渲染器使用。
+// - V = PoemExportLayoutValue → 原始模板配置，位置量可为表达式字符串。
+export type PoemExportRectConfig<V = number> = {
+  x: V;
+  y: V;
+  width: V;
+  height: V;
 };
 
-export type PoemExportTextBlockConfig = {
-  x: number;
-  y: number;
+export type PoemExportTextBlockConfig<V = number> = {
+  x: V;
+  y: V;
   color: string;
-  fontSize: number;
-  minFontSize?: number;
-  maxWidth?: number;
+  fontSize: V;
+  minFontSize?: V;
+  maxWidth?: V;
   weight?: string;
   align?: PoemExportTextAlign;
 };
 
-export type PoemExportBodyConfig = PoemExportTextBlockConfig & {
-  lineHeight: number;
-  sectionGap: number;
+export type PoemExportBodyConfig<V = number> = PoemExportTextBlockConfig<V> & {
+  lineHeight: V;
+  sectionGap: V;
 };
 
 export type PoemExportBaseImageConfig = {

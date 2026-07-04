@@ -1,4 +1,8 @@
-import type { PoemExportTemplate, PoemExportTemplateId } from "../schema.js";
+import type {
+  PoemExportLayoutValue,
+  PoemExportTemplate,
+  PoemExportTemplateId,
+} from "../schema.js";
 import type { AntiqueTagImageConfig } from "./antique-tag.js";
 import {
   ANTIQUE_TAG_TEMPLATE_CONFIG,
@@ -15,10 +19,15 @@ import {
   MODERN_WHITESPACE_TEMPLATE_META,
 } from "./modern-whitespace.js";
 
-export type PoemExportImageTemplateConfig =
-  | ModernWhitespaceImageConfig
-  | AntiqueTagImageConfig
-  | CompactPaperImageConfig;
+// V=number（默认）为解析后配置；V=PoemExportLayoutValue 为原始模板配置。
+export type PoemExportImageTemplateConfig<V = number> =
+  | ModernWhitespaceImageConfig<V>
+  | AntiqueTagImageConfig<V>
+  | CompactPaperImageConfig<V>;
+
+// 原始模板配置：位置量可为版式表达式字符串，交由 templates.ts 解析为纯数值。
+export type RawPoemExportImageTemplateConfig =
+  PoemExportImageTemplateConfig<PoemExportLayoutValue>;
 
 export const POEM_EXPORT_TEMPLATES: PoemExportTemplate[] = [
   MODERN_WHITESPACE_TEMPLATE_META,
@@ -30,7 +39,7 @@ export const POEM_EXPORT_TEMPLATES: PoemExportTemplate[] = [
 // 转成纯数值，再交给应用层渲染器。
 export const POEM_EXPORT_IMAGE_TEMPLATE_CONFIGS: Record<
   PoemExportTemplateId,
-  unknown
+  RawPoemExportImageTemplateConfig
 > = {
   "modern-whitespace": MODERN_WHITESPACE_TEMPLATE_CONFIG,
   "antique-tag": ANTIQUE_TAG_TEMPLATE_CONFIG,
