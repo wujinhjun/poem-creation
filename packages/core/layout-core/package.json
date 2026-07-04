@@ -20,7 +20,7 @@
     "@poem/editor-core": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.9.0",
+    "typescript": "catalog:",
     "vitest": "^3.2.4"
   }
 }

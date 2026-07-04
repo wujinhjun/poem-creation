@@ -3,6 +3,10 @@ packages:
   - "packages/core/*"
   - "packages/apps/*"
 
+# 统一各包依赖版本，避免核心包与 web 之间的 TS 大版本漂移。
+catalog:
+  typescript: ~6.0.2
+
 allowBuilds:
   esbuild: true
 
