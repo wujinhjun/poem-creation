@@ -57,12 +57,24 @@ function percentBase(axis: LayoutAxis, canvas: PoemExportRatio): number {
   return Math.min(canvas.width, canvas.height);
 }
 
+// 用 sticky 匹配逐段消费表达式：遇到无法识别的字符立即报错，
+// 避免旧实现"静默丢弃未知字符"掩盖模板笔误（如 "panel.left & 8%"）。
 function tokenizeExpression(expression: string): string[] {
   const tokens: string[] = [];
-  const matcher = /\s*([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?|\d+(?:\.\d+)?%?|\+|-|\*|\/|\(|\))/g;
-  let match: RegExpExecArray | null;
-  while ((match = matcher.exec(expression)) !== null) {
+  const matcher = /([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?|\d+(?:\.\d+)?%?|[+\-*/()])/y;
+  let pos = 0;
+  while (pos < expression.length) {
+    while (pos < expression.length && /\s/.test(expression[pos])) pos += 1;
+    if (pos >= expression.length) break;
+    matcher.lastIndex = pos;
+    const match = matcher.exec(expression);
+    if (!match) {
+      throw new Error(
+        `导出版式表达式含非法字符：${expression}（位置 ${pos} 处 "${expression[pos]}"）`,
+      );
+    }
     tokens.push(match[1]);
+    pos = matcher.lastIndex;
   }
   return tokens;
 }
@@ -78,7 +90,8 @@ function slotValue(context: LayoutContext, token: string): number {
 
 // 一个很小的坐标表达式解析器，支持类似 "panel.left + 8%" 的写法。
 // 它刻意比 JavaScript 窄，避免模板配置变成可执行脚本。
-function evaluateLayoutExpression(
+// 导出以便单测直接覆盖各分支（百分比轴向、优先级、错误路径）。
+export function evaluateLayoutExpression(
   expression: string,
   context: LayoutContext,
   axis: LayoutAxis,
@@ -109,6 +122,9 @@ function evaluateLayoutExpression(
     while (tokens[index] === "*" || tokens[index] === "/") {
       const operator = tokens[index++];
       const right = parseFactor();
+      if (operator === "/" && right === 0) {
+        throw new Error(`导出版式表达式除以零：${expression}`);
+      }
       value = operator === "*" ? value * right : value / right;
     }
     return value;
@@ -262,7 +278,8 @@ function resolveTextBlock(
   updateTextSlot(context, name, { x, y, fontSize, maxWidth, lineHeight, sectionGap });
 }
 
-function createLayoutContext(canvas: PoemExportRatio): LayoutContext {
+// 导出以便单测直接构造上下文来覆盖 evaluateLayoutExpression。
+export function createLayoutContext(canvas: PoemExportRatio): LayoutContext {
   return {
     canvas,
     slots: {
