@@ -10,6 +10,7 @@ import {
 import { Tone } from '@poem/parser/kernel';
 import type { ToneConstraint } from '@poem/parser/kernel';
 import type { RhymeDict } from '@poem/parser/kernel';
+import { evaluateToneCell } from '@poem/poem-kit';
 import { CharSlot } from './components/composer/CharSlot';
 import type { SlotEvaluation } from './components/composer/types';
 import {
@@ -502,70 +503,44 @@ export default function Composer({
     return pattern.map((row, li) => {
       return row.map((constraint, ci): SlotEvaluation => {
         const value = grid[li]?.[ci] ?? '';
-        const expectedTone =
-          constraint.type === 'rhyme'
-            ? (constraint.tone ?? expectedRhymeTone)
-            : null;
-        const baseLabel = expectedTone
-          ? rhymeToneLabel(
-              expectedTone,
-              constraint.type === 'rhyme' ? constraint.xieyun : false,
-            )
+        const result = evaluateToneCell(value, constraint, {
+          dict,
+          expectedRhymeTone,
+          rhymeAnchors,
+        });
+        const baseLabel = result.expectedTone
+          ? rhymeToneLabel(result.expectedTone, result.xieyun)
           : constraintLabel(constraint);
-        if (!value || !dict) {
+
+        if (result.status === 'empty') {
           return {
             status: 'empty',
             label: baseLabel,
             title: baseLabel === '中' ? '可平可仄' : baseLabel,
           };
         }
-
-        if (constraint.type === 'flexible') {
+        if (result.constraintType === 'flexible') {
           return { status: 'pass', label: '中', title: '可平可仄' };
         }
-
-        const entries = dict.lookup(value);
-        if (entries.length === 0) {
+        if (result.failReason === 'not-in-dict') {
           return { status: 'fail', label: baseLabel, title: '韵书未收此字' };
         }
-
-        if (constraint.type === 'fixed') {
-          const matches = entries.some(
-            (entry) => entry.tone === constraint.tone,
-          );
+        if (result.constraintType === 'fixed') {
+          const pass = result.status === 'pass';
           return {
-            status: matches ? 'pass' : 'fail',
+            status: pass ? 'pass' : 'fail',
             label: baseLabel,
-            title: matches ? `符合${baseLabel}声` : `此处应为${baseLabel}声`,
+            title: pass ? `符合${baseLabel}声` : `此处应为${baseLabel}声`,
           };
         }
-
-        const rhymeEntries = entries.filter(
-          (entry) =>
-            entry.rhymeGroup && (!expectedTone || entry.tone === expectedTone),
-        );
-        const matchingEntry = rhymeEntries.find((entry) => {
-          const anchor = rhymeAnchors.get(entry.tone);
-          return !anchor || anchor === entry.rhymeGroup;
-        });
-
-        if (!matchingEntry) {
-          return {
-            status: 'fail',
-            label: baseLabel,
-            title: `${baseLabel}不合`,
-          };
-        }
-
-        if (!rhymeAnchors.has(matchingEntry.tone)) {
-          rhymeAnchors.set(matchingEntry.tone, matchingEntry.rhymeGroup);
-        }
-
-        return {
-          status: 'pass',
-          label: baseLabel,
-          title: `${baseLabel}：${matchingEntry.rhymeGroup}`,
-        };
+        // 韵脚
+        return result.status === 'pass'
+          ? {
+              status: 'pass',
+              label: baseLabel,
+              title: `${baseLabel}：${result.matchedRhymeGroup}`,
+            }
+          : { status: 'fail', label: baseLabel, title: `${baseLabel}不合` };
       });
     });
   }, [dict, expectedRhymeTone, grid, pattern]);
