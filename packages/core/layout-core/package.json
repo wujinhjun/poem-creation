@@ -5,7 +5,11 @@
   "type": "module",
   "description": "诗词排版核心 —— 导出与跨端渲染共享的排版语义、正文分组和文本生成规则",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

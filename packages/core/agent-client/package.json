@@ -5,7 +5,11 @@
   "type": "module",
   "description": "Agent 客户端纯逻辑层 —— 上下文采集 + 请求构建 + 流式解析 + 对话状态（待开发）",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

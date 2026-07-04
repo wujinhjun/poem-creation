@@ -5,7 +5,11 @@
   "type": "module",
   "description": "编辑器核心 —— 网格文档模型与输入处理的纯逻辑（跨端复用）",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

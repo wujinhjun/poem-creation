@@ -4,10 +4,26 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./kernel": "./dist/kernel.js",
-    "./types": "./dist/core/types.js",
-    "./catalog": "./dist/catalog.js"
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./kernel": {
+      "development": "./src/kernel.ts",
+      "types": "./dist/kernel.d.ts",
+      "default": "./dist/kernel.js"
+    },
+    "./types": {
+      "development": "./src/core/types.ts",
+      "types": "./dist/core/types.d.ts",
+      "default": "./dist/core/types.js"
+    },
+    "./catalog": {
+      "development": "./src/catalog.ts",
+      "types": "./dist/catalog.d.ts",
+      "default": "./dist/catalog.js"
+    }
   },
   "scripts": {
     "clean:data": "node scripts/clean-data.mjs",
