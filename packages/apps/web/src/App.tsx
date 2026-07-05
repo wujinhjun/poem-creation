@@ -1,13 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { analyzeSync, RhymeDictType } from '@poem/parser/kernel';
 import { createPoemLayoutDocument } from '@poem/layout-core';
-import { identifyQuickFill } from '@poem/poem-kit';
-import type { QuickFillCandidate } from '@poem/poem-kit';
-import { createDraftStore, createExportTemplateStore } from './persist';
-import type { PoemCreationDraft, PoemCreationDraftSummary } from './persist';
+import { createExportTemplateStore } from './persist';
 import type { Genre } from './constants/poem';
 import { AppFrame } from './components/AppFrame';
-import type { SaveStatus } from './components/AppFrame';
 import { AppNotice } from './components/AppNotice';
 import { EntryPage } from './components/EntryPage';
 import { EditorPage } from './components/EditorPage';
@@ -19,19 +15,15 @@ import { WorksPage } from './components/WorksPage';
 import { useBrowserDict } from './hooks/useBrowserDict';
 import { useEditorPattern } from './hooks/useEditorPattern';
 import { useEntrySelection } from './hooks/useEntrySelection';
+import { useDraftManager } from './hooks/useDraftManager';
 import { formatAnalysisReport } from './utils/analysisReport';
-import { createEmptyDraft, normalizeDraft } from './utils/draft';
-import { downloadDraftArchive, readDraftArchive } from './utils/draftArchive';
-import { draftDisplayTitle } from './utils/draftDisplay';
+import { createEmptyDraft } from './utils/draft';
 import { copyText, formatPoemText } from './utils/exportText';
 import type { UserExportTemplate } from './utils/exportTemplates';
 import { validateGridStrictly } from './utils/strictGridValidation';
 import type { StrictCharIssue } from './utils/strictGridValidation';
 import { pushRoute, readRoute, replaceRoute } from './utils/routing';
 import type { AppRoute } from './utils/routing';
-import { loadCiBundle } from './utils/ciTemplate';
-import { createBrowserDict } from './utils/rhymeDict';
-import { getAllTemplates } from '@poem/poem-kit';
 import {
   loadUserSettings,
   saveUserSettings,
@@ -42,22 +34,6 @@ import './style.css';
 type ViewMode = AppRoute['mode'];
 type FrameActiveView = 'entry' | 'works' | 'editor' | 'template-designer' | 'settings';
 
-const QUICKFILL_MIN_CONFIDENCE = 0.55;
-
-type QuickFillRecognitionInput = {
-  title: string;
-  author: string;
-  lines: string[];
-};
-
-function quickFillInputText(lines: string[]): string {
-  return lines.map((line) => line.trim()).filter(Boolean).join('\n');
-}
-
-function candidateRhymeType(candidate: QuickFillCandidate): RhymeDictType {
-  return candidate.genre === 'ci' ? RhymeDictType.Cilin : RhymeDictType.Pingshui;
-}
-
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('entry');
   const [entryGenre, setEntryGenre] = useState<Genre>('meter');
@@ -66,35 +42,77 @@ export default function App() {
   const [entryRhymeType, setEntryRhymeType] = useState<RhymeDictType>(
     RhymeDictType.Pingshui,
   );
-  const [genre, setGenre] = useState<Genre>('meter');
-  const [selectedTune, setSelectedTune] = useState('');
-  const [selectedVariant, setSelectedVariant] = useState('');
-  const [rhymeType, setRhymeType] = useState<RhymeDictType>(
-    RhymeDictType.Pingshui,
-  );
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [author, setAuthor] = useState('');
   const [userSettings, setUserSettings] = useState<UserSettings>(
     () => loadUserSettings(),
   );
   const [userExportTemplates, setUserExportTemplates] = useState<UserExportTemplate[]>([]);
-  const [activeDraftId, setActiveDraftId] = useState('');
-  const [draftRevision, setDraftRevision] = useState(0);
-  const [drafts, setDrafts] = useState<PoemCreationDraftSummary[]>([]);
-  const [chars, setChars] = useState<string[][]>([]);
   const [analyzeResult, setAnalyzeResult] = useState('');
   const [analysisIssues, setAnalysisIssues] = useState<StrictCharIssue[]>([]);
   const [appError, setAppError] = useState('');
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [exportStatus, setExportStatus] = useState('');
   const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [persistReady, setPersistReady] = useState(false);
-  const draftStore = useMemo(
-    () => createDraftStore(userSettings.persistence),
-    [userSettings.persistence],
-  );
   const exportTemplateStore = useMemo(() => createExportTemplateStore(), []);
+
+  const navigateTo = useCallback((route: AppRoute) => {
+    setViewMode(route.mode);
+    pushRoute(route);
+  }, []);
+
+  const entrySelection = useMemo(
+    () => ({
+      genre: entryGenre,
+      selectedTune: entrySelectedTune,
+      selectedVariant: entrySelectedVariant,
+      rhymeType: entryRhymeType,
+    }),
+    [entryGenre, entrySelectedTune, entrySelectedVariant, entryRhymeType],
+  );
+
+  const resetAnalysis = useCallback(() => setAnalyzeResult(''), []);
+
+  const {
+    drafts,
+    setDrafts,
+    activeDraftId,
+    draftRevision,
+    saveStatus,
+    setSaveStatus,
+    title,
+    description,
+    author,
+    genre,
+    selectedTune,
+    selectedVariant,
+    rhymeType,
+    chars,
+    setTitle,
+    setDescription,
+    setAuthor,
+    setChars,
+    applyDraft,
+    persistIfEditing,
+    newDraft: handleNewDraft,
+    openDraft: handleOpenDraft,
+    deleteDraft: handleDeleteDraft,
+    recognize: handleRecognizeQuickFill,
+    importDrafts: handleImportDrafts,
+    exportDrafts: handleExportDrafts,
+    loadDraft,
+    loadActiveDraftId,
+    listDrafts,
+    setActiveDraftIdInStore,
+  } = useDraftManager({
+    persistence: userSettings.persistence,
+    defaultAuthor: userSettings.defaultAuthor,
+    viewMode,
+    persistReady,
+    navigateTo,
+    onError: setAppError,
+    onDraftApplied: resetAnalysis,
+    entrySelection,
+  });
+
   const { dict, dictError } = useBrowserDict(rhymeType);
   const {
     pattern,
@@ -122,73 +140,6 @@ export default function App() {
     setEntrySelectedVariant,
     setEntryRhymeType,
   });
-
-  // Applying a draft is the only place that hydrates editor state from storage.
-  // Keeping it centralized prevents route/list actions from drifting apart.
-  const applyDraft = useCallback((sourceDraft: PoemCreationDraft) => {
-    const draft = normalizeDraft(sourceDraft, getAllTemplates());
-    setActiveDraftId(draft.id);
-    setDraftRevision((revision) => revision + 1);
-    setTitle(draft.title);
-    setDescription(draft.description);
-    setAuthor(draft.author);
-    setGenre(draft.genre);
-    setSelectedTune(draft.selectedTune);
-    setSelectedVariant(draft.selectedVariant);
-    setRhymeType(draft.rhymeType);
-    setChars(draft.chars);
-    setAnalyzeResult('');
-  }, []);
-
-  const refreshDraftList = useCallback(async () => {
-    setDrafts(await draftStore.listDrafts());
-  }, [draftStore]);
-
-  const buildCurrentDraft = useCallback((): PoemCreationDraft | null => {
-    if (!activeDraftId) return null;
-    return {
-      schemaVersion: 1,
-      id: activeDraftId,
-      title,
-      description,
-      author,
-      genre,
-      selectedTune,
-      selectedVariant,
-      rhymeType,
-      chars,
-      updatedAt: new Date().toISOString(),
-    };
-  }, [
-    activeDraftId,
-    author,
-    chars,
-    description,
-    genre,
-    rhymeType,
-    selectedTune,
-    selectedVariant,
-    title,
-  ]);
-
-  const persistIfEditing = useCallback(async () => {
-    if (viewMode !== 'editor' || !persistReady) return;
-    const current = buildCurrentDraft();
-    if (!current) return;
-    await draftStore.saveDraft(current);
-    await refreshDraftList();
-  }, [
-    buildCurrentDraft,
-    draftStore,
-    persistReady,
-    refreshDraftList,
-    viewMode,
-  ]);
-
-  const navigateTo = useCallback((route: AppRoute) => {
-    setViewMode(route.mode);
-    pushRoute(route);
-  }, []);
 
   const handleUserExportTemplatesChange = useCallback(
     (templates: UserExportTemplate[]) => {
@@ -227,103 +178,13 @@ export default function App() {
     };
   }, [exportTemplateStore]);
 
-  const handleNewDraft = useCallback(async () => {
-    await persistIfEditing();
-    const nextDraft = {
-      ...createEmptyDraft(),
-      title: entrySelectedTune,
-      author: userSettings.defaultAuthor,
-      genre: entryGenre,
-      selectedTune: entrySelectedTune,
-      selectedVariant: entrySelectedVariant,
-      rhymeType: entryRhymeType,
-    };
-    await draftStore.saveDraft(nextDraft);
-    applyDraft(nextDraft);
-    await refreshDraftList();
-    navigateTo({ mode: 'editor', draftId: nextDraft.id });
-  }, [
-    applyDraft,
-    draftStore,
-    entryGenre,
-    entryRhymeType,
-    entrySelectedTune,
-    entrySelectedVariant,
-    navigateTo,
-    persistIfEditing,
-    refreshDraftList,
-    userSettings.defaultAuthor,
-  ]);
-
-  const handleOpenDraft = useCallback(
-    async (id: string) => {
-      await persistIfEditing();
-      const draft = await draftStore.loadDraft(id);
-      if (!draft) return;
-      applyDraft(draft);
-      await draftStore.setActiveDraftId(id);
-      await refreshDraftList();
-      navigateTo({ mode: 'editor', draftId: id });
-    },
-    [
-      applyDraft,
-      draftStore,
-      navigateTo,
-      persistIfEditing,
-      refreshDraftList,
-    ],
-  );
-
-  const handleDeleteDraft = useCallback(
-    async (id: string) => {
-      const target = drafts.find((draft) => draft.id === id);
-      const label = target ? draftDisplayTitle(target) : '这首作品';
-      if (!window.confirm(`确定删除「${label}」吗？此操作不可恢复。`)) {
-        return;
-      }
-      await draftStore.deleteDraft(id);
-      const remaining = await draftStore.listDrafts();
-      setDrafts(remaining);
-
-      if (id !== activeDraftId) return;
-      if (viewMode !== 'editor') {
-        setActiveDraftId('');
-        return;
-      }
-
-      const nextId = remaining[0]?.id;
-      if (nextId) {
-        const nextDraft = await draftStore.loadDraft(nextId);
-        if (nextDraft) {
-          applyDraft(nextDraft);
-          await draftStore.setActiveDraftId(nextId);
-          navigateTo({ mode: 'editor', draftId: nextId });
-          return;
-        }
-      }
-
-      applyDraft(createEmptyDraft());
-      navigateTo({ mode: 'entry' });
-      await refreshDraftList();
-    },
-    [
-      activeDraftId,
-      applyDraft,
-      draftStore,
-      drafts,
-      navigateTo,
-      refreshDraftList,
-      viewMode,
-    ],
-  );
-
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const [activeId, summaries] = await Promise.all([
-          draftStore.loadActiveDraftId(),
-          draftStore.listDrafts(),
+          loadActiveDraftId(),
+          listDrafts(),
         ]);
         if (!alive) return;
         setDrafts(summaries);
@@ -340,11 +201,11 @@ export default function App() {
         }
 
         if (route.mode === 'editor') {
-          const draft = await draftStore.loadDraft(route.draftId);
+          const draft = await loadDraft(route.draftId);
           if (!alive) return;
           if (draft?.schemaVersion === 1) {
             applyDraft(draft);
-            await draftStore.setActiveDraftId(route.draftId);
+            await setActiveDraftIdInStore(route.draftId);
             setViewMode('editor');
             setPersistReady(true);
             return;
@@ -352,15 +213,13 @@ export default function App() {
           replaceRoute({ mode: 'entry' });
         }
 
-        let fallbackDraft = activeId
-          ? await draftStore.loadDraft(activeId)
-          : null;
+        let fallbackDraft = activeId ? await loadDraft(activeId) : null;
         if (
           !fallbackDraft &&
           summaries[0]?.id &&
           summaries[0].id !== activeId
         ) {
-          fallbackDraft = await draftStore.loadDraft(summaries[0].id);
+          fallbackDraft = await loadDraft(summaries[0].id);
         }
         if (!alive) return;
 
@@ -382,7 +241,14 @@ export default function App() {
     return () => {
       alive = false;
     };
-  }, [applyDraft, draftStore]);
+  }, [
+    applyDraft,
+    listDrafts,
+    loadActiveDraftId,
+    loadDraft,
+    setActiveDraftIdInStore,
+    setDrafts,
+  ]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -393,7 +259,7 @@ export default function App() {
         return;
       }
 
-      void draftStore.loadDraft(route.draftId).then((draft) => {
+      void loadDraft(route.draftId).then((draft) => {
         if (!draft) {
           setViewMode('entry');
           replaceRoute({ mode: 'entry' });
@@ -401,7 +267,7 @@ export default function App() {
         }
         applyDraft(draft);
         setViewMode('editor');
-        void draftStore.setActiveDraftId(route.draftId);
+        void setActiveDraftIdInStore(route.draftId);
       });
     };
 
@@ -409,37 +275,7 @@ export default function App() {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [applyDraft, draftStore]);
-
-  useEffect(() => {
-    if (!persistReady || !activeDraftId || viewMode !== 'editor') return;
-    // Debounce store writes so IME composition and rapid typing stay smooth.
-    const timer = window.setTimeout(() => {
-      const draft = buildCurrentDraft();
-      if (!draft) return;
-      setSaveStatus('saving');
-      void draftStore
-        .saveDraft(draft)
-        .then(async () => {
-          await refreshDraftList();
-          setSaveStatus('saved');
-        })
-        .catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error);
-          setSaveStatus('error');
-          setAppError(`草稿保存失败：${message}`);
-        });
-    }, 350);
-
-    return () => window.clearTimeout(timer);
-  }, [
-    activeDraftId,
-    buildCurrentDraft,
-    draftStore,
-    persistReady,
-    viewMode,
-    refreshDraftList,
-  ]);
+  }, [applyDraft, loadDraft, setActiveDraftIdInStore]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
@@ -475,65 +311,11 @@ export default function App() {
     navigateTo({ mode: 'quickfill' });
   }, [navigateTo, persistIfEditing]);
 
-  const handleRecognizeQuickFill = useCallback(
-    async (input: QuickFillRecognitionInput) => {
-      const text = quickFillInputText(input.lines);
-      if (!text) throw new Error('请先输入至少一句正文');
-
-      const [pingshuiDict, cilinDict, ciBundle] = await Promise.all([
-        createBrowserDict(RhymeDictType.Pingshui),
-        createBrowserDict(RhymeDictType.Cilin),
-        loadCiBundle(),
-      ]);
-      const meterCandidates = identifyQuickFill(text, pingshuiDict, undefined, {
-        topN: 6,
-      });
-      const ciCandidates = identifyQuickFill(
-        text,
-        cilinDict,
-        Object.values(ciBundle),
-        { topN: 8 },
-      ).filter((candidate) => candidate.genre === 'ci');
-      const candidates = [...meterCandidates, ...ciCandidates].sort(
-        (a, b) => b.confidence - a.confidence,
-      );
-      const best = candidates[0];
-      if (!best || best.confidence < QUICKFILL_MIN_CONFIDENCE) {
-        throw new Error('暂未识别到足够可信的格律或词牌，请补充分行或改用模板起笔');
-      }
-
-      const nextDraft: PoemCreationDraft = {
-        ...createEmptyDraft(),
-        title: input.title.trim() || best.tuneName,
-        author: input.author.trim() || userSettings.defaultAuthor,
-        genre: best.genre,
-        selectedTune: best.tuneName,
-        selectedVariant: best.variantId,
-        rhymeType: candidateRhymeType(best),
-        chars: best.normalizedLines,
-      };
-      await draftStore.saveDraft(nextDraft);
-      applyDraft(nextDraft);
-      await refreshDraftList();
-      navigateTo({ mode: 'editor', draftId: nextDraft.id });
-      setAppError(
-        `已识别为${best.tuneName} · ${best.variantName}（置信度 ${Math.round(best.confidence * 100)}%）`,
-      );
-    },
-    [
-      applyDraft,
-      draftStore,
-      navigateTo,
-      refreshDraftList,
-      userSettings.defaultAuthor,
-    ],
-  );
-
   const handleSettingsChange = useCallback((settings: UserSettings) => {
     setUserSettings(settings);
     setSaveStatus('saved');
     saveUserSettings(settings);
-  }, []);
+  }, [setSaveStatus]);
 
   const handleAnalyze = useCallback(
     async (sourceChars = chars) => {
@@ -613,30 +395,6 @@ export default function App() {
     setExportStatus('文字已复制');
     window.setTimeout(() => setExportStatus(''), 1800);
   }, [exportPreviewText]);
-
-  const handleExportDrafts = useCallback(async () => {
-    const fullDrafts = await Promise.all(
-      drafts.map((draft) => draftStore.loadDraft(draft.id)),
-    );
-    downloadDraftArchive(
-      fullDrafts.filter((draft): draft is PoemCreationDraft => Boolean(draft)),
-    );
-  }, [draftStore, drafts]);
-
-  const handleImportDrafts = useCallback(
-    async (file: File) => {
-      try {
-        const importedDrafts = await readDraftArchive(file);
-        await Promise.all(importedDrafts.map((draft) => draftStore.saveDraft(draft)));
-        await refreshDraftList();
-        setAppError(`已导入 ${importedDrafts.length} 首作品`);
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        setAppError(`导入失败：${message}`);
-      }
-    },
-    [draftStore, refreshDraftList],
-  );
 
   const errorMessage = dictError || appError;
   const framePersistenceMode = userSettings.persistence.mode;
