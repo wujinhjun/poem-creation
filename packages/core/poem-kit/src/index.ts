@@ -159,6 +159,16 @@ export function firstVariantForTune(
 export { identifyQuickFill } from "./identify.js";
 export type { QuickFillCandidate, QuickFillOptions } from "./identify.js";
 
+// ============ 单格平仄/韵校验 ============
+
+export { evaluateToneCell } from "./tone-cell.js";
+export type {
+  ToneCellContext,
+  ToneCellResult,
+  ToneCellStatus,
+  ToneCellFailReason,
+} from "./tone-cell.js";
+
 // ============ 草稿规范化 ============
 
 function inferTemplateNameFromVariant(

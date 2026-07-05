@@ -1,6 +1,7 @@
 import type {
   PoemExportBaseImageConfig,
   PoemExportBodyConfig,
+  PoemExportLayoutValue,
   PoemExportRectConfig,
   PoemExportTemplate,
   PoemExportTextBlockConfig,
@@ -8,18 +9,19 @@ import type {
 
 // 素笺居中模板的渲染器配置类型。
 // 这个模板保持居中的古典构图，只使用纸纹和细边框作为装饰。
-export type CompactPaperImageConfig = PoemExportBaseImageConfig & {
+// V=number 为解析后配置（渲染用），V=PoemExportLayoutValue 为原始模板配置。
+export type CompactPaperImageConfig<V = number> = PoemExportBaseImageConfig & {
   kind: "compact-paper";
-  paper: PoemExportRectConfig & {
+  paper: PoemExportRectConfig<V> & {
     fill: string;
   };
-  border: PoemExportRectConfig & {
+  border: PoemExportRectConfig<V> & {
     stroke: string;
-    lineWidth: number;
+    lineWidth: V;
   };
-  title: PoemExportTextBlockConfig;
-  author: PoemExportTextBlockConfig;
-  body: PoemExportBodyConfig;
+  title: PoemExportTextBlockConfig<V>;
+  author: PoemExportTextBlockConfig<V>;
+  body: PoemExportBodyConfig<V>;
 };
 
 export const COMPACT_PAPER_TEMPLATE_META: PoemExportTemplate = {
@@ -30,7 +32,7 @@ export const COMPACT_PAPER_TEMPLATE_META: PoemExportTemplate = {
 
 // 素笺居中：居中经典构图，装饰最少。
 export const COMPACT_PAPER_TEMPLATE_CONFIG = {
-  kind: "compact-paper",
+  kind: "compact-paper" as const,
   background: { from: "#fff9eb", to: "#fff9eb" },
   speckles: { count: 24, color: "#bd955e" },
   paper: {
@@ -75,4 +77,4 @@ export const COMPACT_PAPER_TEMPLATE_CONFIG = {
     maxWidth: "border.width - 16%",
     align: "center",
   },
-};
+} satisfies CompactPaperImageConfig<PoemExportLayoutValue>;

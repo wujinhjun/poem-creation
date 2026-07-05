@@ -4,6 +4,7 @@ export type {
   PoemExportBaseImageConfig,
   PoemExportBodyConfig,
   PoemExportGradientConfig,
+  PoemExportLayoutValue,
   PoemExportRatio,
   PoemExportRatioId,
   PoemExportRectConfig,
@@ -19,7 +20,10 @@ export type {
 export type { AntiqueTagImageConfig } from "./templates/antique-tag.js";
 export type { CompactPaperImageConfig } from "./templates/compact-paper.js";
 export type { ModernWhitespaceImageConfig } from "./templates/modern-whitespace.js";
-export type { PoemExportImageTemplateConfig } from "./templates/registry.js";
+export type {
+  PoemExportImageTemplateConfig,
+  RawPoemExportImageTemplateConfig,
+} from "./templates/registry.js";
 export {
   DEFAULT_POEM_EXPORT_TEMPLATE_ID,
   DEFAULT_POEM_EXPORT_RATIO_ID,

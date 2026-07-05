@@ -5,7 +5,11 @@
   "type": "module",
   "description": "诗词创作工具包 —— 目录懒加载、模板/变体查询、编辑器模式投影、草稿规范化",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -19,7 +23,7 @@
   "devDependencies": {
     "@poem/rhyme-book": "workspace:*",
     "@types/node": "^24.0.0",
-    "typescript": "^5.9.0",
+    "typescript": "catalog:",
     "vitest": "^3.2.4"
   }
 }

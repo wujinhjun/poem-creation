@@ -1,6 +1,7 @@
 import type {
   PoemExportBaseImageConfig,
   PoemExportBodyConfig,
+  PoemExportLayoutValue,
   PoemExportRectConfig,
   PoemExportTemplate,
   PoemExportTextBlockConfig,
@@ -9,20 +10,21 @@ import type {
 // 现代留白模板的渲染器配置类型。
 // 这个模板刻意保持克制：一个纸面区域、一条强调线、左对齐文本，
 // 以及底部的小型品牌署名。
-export type ModernWhitespaceImageConfig = PoemExportBaseImageConfig & {
+// V=number 为解析后配置（渲染用），V=PoemExportLayoutValue 为原始模板配置。
+export type ModernWhitespaceImageConfig<V = number> = PoemExportBaseImageConfig & {
   kind: "modern-whitespace";
-  panel: PoemExportRectConfig & {
+  panel: PoemExportRectConfig<V> & {
     fill: string;
     stroke: string;
-    lineWidth: number;
+    lineWidth: V;
   };
-  accentBar: PoemExportRectConfig & {
+  accentBar: PoemExportRectConfig<V> & {
     fill: string;
   };
-  title: PoemExportTextBlockConfig;
-  author: PoemExportTextBlockConfig;
-  body: PoemExportBodyConfig;
-  brand: PoemExportTextBlockConfig & {
+  title: PoemExportTextBlockConfig<V>;
+  author: PoemExportTextBlockConfig<V>;
+  body: PoemExportBodyConfig<V>;
+  brand: PoemExportTextBlockConfig<V> & {
     text: string;
   };
 };
@@ -35,7 +37,7 @@ export const MODERN_WHITESPACE_TEMPLATE_META: PoemExportTemplate = {
 
 // 现代留白：安静的编辑型排版，正文左对齐，品牌信息固定在纸面底部附近。
 export const MODERN_WHITESPACE_TEMPLATE_CONFIG = {
-  kind: "modern-whitespace",
+  kind: "modern-whitespace" as const,
   background: { from: "#fffdf8", to: "#fffdf8" },
   speckles: { count: 18, color: "#c8b17c" },
   panel: {
@@ -85,4 +87,4 @@ export const MODERN_WHITESPACE_TEMPLATE_CONFIG = {
     fontSize: "canvas.short * 0.013",
     text: "Poem Creation",
   },
-};
+} satisfies ModernWhitespaceImageConfig<PoemExportLayoutValue>;

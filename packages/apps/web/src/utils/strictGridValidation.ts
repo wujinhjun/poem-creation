@@ -1,6 +1,7 @@
 import { Tone } from '@poem/parser/kernel';
 import type { RhymeDict, ToneConstraint } from '@poem/parser/kernel';
 import { formatRhymeToneLabel } from '@poem/shared';
+import { evaluateToneCell } from '@poem/poem-kit';
 
 export type StrictCharIssue = {
   lineIndex: number;
@@ -44,22 +45,28 @@ export function validateGridStrictly({
     const lineText = chars[lineIndex]?.join('').trim() ?? '';
     line.forEach((constraint, col) => {
       const char = chars[lineIndex]?.[col] ?? '';
-      if (!char || constraint.type === 'flexible') return;
-      const expectedTone =
-        constraint.type === 'rhyme'
-          ? (constraint.tone ?? expectedRhymeTone)
-          : null;
+      const result = evaluateToneCell(char, constraint, {
+        dict,
+        expectedRhymeTone,
+        rhymeAnchors,
+      });
+
+      // 空格与可平可仄不计入可校验字数。
+      if (result.status === 'empty' || result.constraintType === 'flexible') {
+        return;
+      }
+      checkableCount += 1;
+      if (result.status === 'pass') {
+        matchedCount += 1;
+        return;
+      }
+
       const expectedLabel =
         constraint.type === 'fixed'
           ? toneLabel(constraint.tone)
-          : formatRhymeToneLabel(
-              expectedTone,
-              constraint.type === 'rhyme' ? constraint.xieyun : false,
-            );
+          : formatRhymeToneLabel(result.expectedTone, result.xieyun);
 
-      checkableCount += 1;
-      const entries = dict.lookup(char);
-      if (entries.length === 0) {
+      if (result.failReason === 'not-in-dict') {
         issues.push({
           lineIndex,
           col,
@@ -73,39 +80,16 @@ export function validateGridStrictly({
       }
 
       if (constraint.type === 'fixed') {
-        const matched = entries.some((entry) => entry.tone === constraint.tone);
-        if (matched) {
-          matchedCount += 1;
-          return;
-        }
         issues.push({
           lineIndex,
           col,
           char,
           lineText,
-          expected: toneLabel(constraint.tone),
-          actual: [...new Set(entries.map((entry) => toneLabel(entry.tone)))]
+          expected: expectedLabel,
+          actual: [...new Set(result.entries.map((entry) => toneLabel(entry.tone)))]
             .join('/'),
           reason: '平仄不合',
         });
-        return;
-      }
-
-      const rhymeEntries = entries.filter(
-        (entry) =>
-          entry.rhymeGroup &&
-          (!expectedTone || entry.tone === expectedTone),
-      );
-      const matchingEntry = rhymeEntries.find((entry) => {
-        const anchor = rhymeAnchors.get(entry.tone);
-        return !anchor || anchor === entry.rhymeGroup;
-      });
-
-      if (matchingEntry) {
-        matchedCount += 1;
-        if (!rhymeAnchors.has(matchingEntry.tone)) {
-          rhymeAnchors.set(matchingEntry.tone, matchingEntry.rhymeGroup);
-        }
         return;
       }
 
@@ -115,7 +99,7 @@ export function validateGridStrictly({
         char,
         lineText,
         expected: expectedLabel,
-        actual: [...new Set(entries.map((entry) => {
+        actual: [...new Set(result.entries.map((entry) => {
           const tone = toneLabel(entry.tone);
           return entry.rhymeGroup ? `${tone}${entry.rhymeGroup}` : tone;
         }))].join('/'),

@@ -5,13 +5,19 @@
   "type": "module",
   "description": "编辑器核心 —— 网格文档模型与输入处理的纯逻辑（跨端复用）",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "typescript": "^5.9.0"
+    "typescript": "catalog:",
+    "vitest": "^3.2.4"
   }
 }
