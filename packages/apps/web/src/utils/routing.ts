@@ -1,3 +1,5 @@
+// 路由语义与 URL 路径的双向映射。历史/导航现由 TanStack Router 负责，
+// 这里只保留“语义 mode ↔ 路径”的纯映射，供派生 viewMode 与导航适配使用。
 export type AppRoute =
   | { mode: 'entry' }
   | { mode: 'template' }
@@ -7,7 +9,9 @@ export type AppRoute =
   | { mode: 'settings' }
   | { mode: 'editor'; draftId: string };
 
-function routePath(route: AppRoute): string {
+export type ViewMode = AppRoute['mode'];
+
+export function routeToPath(route: AppRoute): string {
   if (route.mode === 'editor') return `/edit/${encodeURIComponent(route.draftId)}`;
   if (route.mode === 'template') return '/new';
   if (route.mode === 'quickfill') return '/quickfill';
@@ -17,24 +21,13 @@ function routePath(route: AppRoute): string {
   return '/';
 }
 
-export function readRoute(): AppRoute {
-  // Static deployments serve one HTML file, so editor state lives in the hash
-  // instead of the real pathname: /#/edit/:draftId.
-  const hashPath = window.location.hash.replace(/^#/, '') || '/';
-  if (hashPath === '/new') return { mode: 'template' };
-  if (hashPath === '/quickfill') return { mode: 'quickfill' };
-  if (hashPath === '/works') return { mode: 'works' };
-  if (hashPath === '/export-templates') return { mode: 'template-designer' };
-  if (hashPath === '/settings') return { mode: 'settings' };
-  const match = hashPath.match(/^\/edit\/([^/]+)$/);
-  if (match) return { mode: 'editor', draftId: decodeURIComponent(match[1]) };
-  return { mode: 'entry' };
-}
-
-export function pushRoute(route: AppRoute): void {
-  window.history.pushState(route, '', `#${routePath(route)}`);
-}
-
-export function replaceRoute(route: AppRoute): void {
-  window.history.replaceState(route, '', `#${routePath(route)}`);
+/** 从（hash 内的）pathname 解析出当前视图 mode，用于高亮/派生状态。 */
+export function pathnameToMode(pathname: string): ViewMode {
+  if (pathname === '/new') return 'template';
+  if (pathname === '/quickfill') return 'quickfill';
+  if (pathname === '/works') return 'works';
+  if (pathname === '/export-templates') return 'template-designer';
+  if (pathname === '/settings') return 'settings';
+  if (/^\/edit\//.test(pathname)) return 'editor';
+  return 'entry';
 }

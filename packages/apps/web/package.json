@@ -16,6 +16,7 @@
     "@poem/layout-core": "workspace:*",
     "@poem/parser": "workspace:*",
     "@poem/shared": "workspace:*",
+    "@tanstack/react-router": "^1.170.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
